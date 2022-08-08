@@ -174,13 +174,13 @@ public enum ResultCode implements Serializable {
 
     /**
      * ******
-     * Target
+     * Compound
      * *******
      */
-    TARGET_ID_CANNOT_BE_EMPTY("TARGET_ID_CANNOT_BE_EMPTY", "靶标id不能为空"),
-    TARGET_NOT_EXISTED("TARGET_NOT_EXISTED", "该靶标不存在"),
+    COMPOUND_ID_CANNOT_BE_EMPTY("COMPOUND_ID_CANNOT_BE_EMPTY", "化合物id不能为空"),
+    COMPOUND_NOT_EXISTED("COMPOUND_NOT_EXISTED", "该化合物不存在"),
     KEY_FIELDS_CANNOT_BE_EMPTY("KEY_FIELDS_CANNOT_BE_EMPTY(UniqueId,Platform,Matrix,Species)", "关键字段不能为空(UniqueId,平台,物种,基质)"),
-    ROOT_TARGET_IS_ALREADY_EXISTED("ROOT_TARGET_IS_ALREADY_EXISTED", "主库中已经存在关联靶标"),
+    ROOT_COMPOUND_IS_ALREADY_EXISTED("ROOT_COMPOUND_IS_ALREADY_EXISTED", "主库中已经存在关联化合物"),
     MZ_NOT_SAME("MZ_NOT_SAME", "合并的mz不相同"),
     NAME_NOT_SAME("NAME_NOT_SAME", "合并的名称不相同"),
     RI_NOT_SAME("RI_NOT_SAME", "合并的ri不相同"),
