@@ -9,6 +9,8 @@ public class CompoundQuery extends PageQuery {
 
     String name;
 
+    String searchName;
+
     String libraryId;
 
     public CompoundQuery() {

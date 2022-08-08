@@ -2,7 +2,6 @@ package net.csibio.mslibrary.core.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.bean.common.IdName;
-import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.common.LabelValue;
@@ -15,7 +14,6 @@ import net.csibio.mslibrary.client.service.BaseService;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @RestController
 @Slf4j

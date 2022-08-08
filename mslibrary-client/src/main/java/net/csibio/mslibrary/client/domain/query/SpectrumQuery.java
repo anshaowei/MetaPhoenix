@@ -11,7 +11,7 @@ public class SpectrumQuery extends PageQuery {
 
     String id;
 
-    String targetId;
+    String compoundId;
 
     String innerId;
 
@@ -19,7 +19,7 @@ public class SpectrumQuery extends PageQuery {
 
     List<String> ids;
 
-    List<String> targetIds;
+    List<String> compoundIds;
 
     Boolean root;
 
@@ -34,7 +34,7 @@ public class SpectrumQuery extends PageQuery {
     public SpectrumQuery() {
     }
 
-    public SpectrumQuery(String targetId) {
-        this.targetId = targetId;
+    public SpectrumQuery(String compoundId) {
+        this.compoundId = compoundId;
     }
 }
