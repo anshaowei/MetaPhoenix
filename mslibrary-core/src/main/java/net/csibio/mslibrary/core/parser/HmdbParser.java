@@ -127,6 +127,9 @@ public class HmdbParser implements IParser {
                             case "spectra" ->  compound.setSpectra(parseSpectra(ele));
                             case "biological_properties" ->  compound.setBiological(parseBiological(ele));
                             case "concentrations" ->  compound.setConcentrations(parseConcentrations(ele));
+                            case "diseases" ->  compound.setDiseases(parseDiseases(ele));
+                            case "general_references" ->  compound.setReferences(parseReferences(ele));
+                            case "protein_associations" ->  compound.setProteinAssociations(parseProteinAssociations(ele));
                         }
                     }
                     compounds.add(compound);
@@ -341,6 +344,34 @@ public class HmdbParser implements IParser {
         return concentration;
     }
 
+    private List<Disease> parseDiseases(Element element){
+        Iterator iter = element.elementIterator();
+        List<Disease> diseases = new ArrayList<>();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            diseases.add(parseDisease(ele));
+        }
+        return diseases;
+    }
+
+    private Disease parseDisease(Element element){
+        Iterator iter = element.elementIterator();
+        Disease disease = new Disease();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            if (value.isEmpty()){
+                break;
+            }
+            switch (ele.getName()){
+                case "name" -> disease.setName(value);
+                case "omim_id" -> disease.setOmimId(value);
+                case "references" -> disease.setReferences(parseReferences(ele));
+            }
+        }
+        return disease;
+    }
+
     private List<Reference> parseReferences(Element element){
         Iterator iter = element.elementIterator();
         List<Reference> references = new ArrayList<>();
@@ -366,6 +397,36 @@ public class HmdbParser implements IParser {
             }
         }
         return reference;
+    }
+
+    private List<ProteinAssociation> parseProteinAssociations(Element element){
+        Iterator iter = element.elementIterator();
+        List<ProteinAssociation> associations = new ArrayList<>();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            associations.add(parseProteinAssociation(ele));
+        }
+        return associations;
+    }
+
+    private ProteinAssociation parseProteinAssociation(Element element){
+        Iterator iter = element.elementIterator();
+        ProteinAssociation association = new ProteinAssociation();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            if (value.isEmpty()){
+                break;
+            }
+            switch (ele.getName()){
+                case "name" -> association.setName(value);
+                case "protein_accession" -> association.setProteinAccession(value);
+                case "uniprot_id" -> association.setUniprotId(value);
+                case "gene_name" -> association.setGeneName(value);
+                case "protein_type" -> association.setProteinType(value);
+            }
+        }
+        return association;
     }
 
     private List<String> parseList(Element node){

@@ -69,6 +69,11 @@ public class CompoundDO {
 
     List<Concentration> concentrations;
 
+    List<Disease> diseases;
+
+    List<Reference> references;
+
+    List<ProteinAssociation> proteinAssociations;
     /**
      * 化学方程式
      */
