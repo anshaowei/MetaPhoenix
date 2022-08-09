@@ -2,6 +2,9 @@ package net.csibio.mslibrary.client.domain.db;
 
 import lombok.Data;
 import net.csibio.mslibrary.client.domain.bean.Adduct;
+import net.csibio.mslibrary.client.domain.bean.hmdb.Descendant;
+import net.csibio.mslibrary.client.domain.bean.hmdb.Property;
+import net.csibio.mslibrary.client.domain.bean.hmdb.Taxonomy;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
@@ -43,8 +46,24 @@ public class CompoundDO {
     @Indexed
     String cnName;
 
-    //化合物名称的同义词
+    /**
+     * 化合物名称的同义词
+     */
     List<String> synonyms;
+
+    /**
+     * 分类
+     */
+    Taxonomy taxonomy;
+
+    /**
+     * 本体
+     */
+    List<Descendant> ontology;
+
+    List<Property> experimentalProperties;
+
+    List<Property> predictedProperties;
 
     /**
      * 化学方程式
@@ -122,6 +141,7 @@ public class CompoundDO {
     String keggId;
     //即Accession
     String hmdbId;
+    List<String> hmdbIds;
     String chemSpiderId;
     String pdbId;
     String chebiId;

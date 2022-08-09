@@ -3,6 +3,9 @@ package net.csibio.mslibrary.core.parser;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.constants.LibraryConst;
 import net.csibio.mslibrary.client.domain.Result;
+import net.csibio.mslibrary.client.domain.bean.hmdb.Descendant;
+import net.csibio.mslibrary.client.domain.bean.hmdb.Property;
+import net.csibio.mslibrary.client.domain.bean.hmdb.Taxonomy;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.query.CompoundQuery;
@@ -74,18 +77,18 @@ public class HmdbParser implements IParser {
                     CompoundDO compound = new CompoundDO();
                     compound.setLibraryId(library.getId());
                     //此迭代用以遍历两个metabolite标签之间的内容
-                    Iterator iterator1 = maim.elementIterator();
-                    while (iterator1.hasNext()) {
-                        Element property = (Element) iterator1.next();
-                        if (property.getName().equals("metabolite")) {
+                    Iterator iter = maim.elementIterator();
+                    while (iter.hasNext()) {
+                        Element ele = (Element) iter.next();
+                        if (ele.getName().equals("metabolite")) {
                             break;
                         }
 
-                        String value = property.getStringValue();
+                        String value = ele.getStringValue();
                         if (value.isEmpty()){
                             break;
                         }
-                        switch (property.getName()){
+                        switch (ele.getName()){
                             case "name" -> compound.setName(value);
                             case "accession" -> compound.setHmdbId(value);
                             case "status" -> compound.setStatus(value);
@@ -116,13 +119,19 @@ public class HmdbParser implements IParser {
                             case "state" -> compound.setState(value);
                             case "creation_date" ->  compound.setCreateDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").parse(value));
                             case "update_date" ->  compound.setLastModifiedDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").parse(value));
+                            case "secondary_accessions" ->  compound.setHmdbIds(parseList(ele));
+                            case "synonyms" ->  compound.setSynonyms(parseList(ele));
+                            case "taxonomy" ->  compound.setTaxonomy(parseTaxonomy(ele));
+                            case "ontology" ->  compound.setOntology(parseDescendantList(ele));
+                            case "experimental_properties" ->  compound.setExperimentalProperties(parseProperties(ele));
+                            case "predicted_properties" ->  compound.setPredictedProperties(parseProperties(ele));
                         }
                     }
                     compounds.add(compound);
                 }
             }
             log.info("总计扫描到化合物"+compounds.size()+"个,正在删除旧数据");
-            compoundService.remove(new CompoundQuery(), LibraryConst.HMDB);
+            compoundService.remove(new CompoundQuery(LibraryConst.HMDB), LibraryConst.HMDB);
             log.info("旧数据删除完毕,开始插入新数据");
             long insertTime = System.currentTimeMillis();
             compoundService.insert(compounds, LibraryConst.HMDB);
@@ -131,5 +140,103 @@ public class HmdbParser implements IParser {
             e.printStackTrace();
         }
         return new Result(true);
+    }
+
+    private Taxonomy parseTaxonomy(Element taxonomyElement){
+        Iterator iter = taxonomyElement.elementIterator();
+        Taxonomy taxonomy = new Taxonomy();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            if (value.isEmpty()){
+                break;
+            }
+            switch (ele.getName()){
+                case "description" -> taxonomy.setDescription(value);
+                case "direct_parent" -> taxonomy.setDirectParent(value);
+                case "kingdom" -> taxonomy.setKingdom(value);
+                case "super_class" -> taxonomy.setSuperClass(value);
+                case "class" -> taxonomy.setClazz(value);
+                case "sub_class" -> taxonomy.setSubClass(value);
+                case "molecular_framework" -> taxonomy.setMolecularFramework(value);
+                case "alternative_parents" -> taxonomy.setAlterParents(parseList(taxonomyElement));
+                case "substituents" -> taxonomy.setSubstituents(parseList(taxonomyElement));
+                case "external_descriptors" -> taxonomy.setExtDesc(parseList(taxonomyElement));
+            }
+        }
+       return taxonomy;
+    }
+
+    private List<Descendant> parseDescendantList(Element ontology){
+        Iterator iter = ontology.elementIterator();
+        List<Descendant> descendants = new ArrayList<>();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            Descendant descendant = parseDescendant(ele);
+            descendants.add(descendant);
+        }
+        return descendants;
+    }
+
+    private Descendant parseDescendant(Element element){
+        Iterator iter = element.elementIterator();
+        Descendant descendant = new Descendant();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            if (value.isEmpty()){
+                break;
+            }
+            switch (ele.getName()){
+                case "term" -> descendant.setTerm(value);
+                case "definition" -> descendant.setDefinition(value);
+                case "parent_id" -> descendant.setParentId(value);
+                case "level" -> descendant.setLevel(Integer.parseInt(value));
+                case "type" -> descendant.setType(value);
+                case "synonyms" -> descendant.setSynonyms(parseList(ele));
+                case "descendants" -> descendant.setDescendants(parseDescendantList(ele));
+            }
+        }
+        return descendant;
+    }
+
+    private List<Property> parseProperties(Element element){
+        Iterator iter = element.elementIterator();
+        List<Property> properties = new ArrayList<>();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            Property property = parseProperty(ele);
+            properties.add(property);
+        }
+        return properties;
+    }
+
+    private Property parseProperty(Element element){
+        Iterator iter = element.elementIterator();
+        Property property = new Property();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            if (value.isEmpty()){
+                break;
+            }
+            switch (ele.getName()){
+                case "kind" -> property.setKind(value);
+                case "value" -> property.setValue(value);
+                case "source" -> property.setSource(value);
+            }
+        }
+        return property;
+    }
+
+    private List<String> parseList(Element node){
+        Iterator iter = node.elementIterator();
+        List<String> list = new ArrayList<>();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            list.add(value);
+        }
+        return list;
     }
 }
