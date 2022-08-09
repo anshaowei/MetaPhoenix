@@ -126,6 +126,7 @@ public class HmdbParser implements IParser {
                             case "predicted_properties" ->  compound.setPredictedProperties(parseProperties(ele));
                             case "spectra" ->  compound.setSpectra(parseSpectra(ele));
                             case "biological_properties" ->  compound.setBiological(parseBiological(ele));
+                            case "concentrations" ->  compound.setConcentrations(parseConcentrations(ele));
                         }
                     }
                     compounds.add(compound);
@@ -303,6 +304,68 @@ public class HmdbParser implements IParser {
             }
         }
         return pathway;
+    }
+
+    private List<Concentration> parseConcentrations(Element element){
+        Iterator iter = element.elementIterator();
+        List<Concentration> concentrations = new ArrayList<>();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            concentrations.add(parseConcentration(ele));
+        }
+        return concentrations;
+    }
+
+    private Concentration parseConcentration(Element element){
+        Iterator iter = element.elementIterator();
+        Concentration concentration = new Concentration();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            if (value.isEmpty()){
+                break;
+            }
+            switch (ele.getName()){
+                case "biospecimen" -> concentration.setBiospecimen(value);
+                case "concentration_value" -> concentration.setValue(value);
+                case "concentration_units" -> concentration.setUnits(value);
+                case "subject_age" -> concentration.setSubjectAge(value);
+                case "subject_sex" -> concentration.setSubjectSex(value);
+                case "patient_age" -> concentration.setPatientAge(value);
+                case "patient_sex" -> concentration.setPatientSex(value);
+                case "patient_information" -> concentration.setPatientInfo(value);
+                case "comment" -> concentration.setComment(value);
+                case "references" -> concentration.setReferences(parseReferences(ele));
+            }
+        }
+        return concentration;
+    }
+
+    private List<Reference> parseReferences(Element element){
+        Iterator iter = element.elementIterator();
+        List<Reference> references = new ArrayList<>();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            references.add(parseReference(ele));
+        }
+        return references;
+    }
+
+    private Reference parseReference(Element element){
+        Iterator iter = element.elementIterator();
+        Reference reference = new Reference();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            if (value.isEmpty()){
+                break;
+            }
+            switch (ele.getName()){
+                case "reference_text" -> reference.setText(value);
+                case "pubmed_id" -> reference.setPubMedId(value);
+            }
+        }
+        return reference;
     }
 
     private List<String> parseList(Element node){

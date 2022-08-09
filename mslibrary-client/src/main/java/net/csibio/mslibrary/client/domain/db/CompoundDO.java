@@ -67,6 +67,8 @@ public class CompoundDO {
 
     Biological biological;
 
+    List<Concentration> concentrations;
+
     /**
      * 化学方程式
      */
