@@ -164,9 +164,9 @@ public class HmdbParser implements IParser {
                 case "class" -> taxonomy.setClazz(value);
                 case "sub_class" -> taxonomy.setSubClass(value);
                 case "molecular_framework" -> taxonomy.setMolecularFramework(value);
-                case "alternative_parents" -> taxonomy.setAlterParents(parseList(taxonomyElement));
-                case "substituents" -> taxonomy.setSubstituents(parseList(taxonomyElement));
-                case "external_descriptors" -> taxonomy.setExtDesc(parseList(taxonomyElement));
+                case "alternative_parents" -> taxonomy.setAlterParents(parseList(ele));
+                case "substituents" -> taxonomy.setSubstituents(parseList(ele));
+                case "external_descriptors" -> taxonomy.setExtDesc(parseList(ele));
             }
         }
        return taxonomy;
@@ -256,7 +256,7 @@ public class HmdbParser implements IParser {
             }
             switch (ele.getName()){
                 case "type" -> link.setType(value);
-                case "spectrumId" -> link.setSpectrumId(value);
+                case "spectrum_id" -> link.setSpectrumId(value);
             }
         }
         return link;
