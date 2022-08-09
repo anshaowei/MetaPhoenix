@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.core.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.constants.LibraryConst;
 import net.csibio.mslibrary.client.constants.StatConst;
 import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.constants.enums.StatDim;
@@ -81,12 +82,18 @@ public class StatServiceImpl implements StatService {
         stat = new StatDO(dim.getDim(), StatType.Global_Total.getName(), date);
 
         long libraryNum = libraryService.count(new LibraryQuery());
-        long compoundNum = compoundService.count(new CompoundQuery());
+        long hmdbNum = compoundService.count(new CompoundQuery(), LibraryConst.HMDB);
+        long gnpsNum = compoundService.count(new CompoundQuery(), LibraryConst.GNPS);
+        long massBankNum = compoundService.count(new CompoundQuery(), LibraryConst.MassBank);
+        long mslibraryNum = compoundService.count(new CompoundQuery(), LibraryConst.Empty);
         long spectraNum = spectrumService.count(new SpectrumQuery());
 
         HashMap<String, Object> statMap = new HashMap<>();
         statMap.put(StatConst.STAT_LIBRARY_NUM, libraryNum);
-        statMap.put(StatConst.STAT_COMPOUND_NUM, compoundNum);
+        statMap.put(StatConst.STAT_HMDB_COMPOUND_NUM, hmdbNum);
+        statMap.put(StatConst.STAT_GNPS_COMPOUND_NUM, gnpsNum);
+        statMap.put(StatConst.STAT_MASSBANK_COMPOUND_NUM, massBankNum);
+        statMap.put(StatConst.STAT_MSLIBRARY_COMPOUND_NUM, mslibraryNum);
         statMap.put(StatConst.STAT_SPECTRA_NUM, spectraNum);
 
         stat.setStatMap(statMap);

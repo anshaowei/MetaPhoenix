@@ -51,7 +51,7 @@ public class LibraryDO implements Serializable {
     /**
      * 库中含有的靶标的数量
      */
-    Integer targetCount = 0;
+    Integer compCount = 0;
 
     /**
      * 库中含有的靶标的数量
@@ -61,14 +61,6 @@ public class LibraryDO implements Serializable {
     Date createDate;
 
     Date lastModifiedDate;
-
-    public boolean isAnaLib(){
-        return type.equals(LibraryType.ANA.getName());
-    }
-
-    public boolean isInsLib(){
-        return type.equals(LibraryType.INS.getName());
-    }
 
     // 新增一个基质类型
     public void addMatrix(String matrix) {

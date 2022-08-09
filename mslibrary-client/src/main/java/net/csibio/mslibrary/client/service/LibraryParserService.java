@@ -2,6 +2,7 @@ package net.csibio.mslibrary.client.service;
 
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
+import net.csibio.mslibrary.client.exceptions.XException;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -14,6 +14,7 @@ import com.opencsv.bean.HeaderColumnNameMappingStrategy;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
+import net.csibio.mslibrary.client.constants.LibraryConst;
 import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.parser.csv.CsvCompound;
@@ -22,6 +23,7 @@ import net.csibio.mslibrary.client.domain.bean.spectrum.AnnotationHistory;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
+import net.csibio.mslibrary.client.domain.query.CompoundQuery;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryParserService;
 import net.csibio.mslibrary.client.service.LibraryService;
@@ -107,18 +109,18 @@ public class LibraryParserServiceImpl implements LibraryParserService {
             libraryService.remove(library.getId());
             Result errorResult = new Result(false);
             errorResult.setErrorList(errorNames);
-            errorResult.setErrorResult(ResultCode.DUPLICATED_TARGET_EXIST);
+            errorResult.setErrorResult(ResultCode.DUPLICATED_COMPOUND_EXIST);
             return errorResult;
         }
         try {
-            compoundService.insert(compList);
+            compoundService.insert(compList, LibraryConst.Empty);
         } catch (Exception e) {
             compoundService.removeAllByLibraryId(library.getId());
             libraryService.remove(library.getId());
             return Result.Error(e.getMessage());
         }
 
-        library.setTargetCount(compList.size());
+        library.setCompCount(compList.size());
         libraryService.update(library);
         log.info("库" + library.getName() + "创建成功!," + compList.size() + "条靶标插入成功");
         Result result = new Result(true);
@@ -148,7 +150,14 @@ public class LibraryParserServiceImpl implements LibraryParserService {
      */
     @Override
     public Result parseHMDB(String filePath) {
-
+        LibraryDO library = libraryService.getById(LibraryConst.HMDB);
+        if (library == null) {
+            library = new LibraryDO();
+            library.setId(LibraryConst.HMDB);
+            library.setName(LibraryConst.HMDB);
+            libraryService.insert(library);
+            log.info("HMDB镜像库不存在,已创建新的HMDB库");
+        }
         try {
             //获取sax解析器的工厂对象
             SAXParserFactory parserFactory = SAXParserFactory.newInstance();
@@ -156,16 +165,15 @@ public class LibraryParserServiceImpl implements LibraryParserService {
             SAXParser saxParser = parserFactory.newSAXParser();
             //编写处理器
 
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
+        } catch (ParserConfigurationException | SAXException e) {
             e.printStackTrace();
         }
 
         SAXReader reader = new SAXReader();
-        List<CompoundDO> compoundDOS = new ArrayList<>();
-
+        List<CompoundDO> compounds = new ArrayList<>();
+        log.info("开始解析源文件");
         try {
+            long start = System.currentTimeMillis();
             Document document = reader.read(filePath);
             Element rootElement = document.getRootElement();
             Iterator iterator = rootElement.elementIterator();
@@ -174,7 +182,8 @@ public class LibraryParserServiceImpl implements LibraryParserService {
                 Element element = (Element) iterator.next();
                 //每次遇到metabolite就创建一个新化合物
                 if (element.getName().equals("metabolite")) {
-                    CompoundDO compoundDO = new CompoundDO();
+                    CompoundDO compound = new CompoundDO();
+                    compound.setLibraryId(library.getId());
                     //此迭代用以遍历两个metabolite标签之间的内容
                     Iterator iterator1 = element.elementIterator();
                     while (iterator1.hasNext()) {
@@ -183,36 +192,42 @@ public class LibraryParserServiceImpl implements LibraryParserService {
                             break;
                         }
                         if (element1.getName().equals("chemical_formula")) {
-                            compoundDO.setFormula(element1.getStringValue());
+                            compound.setFormula(element1.getStringValue());
                         }
                         if (element1.getName().equals("name")) {
-                            compoundDO.setName(element1.getStringValue());
+                            compound.setName(element1.getStringValue());
                         }
                         if (element1.getName().equals("creation_date")) {
                             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-                            compoundDO.setCreateDate(simpleDateFormat.parse(element1.getStringValue()));
+                            compound.setCreateDate(simpleDateFormat.parse(element1.getStringValue()));
                         }
                         if (element1.getName().equals("update_date")) {
                             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-                            compoundDO.setLastModifiedDate(simpleDateFormat.parse(element1.getStringValue()));
+                            compound.setLastModifiedDate(simpleDateFormat.parse(element1.getStringValue()));
                         }
                         if (element1.getName().equals("average_molecular_weight")) {
                             if (!element1.getStringValue().isEmpty()) {
-                                compoundDO.setAvgMw(Double.parseDouble(element1.getStringValue()));
+                                compound.setAvgMw(Double.parseDouble(element1.getStringValue()));
                             }
                         }
                         if (element1.getName().equals("monisotopic_molecular_weight")) {
                             if (!element1.getStringValue().isEmpty()) {
-                                compoundDO.setMonoMw(Double.parseDouble(element1.getStringValue()));
+                                compound.setMonoMw(Double.parseDouble(element1.getStringValue()));
                             }
                         }
                         if (element1.getName().equals("smiles")) {
-                            compoundDO.setSmiles(element1.getStringValue());
+                            compound.setSmiles(element1.getStringValue());
                         }
                     }
-                    compoundDOS.add(compoundDO);
+                    compounds.add(compound);
                 }
             }
+            log.info("总计扫描到化合物"+compounds.size()+"个,正在删除旧数据");
+            compoundService.remove(new CompoundQuery(), LibraryConst.HMDB);
+            log.info("旧数据删除完毕,开始插入新数据");
+            long insertTime = System.currentTimeMillis();
+            compoundService.insert(compounds, LibraryConst.HMDB);
+            log.info("新数据插入完毕,数据库插入耗时:"+(System.currentTimeMillis() - insertTime)+";总耗时:"+(System.currentTimeMillis() - start));
         } catch (DocumentException | ParseException e) {
             e.printStackTrace();
         }
@@ -308,7 +323,7 @@ public class LibraryParserServiceImpl implements LibraryParserService {
             int spectraCount = 0;
             for (String compoundName : compoundNameToSpectrumMap.keySet()) {
                 CompoundDO compoundDO = compoundNameToCompoundMap.get(compoundName);
-                compoundService.insert(compoundDO);
+                compoundService.insert(compoundDO, LibraryConst.MassBank);
                 List<SpectrumDO> spectrumDOS = compoundNameToSpectrumMap.get(compoundName);
                 for (SpectrumDO spectrumDO : spectrumDOS) {
                     spectrumDO.setCompoundId(compoundDO.getId());

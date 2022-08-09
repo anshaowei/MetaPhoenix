@@ -1,20 +1,26 @@
 package net.csibio.mslibrary.core.dao;
 
+import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
 import net.csibio.mslibrary.client.domain.query.CompoundQuery;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class CompoundDAO extends BaseDAO<CompoundDO, CompoundQuery> {
+public class CompoundDAO extends BaseMultiDAO<CompoundDO, CompoundQuery> {
 
     public static String CollectionName = "compound";
 
     @Override
-    protected String getCollectionName() {
-        return CollectionName;
+    protected String getCollectionName(String routerId) {
+        if (StringUtils.isNotEmpty(routerId)) {
+            return CollectionName + SymbolConst.DELIMITER + routerId;
+        } else {
+            return CollectionName;
+        }
     }
 
     @Override
@@ -32,10 +38,10 @@ public class CompoundDAO extends BaseDAO<CompoundDO, CompoundQuery> {
         return new Query();
     }
 
-    public List<CompoundDO> getAllByOuterLibraryId(String outerLibraryId) {
+    public List<CompoundDO> getAllByLibraryId(String libraryId) {
         CompoundQuery query = new CompoundQuery();
-        query.setLibraryId(outerLibraryId);
-        return mongoTemplate.find(buildQueryWithoutPage(query), CompoundDO.class, CollectionName);
+        query.setLibraryId(libraryId);
+        return mongoTemplate.find(buildQueryWithoutPage(query), CompoundDO.class, getCollectionName(libraryId));
     }
 
 }

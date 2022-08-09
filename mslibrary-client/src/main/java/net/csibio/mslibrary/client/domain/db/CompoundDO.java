@@ -1,18 +1,22 @@
 package net.csibio.mslibrary.client.domain.db;
 
 import lombok.Data;
-import net.csibio.mslibrary.client.constants.AdductConst;
 import net.csibio.mslibrary.client.domain.bean.Adduct;
-import org.springframework.beans.BeanUtils;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 
 @Data
 @Document(collection = "compound")
+@CompoundIndexes({
+        @CompoundIndex(name = "libraryId_code", def = "{'libraryId':1,'code':1}", unique = true),
+        @CompoundIndex(name = "libraryId_name", def = "{'libraryId':1,'name':1}", unique = true)})
 public class CompoundDO {
 
     @Id
@@ -27,9 +31,9 @@ public class CompoundDO {
     @Indexed
     String code;
 
-    /**
-     * 靶标名称
-     */
+    @Indexed
+    String status;
+
     @Indexed
     String name;
 
@@ -39,12 +43,34 @@ public class CompoundDO {
     @Indexed
     String cnName;
 
+    //化合物名称的同义词
+    List<String> synonyms;
+
     /**
      * 化学方程式
      */
     @Indexed
     String formula;
 
+    /**
+     * 有机物命名法
+     */
+    String iupac;
+
+    /**
+     * 传统有机物命名法
+     */
+    String traditionalIupac;
+
+    /**
+     * 国际化合物标识 International Chemical Identifier
+     */
+    String inchi;
+
+    /**
+     * 国际标识物key
+     */
+    String inchikey;
     /**
      * 平均分子质量
      */
@@ -95,25 +121,5 @@ public class CompoundDO {
     // 最后修改日期
     Date lastModifiedDate;
 
-    String features = "";
-
     String comments;
-
-    /**
-     * 将自己作为一个非主库的靶标进行克隆,如果本身就是一个主库靶标,那么会将自己的rootId设置为原靶标的id
-     *
-     * @return
-     */
-    public CompoundDO cloneAsNewComp() {
-        CompoundDO clone = new CompoundDO();
-        BeanUtils.copyProperties(this, clone);
-        clone.setId(null);
-        clone.setLibraryId(null);
-        return clone;
-    }
-
-    public HashSet<Adduct> fetchAdductList() {
-        this.adducts.addAll(AdductConst.adductProbabilitiesList);
-        return this.adducts;
-    }
 }

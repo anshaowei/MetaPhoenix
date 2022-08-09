@@ -2,8 +2,8 @@ package net.csibio.mslibrary.client.constants.enums;
 
 public enum LibraryType {
 
-    INS("INS", "Internal Standard"),
-    ANA("ANA", "Analytes to analyze"),
+    Proteomic("Proteomics","蛋白质组学相关库"),
+    Metabolomics("Metabolomics","代谢组学相关库"),
     ;
 
     String name;

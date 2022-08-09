@@ -86,20 +86,6 @@ public interface BaseMultiService<T, Q extends PageQuery> {
         }
     }
 
-    default Result<List<T>> update(List<T> tList, String routerId) {
-        try {
-            for (T t : tList) {
-                beforeUpdate(t, routerId);
-            }
-            getBaseDAO().update(tList, routerId);
-            return Result.OK(tList);
-        } catch (XException xe) {
-            return Result.Error(xe.getCode(), xe.getMessage());
-        } catch (Exception e) {
-            return Result.Error(ResultCode.UPDATE_ERROR);
-        }
-    }
-
     default Result<T> update(T t, String routerId) {
         try {
             beforeUpdate(t, routerId);

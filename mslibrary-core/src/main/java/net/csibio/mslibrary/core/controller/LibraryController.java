@@ -30,7 +30,6 @@ import java.util.List;
 @RequestMapping("library")
 public class LibraryController extends BaseController<LibraryDO, LibraryQuery> {
 
-
     @Autowired
     LibraryService libraryService;
     @Autowired

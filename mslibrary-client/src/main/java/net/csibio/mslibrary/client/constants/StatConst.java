@@ -3,6 +3,9 @@ package net.csibio.mslibrary.client.constants;
 public class StatConst {
 
     public static String STAT_LIBRARY_NUM = "LibraryNum";
-    public static String STAT_COMPOUND_NUM = "CompoundNum";
+    public static String STAT_HMDB_COMPOUND_NUM = "HMDBCompoundNum";
+    public static String STAT_GNPS_COMPOUND_NUM = "GNPSCompoundNum";
+    public static String STAT_MASSBANK_COMPOUND_NUM = "MassBankCompoundNum";
+    public static String STAT_MSLIBRARY_COMPOUND_NUM = "MSLibraryCompoundNum";
     public static String STAT_SPECTRA_NUM = "SpectraNum";
 }

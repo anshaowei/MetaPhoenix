@@ -5,7 +5,7 @@ import net.csibio.mslibrary.client.domain.query.CompoundQuery;
 
 import java.util.List;
 
-public interface CompoundService extends BaseService<CompoundDO, CompoundQuery> {
+public interface CompoundService extends BaseMultiService<CompoundDO, CompoundQuery> {
 
     List<CompoundDO> getAllByLibraryId(String libraryId);
 

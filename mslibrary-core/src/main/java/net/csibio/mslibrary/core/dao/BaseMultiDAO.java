@@ -97,13 +97,6 @@ public abstract class BaseMultiDAO<T, Q extends PageQuery> implements IMultiDAO<
         return t;
     }
 
-    public List<T> update(List<T> list, String routerId) {
-        for (T t: list) {
-            mongoTemplate.save(t, getCollectionName(routerId));
-        }
-        return list;
-    }
-
     public boolean updateFirst(HashMap<String, Object> queryMap, HashMap<String, Object> fieldMap, String routerId) {
 
         if (queryMap == null || queryMap.size() == 0 || fieldMap == null || fieldMap.size() == 0) {

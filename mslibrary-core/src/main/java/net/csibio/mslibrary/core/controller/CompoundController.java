@@ -12,7 +12,6 @@ import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.domain.vo.CompoundUpdateVO;
 import net.csibio.mslibrary.client.domain.vo.SpectrumVO;
 import net.csibio.mslibrary.client.exceptions.XException;
-import net.csibio.mslibrary.client.service.BaseService;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -33,7 +32,7 @@ import static net.csibio.mslibrary.client.constants.AdductConst.ESIAdducts;
 
 @RestController
 @RequestMapping("compound")
-public class CompoundController extends BaseController<CompoundDO, CompoundQuery> {
+public class CompoundController {
 
     @Autowired
     CompoundService compoundService;
@@ -47,34 +46,30 @@ public class CompoundController extends BaseController<CompoundDO, CompoundQuery
         libraryService.tryGetById(compoundUpdate.getLibraryId(), ResultCode.LIBRARY_NOT_EXISTED);
         CompoundDO newCompound = new CompoundDO();
         BeanUtils.copyProperties(compoundUpdate, newCompound);
-        return compoundService.insert(newCompound);
+        return compoundService.insert(newCompound, compoundUpdate.getLibraryId());
     }
 
     @RequestMapping(value = "/update")
-    Result update(CompoundUpdateVO targetUpdateVO) throws XException {
-        CompoundDO compInDB = compoundService.tryGetById(targetUpdateVO.getId(), ResultCode.COMPOUND_NOT_EXISTED);
-        BeanUtils.copyProperties(targetUpdateVO, compInDB);
-        return compoundService.update(compInDB);
-    }
-
-    @Override
-    BaseService<CompoundDO, CompoundQuery> getBaseService() {
-        return compoundService;
+    Result update(CompoundUpdateVO compUpdateVO) throws XException {
+        CompoundDO compInDB = compoundService.tryGetById(compUpdateVO.getId(), compUpdateVO.getLibraryId(), ResultCode.COMPOUND_NOT_EXISTED);
+        BeanUtils.copyProperties(compUpdateVO, compInDB);
+        return compoundService.update(compInDB, compInDB.getLibraryId());
     }
 
     @RequestMapping(value = "/list")
     Result list(CompoundQuery query) {
-        Result<List<CompoundDO>> result = compoundService.getList(query);
+        Result<List<CompoundDO>> result = compoundService.getList(query, query.getLibraryId());
         result.getFeatureMap().put("ESIAdducts", ESIAdducts);
         return result;
     }
 
     @RequestMapping(value = "/fetchCompoundLabelValues")
-    Result fetchCompoundLabelValues(@RequestParam(value = "libraryId", required = true) String libraryId, @RequestParam(value = "searchName", required = true) String searchName) {
+    Result fetchCompoundLabelValues(@RequestParam(value = "libraryId", required = true) String libraryId,
+                                    @RequestParam(value = "searchName", required = true) String searchName) {
         CompoundQuery query = new CompoundQuery();
         query.setLibraryId(libraryId);
         query.setSearchName(searchName);
-        Result<List<IdName>> searchResult = compoundService.getList(query, IdName.class);
+        Result<List<IdName>> searchResult = compoundService.getList(query, IdName.class, libraryId);
         if (searchResult.isFailed()) {
             return Result.OK(new ArrayList<>());
         }
@@ -90,30 +85,34 @@ public class CompoundController extends BaseController<CompoundDO, CompoundQuery
     /**
      * 获取一个靶标所有的关联光谱以及对应的主库靶标的所有光谱
      *
-     * @param targetId
+     * @param compoundId
+     * @param libraryId
      * @return
      */
     @RequestMapping(value = "/getSpectraAll")
-    Result getSpectraAll(@RequestParam(value = "targetId") String targetId) throws XException {
-        CompoundDO compound = compoundService.tryGetById(targetId, ResultCode.COMPOUND_NOT_EXISTED);
+    Result getSpectraAll(@RequestParam(value = "compoundId") String compoundId,
+                         @RequestParam(value = "libraryId") String libraryId) throws XException {
+        CompoundDO compound = compoundService.tryGetById(compoundId, libraryId, ResultCode.COMPOUND_NOT_EXISTED);
         List<SpectrumDO> spectraList = spectrumService.getAll(new SpectrumQuery(compound.getId()));
-        List<SpectrumVO> targetList = new ArrayList<>();
+        List<SpectrumVO> compoundList = new ArrayList<>();
         spectraList.forEach(spectraDO -> {
             SpectrumVO spectrumVO = new SpectrumVO();
             BeanUtils.copyProperties(spectraDO, spectrumVO);
-            targetList.add(spectrumVO);
+            compoundList.add(spectrumVO);
         });
 
-        check(targetList, ResultCode.SPECTRA_NOT_EXISTED);
+        if (spectraList.isEmpty()) {
+            return Result.Error(ResultCode.SPECTRA_NOT_EXISTED);
+        }
 
-        Map<String, List<SpectrumVO>> specMap = targetList.stream().collect(Collectors.groupingBy(
+        Map<String, List<SpectrumVO>> specMap = compoundList.stream().collect(Collectors.groupingBy(
                 SpectrumVO::getType));
         specMap.forEach((key, value) -> {
             value.sort(Comparator.comparing(SpectrumVO::getCreateDate).reversed());
         });
         Result result = new Result(true);
         result.setData(specMap);
-        result.getFeatureMap().put("targetId", targetId);
+        result.getFeatureMap().put("compoundId", compoundId);
         return result;
     }
 

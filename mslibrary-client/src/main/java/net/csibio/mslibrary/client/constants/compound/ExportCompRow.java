@@ -1,13 +1,13 @@
-package net.csibio.mslibrary.client.constants.target;
+package net.csibio.mslibrary.client.constants.compound;
 
 import lombok.Data;
 
 import java.util.HashMap;
 
 @Data
-public class ExportTargetRow {
+public class ExportCompRow {
 
-    String targetId;
+    String compoundId;
 
     // 靶标名称
     String name;
@@ -79,12 +79,12 @@ public class ExportTargetRow {
     String comments;
     HashMap<String, Object> statMap = new HashMap<>();
 
-    public ExportTargetRow() {
+    public ExportCompRow() {
     }
 
     public Object getValueByName(String fieldName) {
         try {
-            return ExportTargetRow.class.getDeclaredField(fieldName).get(this);
+            return ExportCompRow.class.getDeclaredField(fieldName).get(this);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
             return null;
