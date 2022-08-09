@@ -1,11 +1,10 @@
 package net.csibio.mslibrary.core.parser;
 
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.constants.LibraryConst;
 import net.csibio.mslibrary.client.domain.Result;
-import net.csibio.mslibrary.client.domain.bean.hmdb.Descendant;
-import net.csibio.mslibrary.client.domain.bean.hmdb.Property;
-import net.csibio.mslibrary.client.domain.bean.hmdb.Taxonomy;
+import net.csibio.mslibrary.client.domain.bean.hmdb.*;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.query.CompoundQuery;
@@ -125,6 +124,8 @@ public class HmdbParser implements IParser {
                             case "ontology" ->  compound.setOntology(parseDescendantList(ele));
                             case "experimental_properties" ->  compound.setExperimentalProperties(parseProperties(ele));
                             case "predicted_properties" ->  compound.setPredictedProperties(parseProperties(ele));
+                            case "spectra" ->  compound.setSpectra(parseSpectra(ele));
+                            case "biological_properties" ->  compound.setBiological(parseBiological(ele));
                         }
                     }
                     compounds.add(compound);
@@ -227,6 +228,81 @@ public class HmdbParser implements IParser {
             }
         }
         return property;
+    }
+
+    private List<SpectrumLink> parseSpectra(Element element){
+        Iterator iter = element.elementIterator();
+        List<SpectrumLink> spectra = new ArrayList<>();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            SpectrumLink link = parseSpectrum(ele);
+            spectra.add(link);
+        }
+        return spectra;
+    }
+
+    private SpectrumLink parseSpectrum(Element element){
+        Iterator iter = element.elementIterator();
+        SpectrumLink link = new SpectrumLink();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            if (value.isEmpty()){
+                break;
+            }
+            switch (ele.getName()){
+                case "type" -> link.setType(value);
+                case "spectrumId" -> link.setSpectrumId(value);
+            }
+        }
+        return link;
+    }
+
+    private Biological parseBiological(Element element){
+        Iterator iter = element.elementIterator();
+        Biological biological = new Biological();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            if (value.isEmpty()){
+                break;
+            }
+            switch (ele.getName()){
+                case "cellular_locations" -> biological.setCellulars(parseList(ele));
+                case "biospecimen_locations" -> biological.setBioSpecimens(parseList(ele));
+                case "tissue_locations" -> biological.setTissues(parseList(ele));
+                case "pathways" -> biological.setPathways(parsePathways(ele));
+            }
+        }
+        return biological;
+    }
+
+    private List<Pathway> parsePathways(Element element){
+        Iterator iter = element.elementIterator();
+        List<Pathway> pathways = new ArrayList<>();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            pathways.add(parsePathway(ele));
+        }
+        return pathways;
+    }
+
+    private Pathway parsePathway(Element element){
+        Iterator iter = element.elementIterator();
+        Pathway pathway = new Pathway();
+        while (iter.hasNext()) {
+            Element ele = (Element) iter.next();
+            String value = ele.getStringValue();
+            if (value.isEmpty()){
+                break;
+            }
+            switch (ele.getName()){
+                case "name" -> pathway.setName(value);
+                case "smpdb_id" -> pathway.setSmpdbId(value);
+                case "kegg_map_id" -> pathway.setKeggMapId(value);
+            }
+        }
+        return pathway;
     }
 
     private List<String> parseList(Element node){

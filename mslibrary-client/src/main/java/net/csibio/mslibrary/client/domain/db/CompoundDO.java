@@ -2,9 +2,7 @@ package net.csibio.mslibrary.client.domain.db;
 
 import lombok.Data;
 import net.csibio.mslibrary.client.domain.bean.Adduct;
-import net.csibio.mslibrary.client.domain.bean.hmdb.Descendant;
-import net.csibio.mslibrary.client.domain.bean.hmdb.Property;
-import net.csibio.mslibrary.client.domain.bean.hmdb.Taxonomy;
+import net.csibio.mslibrary.client.domain.bean.hmdb.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
@@ -64,6 +62,10 @@ public class CompoundDO {
     List<Property> experimentalProperties;
 
     List<Property> predictedProperties;
+
+    List<SpectrumLink> spectra;
+
+    Biological biological;
 
     /**
      * 化学方程式
