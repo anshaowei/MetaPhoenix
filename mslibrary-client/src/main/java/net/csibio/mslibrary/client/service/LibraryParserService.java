@@ -19,8 +19,6 @@ public interface LibraryParserService {
      */
     Result parse(InputStream in, LibraryDO library, int fileFormat);
 
-    Result parseHMDB(String filePath);
-
     Result parseMassBank(String filePath);
 
     Result parseGNPS(String filePath) throws IOException, ParseException;

@@ -33,11 +33,13 @@ public class AdminController {
     LibraryParserService libraryParserService;
     @Autowired
     VMProperties vmProperties;
+    @Autowired
+    HmdbParser hmdbParser;
 
     @RequestMapping(value = "/async")
     Result async() {
         String path = vmProperties.getRepository()+"/metabolomics/hmdb_metabolites.xml";
-        new HmdbParser().parse(path);
+        hmdbParser.parse(path);
 //        libraryParserService.parseMassBank();
 //        libraryParserService.parseGNPS();
         return Result.OK();

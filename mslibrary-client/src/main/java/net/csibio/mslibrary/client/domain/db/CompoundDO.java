@@ -71,6 +71,12 @@ public class CompoundDO {
      * 国际标识物key
      */
     String inchikey;
+
+    /**
+     * 形态
+     */
+    String state;
+
     /**
      * 平均分子质量
      */
@@ -102,14 +108,31 @@ public class CompoundDO {
     String smiles;
 
     /**
+     * 综合参考
+     */
+    String synthesisReference;
+
+    /**
      * 在外部数据库的ID
      */
     String pubChemId;
     String casId;
     String drugBankId;
+    String foodbId;
     String keggId;
+    //即Accession
     String hmdbId;
     String chemSpiderId;
+    String pdbId;
+    String chebiId;
+    String phenolExplorerId;
+    String knapsackId;
+    String biocycId;
+    String biggId;
+    String wikipediaId;
+    String metlinId;
+    String vmhId;
+    String fbontoId;
 
     // 暂时无用的3个保留字段
     String superPathway;
@@ -121,5 +144,5 @@ public class CompoundDO {
     // 最后修改日期
     Date lastModifiedDate;
 
-    String comments;
+    String description;
 }

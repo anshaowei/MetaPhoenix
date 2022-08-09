@@ -68,44 +68,54 @@ public class HmdbParser implements IParser {
             Iterator iterator = rootElement.elementIterator();
             //以metabolite标签为一个迭代来读取文件信息
             while (iterator.hasNext()) {
-                Element element = (Element) iterator.next();
+                Element maim = (Element) iterator.next();
                 //每次遇到metabolite就创建一个新化合物
-                if (element.getName().equals("metabolite")) {
+                if (maim.getName().equals("metabolite")) {
                     CompoundDO compound = new CompoundDO();
                     compound.setLibraryId(library.getId());
                     //此迭代用以遍历两个metabolite标签之间的内容
-                    Iterator iterator1 = element.elementIterator();
+                    Iterator iterator1 = maim.elementIterator();
                     while (iterator1.hasNext()) {
-                        Element element1 = (Element) iterator1.next();
-                        if (element1.getName().equals("metabolite")) {
+                        Element property = (Element) iterator1.next();
+                        if (property.getName().equals("metabolite")) {
                             break;
                         }
-                        if (element1.getName().equals("chemical_formula")) {
-                            compound.setFormula(element1.getStringValue());
+
+                        String value = property.getStringValue();
+                        if (value.isEmpty()){
+                            break;
                         }
-                        if (element1.getName().equals("name")) {
-                            compound.setName(element1.getStringValue());
-                        }
-                        if (element1.getName().equals("creation_date")) {
-                            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-                            compound.setCreateDate(simpleDateFormat.parse(element1.getStringValue()));
-                        }
-                        if (element1.getName().equals("update_date")) {
-                            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-                            compound.setLastModifiedDate(simpleDateFormat.parse(element1.getStringValue()));
-                        }
-                        if (element1.getName().equals("average_molecular_weight")) {
-                            if (!element1.getStringValue().isEmpty()) {
-                                compound.setAvgMw(Double.parseDouble(element1.getStringValue()));
-                            }
-                        }
-                        if (element1.getName().equals("monisotopic_molecular_weight")) {
-                            if (!element1.getStringValue().isEmpty()) {
-                                compound.setMonoMw(Double.parseDouble(element1.getStringValue()));
-                            }
-                        }
-                        if (element1.getName().equals("smiles")) {
-                            compound.setSmiles(element1.getStringValue());
+                        switch (property.getName()){
+                            case "name" -> compound.setName(value);
+                            case "accession" -> compound.setHmdbId(value);
+                            case "status" -> compound.setStatus(value);
+                            case "chemical_formula" -> compound.setFormula(value);
+                            case "average_molecular_weight" -> compound.setAvgMw(Double.parseDouble(value));
+                            case "monisotopic_molecular_weight" -> compound.setMonoMw(Double.parseDouble(value));
+                            case "smiles" -> compound.setSmiles(value);
+                            case "description" -> compound.setDescription(value);
+                            case "iupac_name" -> compound.setIupac(value);
+                            case "traditional_iupac" -> compound.setTraditionalIupac(value);
+                            case "cas_registry_number" -> compound.setCasId(value);
+                            case "chemspider_id" -> compound.setChemSpiderId(value);
+                            case "drugbank_id" -> compound.setDrugBankId(value);
+                            case "pubchem_compound_id" -> compound.setPubChemId(value);
+                            case "phenol_explorer_compound_id" -> compound.setPhenolExplorerId(value);
+                            case "knapsack_id" -> compound.setKnapsackId(value);
+                            case "kegg_id" -> compound.setKeggId(value);
+                            case "foodb_id" -> compound.setFoodbId(value);
+                            case "biocyc_id" -> compound.setBiocycId(value);
+                            case "bigg_id" -> compound.setBiggId(value);
+                            case "wikipedia_id" -> compound.setWikipediaId(value);
+                            case "metlin_id" -> compound.setMetlinId(value);
+                            case "vmh_id" -> compound.setVmhId(value);
+                            case "fbonto_id" -> compound.setFbontoId(value);
+                            case "synthesis_reference" -> compound.setSynthesisReference(value);
+                            case "inchi" -> compound.setInchi(value);
+                            case "inchikey" -> compound.setInchikey(value);
+                            case "state" -> compound.setState(value);
+                            case "creation_date" ->  compound.setCreateDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").parse(value));
+                            case "update_date" ->  compound.setLastModifiedDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").parse(value));
                         }
                     }
                     compounds.add(compound);
