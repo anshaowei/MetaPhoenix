@@ -1,15 +1,20 @@
 package net.csibio.mslibrary.client.domain.db;
 
+import com.alibaba.fastjson2.JSON;
 import lombok.Data;
+import net.csibio.aird.compressor.bytecomp.ZlibWrapper;
 import net.csibio.mslibrary.client.domain.bean.Adduct;
 import net.csibio.mslibrary.client.domain.bean.hmdb.*;
+import net.csibio.mslibrary.client.utils.CompressUtil;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -49,31 +54,6 @@ public class CompoundDO {
      */
     List<String> synonyms;
 
-    /**
-     * 分类
-     */
-    Taxonomy taxonomy;
-
-    /**
-     * 本体
-     */
-    List<Descendant> ontology;
-
-    List<Property> experimentalProperties;
-
-    List<Property> predictedProperties;
-
-    List<SpectrumLink> spectra;
-
-    Biological biological;
-
-    List<Concentration> concentrations;
-
-    List<Disease> diseases;
-
-    List<Reference> references;
-
-    List<ProteinAssociation> proteinAssociations;
     /**
      * 化学方程式
      */
@@ -148,8 +128,7 @@ public class CompoundDO {
     String drugBankId;
     String foodbId;
     String keggId;
-    //即Accession
-    String hmdbId;
+    String hmdbId;  //即Accession
     List<String> hmdbIds;
     String chemSpiderId;
     String pdbId;
@@ -163,15 +142,26 @@ public class CompoundDO {
     String vmhId;
     String fbontoId;
 
-    // 暂时无用的3个保留字段
-    String superPathway;
-    String subPathway;
-    String pathwaySortOrder;
-
     // 创建日期
     Date createDate;
     // 最后修改日期
     Date lastModifiedDate;
 
     String description;
+
+    byte[] zipHmdbInfo;
+
+    @Transient
+    HmdbInfo hmdbInfo;
+
+    public void encode() {
+        zipHmdbInfo = new ZlibWrapper().encode(JSON.toJSONBytes(hmdbInfo));
+    }
+
+    public void decode() {
+        if (zipHmdbInfo != null) {
+            byte[] unzip = new ZlibWrapper().decode(zipHmdbInfo);
+            hmdbInfo = JSON.parseObject(unzip, HmdbInfo.class);
+        }
+    }
 }

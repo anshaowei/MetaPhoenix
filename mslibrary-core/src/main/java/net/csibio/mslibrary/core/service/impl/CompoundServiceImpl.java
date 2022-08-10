@@ -34,7 +34,7 @@ public class CompoundServiceImpl implements CompoundService {
 
     @Override
     public void beforeInsert(CompoundDO compoundDO, String routerId) throws XException {
-
+        compoundDO.encode();
     }
 
     @Override

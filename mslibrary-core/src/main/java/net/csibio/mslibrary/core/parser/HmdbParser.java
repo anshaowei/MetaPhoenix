@@ -75,6 +75,7 @@ public class HmdbParser implements IParser {
                 if (maim.getName().equals("metabolite")) {
                     CompoundDO compound = new CompoundDO();
                     compound.setLibraryId(library.getId());
+                    HmdbInfo hmdbInfo = new HmdbInfo();
                     //此迭代用以遍历两个metabolite标签之间的内容
                     Iterator iter = maim.elementIterator();
                     while (iter.hasNext()) {
@@ -116,18 +117,20 @@ public class HmdbParser implements IParser {
                             case "update_date" ->  compound.setLastModifiedDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").parse(value));
                             case "secondary_accessions" ->  compound.setHmdbIds(parseList(ele));
                             case "synonyms" ->  compound.setSynonyms(parseList(ele));
-                            case "taxonomy" ->  compound.setTaxonomy(parseTaxonomy(ele));
-                            case "ontology" ->  compound.setOntology(parseDescendantList(ele));
-                            case "experimental_properties" ->  compound.setExperimentalProperties(parseProperties(ele));
-                            case "predicted_properties" ->  compound.setPredictedProperties(parseProperties(ele));
-                            case "spectra" ->  compound.setSpectra(parseSpectra(ele));
-                            case "biological_properties" ->  compound.setBiological(parseBiological(ele));
-                            case "concentrations" ->  compound.setConcentrations(parseConcentrations(ele));
-                            case "diseases" ->  compound.setDiseases(parseDiseases(ele));
-                            case "general_references" ->  compound.setReferences(parseReferences(ele));
-                            case "protein_associations" ->  compound.setProteinAssociations(parseProteinAssociations(ele));
+                            case "taxonomy" ->  hmdbInfo.setTaxonomy(parseTaxonomy(ele));
+                            case "ontology" ->  hmdbInfo.setOntology(parseDescendantList(ele));
+                            case "experimental_properties" ->  hmdbInfo.setExperimentalProperties(parseProperties(ele));
+                            case "predicted_properties" ->  hmdbInfo.setPredictedProperties(parseProperties(ele));
+                            case "spectra" ->  hmdbInfo.setSpectra(parseSpectra(ele));
+                            case "biological_properties" ->  hmdbInfo.setBiological(parseBiological(ele));
+                            case "concentrations" ->  hmdbInfo.setConcentrations(parseConcentrations(ele));
+                            case "diseases" ->  hmdbInfo.setDiseases(parseDiseases(ele));
+                            case "general_references" ->  hmdbInfo.setReferences(parseReferences(ele));
+                            case "protein_associations" ->  hmdbInfo.setProteinAssociations(parseProteinAssociations(ele));
                         }
                     }
+                    compound.setHmdbInfo(hmdbInfo);
+                    compound.encode();
                     compounds.add(compound);
                 }
             }
