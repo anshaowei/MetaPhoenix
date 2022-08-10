@@ -10,7 +10,7 @@ public class Descendant {
     String term;
     String definition;
     String parentId;
-    int level;
+    Integer level;
     String type;
     List<String> synonyms;
     List<Descendant> descendants;

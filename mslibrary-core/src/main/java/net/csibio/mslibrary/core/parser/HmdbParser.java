@@ -79,13 +79,9 @@ public class HmdbParser implements IParser {
                     Iterator iter = maim.elementIterator();
                     while (iter.hasNext()) {
                         Element ele = (Element) iter.next();
-                        if (ele.getName().equals("metabolite")) {
-                            break;
-                        }
-
                         String value = ele.getStringValue();
                         if (value.isEmpty()){
-                            break;
+                            continue;
                         }
                         switch (ele.getName()){
                             case "name" -> compound.setName(value);
@@ -154,7 +150,7 @@ public class HmdbParser implements IParser {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()){
-                break;
+                continue;
             }
             switch (ele.getName()){
                 case "description" -> taxonomy.setDescription(value);
@@ -190,7 +186,7 @@ public class HmdbParser implements IParser {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()){
-                break;
+                continue;
             }
             switch (ele.getName()){
                 case "term" -> descendant.setTerm(value);
@@ -223,7 +219,7 @@ public class HmdbParser implements IParser {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()){
-                break;
+                continue;
             }
             switch (ele.getName()){
                 case "kind" -> property.setKind(value);
@@ -252,7 +248,7 @@ public class HmdbParser implements IParser {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()){
-                break;
+                continue;
             }
             switch (ele.getName()){
                 case "type" -> link.setType(value);
@@ -269,7 +265,7 @@ public class HmdbParser implements IParser {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()){
-                break;
+                continue;
             }
             switch (ele.getName()){
                 case "cellular_locations" -> biological.setCellulars(parseList(ele));
@@ -298,7 +294,7 @@ public class HmdbParser implements IParser {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()){
-                break;
+                continue;
             }
             switch (ele.getName()){
                 case "name" -> pathway.setName(value);
@@ -326,7 +322,7 @@ public class HmdbParser implements IParser {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()){
-                break;
+                continue;
             }
             switch (ele.getName()){
                 case "biospecimen" -> concentration.setBiospecimen(value);
@@ -361,7 +357,7 @@ public class HmdbParser implements IParser {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()){
-                break;
+                continue;
             }
             switch (ele.getName()){
                 case "name" -> disease.setName(value);
@@ -389,7 +385,7 @@ public class HmdbParser implements IParser {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()){
-                break;
+                continue;
             }
             switch (ele.getName()){
                 case "reference_text" -> reference.setText(value);
@@ -416,7 +412,7 @@ public class HmdbParser implements IParser {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()){
-                break;
+                continue;
             }
             switch (ele.getName()){
                 case "name" -> association.setName(value);
