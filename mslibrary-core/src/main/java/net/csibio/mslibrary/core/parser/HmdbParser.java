@@ -49,23 +49,20 @@ public class HmdbParser implements IParser {
             libraryService.insert(library);
             log.info("HMDB镜像库不存在,已创建新的HMDB库");
         }
-        try {
-            //获取sax解析器的工厂对象
-            SAXParserFactory parserFactory = SAXParserFactory.newInstance();
-            //通过工厂对象创建解析器对象
-            SAXParser saxParser = parserFactory.newSAXParser();
-            //编写处理器
 
-        } catch (ParserConfigurationException | SAXException e) {
-            e.printStackTrace();
-        }
-
+        //获取sax解析器的工厂对象
+//        SAXParserFactory parserFactory = SAXParserFactory.newInstance();
+        //通过工厂对象创建解析器对象
+//        SAXParser saxParser = parserFactory.newSAXParser();
+        //编写处理器
         SAXReader reader = new SAXReader();
+        compoundService.remove(new CompoundQuery(LibraryConst.HMDB), LibraryConst.HMDB);
+        log.info("已经删除HMDB旧数据,开始解析新的源文件");
         List<CompoundDO> compounds = new ArrayList<>();
-        log.info("开始解析源文件");
         try {
             long start = System.currentTimeMillis();
             Document document = reader.read(filePath);
+            log.info("文件载入完毕,耗时:" + (System.currentTimeMillis() - start));
             Element rootElement = document.getRootElement();
             Iterator iterator = rootElement.elementIterator();
             //以metabolite标签为一个迭代来读取文件信息
@@ -81,10 +78,10 @@ public class HmdbParser implements IParser {
                     while (iter.hasNext()) {
                         Element ele = (Element) iter.next();
                         String value = ele.getStringValue();
-                        if (value.isEmpty()){
+                        if (value.isEmpty()) {
                             continue;
                         }
-                        switch (ele.getName()){
+                        switch (ele.getName()) {
                             case "name" -> compound.setName(value);
                             case "accession" -> compound.setHmdbId(value);
                             case "status" -> compound.setStatus(value);
@@ -113,49 +110,53 @@ public class HmdbParser implements IParser {
                             case "inchi" -> compound.setInchi(value);
                             case "inchikey" -> compound.setInchikey(value);
                             case "state" -> compound.setState(value);
-                            case "creation_date" ->  compound.setCreateDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").parse(value));
-                            case "update_date" ->  compound.setLastModifiedDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").parse(value));
-                            case "secondary_accessions" ->  compound.setHmdbIds(parseList(ele));
-                            case "synonyms" ->  compound.setSynonyms(parseList(ele));
-                            case "taxonomy" ->  hmdbInfo.setTaxonomy(parseTaxonomy(ele));
-                            case "ontology" ->  hmdbInfo.setOntology(parseDescendantList(ele));
-                            case "experimental_properties" ->  hmdbInfo.setExperimentalProperties(parseProperties(ele));
-                            case "predicted_properties" ->  hmdbInfo.setPredictedProperties(parseProperties(ele));
-                            case "spectra" ->  hmdbInfo.setSpectra(parseSpectra(ele));
-                            case "biological_properties" ->  hmdbInfo.setBiological(parseBiological(ele));
-                            case "concentrations" ->  hmdbInfo.setConcentrations(parseConcentrations(ele));
-                            case "diseases" ->  hmdbInfo.setDiseases(parseDiseases(ele));
-                            case "general_references" ->  hmdbInfo.setReferences(parseReferences(ele));
-                            case "protein_associations" ->  hmdbInfo.setProteinAssociations(parseProteinAssociations(ele));
+                            case "creation_date" ->
+                                    compound.setCreateDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").parse(value));
+                            case "update_date" ->
+                                    compound.setLastModifiedDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z").parse(value));
+                            case "secondary_accessions" -> compound.setHmdbIds(parseList(ele));
+                            case "synonyms" -> compound.setSynonyms(parseList(ele));
+                            case "taxonomy" -> hmdbInfo.setTaxonomy(parseTaxonomy(ele));
+                            case "ontology" -> hmdbInfo.setOntology(parseDescendantList(ele));
+                            case "experimental_properties" -> hmdbInfo.setExperimentalProperties(parseProperties(ele));
+                            case "predicted_properties" -> hmdbInfo.setPredictedProperties(parseProperties(ele));
+                            case "spectra" -> hmdbInfo.setSpectra(parseSpectra(ele));
+                            case "biological_properties" -> hmdbInfo.setBiological(parseBiological(ele));
+                            case "concentrations" -> hmdbInfo.setConcentrations(parseConcentrations(ele));
+                            case "diseases" -> hmdbInfo.setDiseases(parseDiseases(ele));
+                            case "general_references" -> hmdbInfo.setReferences(parseReferences(ele));
+                            case "protein_associations" ->
+                                    hmdbInfo.setProteinAssociations(parseProteinAssociations(ele));
                         }
                     }
                     compound.setHmdbInfo(hmdbInfo);
                     compound.encode();
                     compounds.add(compound);
+                    if (compounds.size() == 1000) {
+                        compoundService.insert(compounds, LibraryConst.HMDB);
+                        compounds.clear();
+                    }
                 }
             }
-            log.info("总计扫描到化合物"+compounds.size()+"个,正在删除旧数据");
-            compoundService.remove(new CompoundQuery(LibraryConst.HMDB), LibraryConst.HMDB);
-            log.info("旧数据删除完毕,开始插入新数据");
-            long insertTime = System.currentTimeMillis();
+
             compoundService.insert(compounds, LibraryConst.HMDB);
-            log.info("新数据插入完毕,数据库插入耗时:"+(System.currentTimeMillis() - insertTime)/1000+"秒;总耗时:"+(System.currentTimeMillis() - start)/1000+"秒");
+            log.info("新数据插入完毕,总耗时:" + (System.currentTimeMillis() - start) / 1000 + "秒");
         } catch (DocumentException | ParseException e) {
             e.printStackTrace();
         }
         return new Result(true);
     }
 
-    private Taxonomy parseTaxonomy(Element taxonomyElement){
+    private Taxonomy parseTaxonomy(Element taxonomyElement) {
         Iterator iter = taxonomyElement.elementIterator();
         Taxonomy taxonomy = new Taxonomy();
         while (iter.hasNext()) {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
-            if (value.isEmpty()){
+            if (value.isEmpty()) {
                 continue;
             }
-            switch (ele.getName()){
+            switch (ele.getName()) {
                 case "description" -> taxonomy.setDescription(value);
                 case "direct_parent" -> taxonomy.setDirectParent(value);
                 case "kingdom" -> taxonomy.setKingdom(value);
@@ -168,10 +169,10 @@ public class HmdbParser implements IParser {
                 case "external_descriptors" -> taxonomy.setExtDesc(parseList(ele));
             }
         }
-       return taxonomy;
+        return taxonomy;
     }
 
-    private List<Descendant> parseDescendantList(Element ontology){
+    private List<Descendant> parseDescendantList(Element ontology) {
         Iterator iter = ontology.elementIterator();
         List<Descendant> descendants = new ArrayList<>();
         while (iter.hasNext()) {
@@ -182,16 +183,16 @@ public class HmdbParser implements IParser {
         return descendants;
     }
 
-    private Descendant parseDescendant(Element element){
+    private Descendant parseDescendant(Element element) {
         Iterator iter = element.elementIterator();
         Descendant descendant = new Descendant();
         while (iter.hasNext()) {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
-            if (value.isEmpty()){
+            if (value.isEmpty()) {
                 continue;
             }
-            switch (ele.getName()){
+            switch (ele.getName()) {
                 case "term" -> descendant.setTerm(value);
                 case "definition" -> descendant.setDefinition(value);
                 case "parent_id" -> descendant.setParentId(value);
@@ -204,7 +205,7 @@ public class HmdbParser implements IParser {
         return descendant;
     }
 
-    private List<Property> parseProperties(Element element){
+    private List<Property> parseProperties(Element element) {
         Iterator iter = element.elementIterator();
         List<Property> properties = new ArrayList<>();
         while (iter.hasNext()) {
@@ -215,16 +216,16 @@ public class HmdbParser implements IParser {
         return properties;
     }
 
-    private Property parseProperty(Element element){
+    private Property parseProperty(Element element) {
         Iterator iter = element.elementIterator();
         Property property = new Property();
         while (iter.hasNext()) {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
-            if (value.isEmpty()){
+            if (value.isEmpty()) {
                 continue;
             }
-            switch (ele.getName()){
+            switch (ele.getName()) {
                 case "kind" -> property.setKind(value);
                 case "value" -> property.setValue(value);
                 case "source" -> property.setSource(value);
@@ -233,7 +234,7 @@ public class HmdbParser implements IParser {
         return property;
     }
 
-    private List<SpectrumLink> parseSpectra(Element element){
+    private List<SpectrumLink> parseSpectra(Element element) {
         Iterator iter = element.elementIterator();
         List<SpectrumLink> spectra = new ArrayList<>();
         while (iter.hasNext()) {
@@ -244,16 +245,16 @@ public class HmdbParser implements IParser {
         return spectra;
     }
 
-    private SpectrumLink parseSpectrum(Element element){
+    private SpectrumLink parseSpectrum(Element element) {
         Iterator iter = element.elementIterator();
         SpectrumLink link = new SpectrumLink();
         while (iter.hasNext()) {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
-            if (value.isEmpty()){
+            if (value.isEmpty()) {
                 continue;
             }
-            switch (ele.getName()){
+            switch (ele.getName()) {
                 case "type" -> link.setType(value);
                 case "spectrum_id" -> link.setSpectrumId(value);
             }
@@ -261,16 +262,16 @@ public class HmdbParser implements IParser {
         return link;
     }
 
-    private Biological parseBiological(Element element){
+    private Biological parseBiological(Element element) {
         Iterator iter = element.elementIterator();
         Biological biological = new Biological();
         while (iter.hasNext()) {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
-            if (value.isEmpty()){
+            if (value.isEmpty()) {
                 continue;
             }
-            switch (ele.getName()){
+            switch (ele.getName()) {
                 case "cellular_locations" -> biological.setCellulars(parseList(ele));
                 case "biospecimen_locations" -> biological.setBioSpecimens(parseList(ele));
                 case "tissue_locations" -> biological.setTissues(parseList(ele));
@@ -280,7 +281,7 @@ public class HmdbParser implements IParser {
         return biological;
     }
 
-    private List<Pathway> parsePathways(Element element){
+    private List<Pathway> parsePathways(Element element) {
         Iterator iter = element.elementIterator();
         List<Pathway> pathways = new ArrayList<>();
         while (iter.hasNext()) {
@@ -290,16 +291,16 @@ public class HmdbParser implements IParser {
         return pathways;
     }
 
-    private Pathway parsePathway(Element element){
+    private Pathway parsePathway(Element element) {
         Iterator iter = element.elementIterator();
         Pathway pathway = new Pathway();
         while (iter.hasNext()) {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
-            if (value.isEmpty()){
+            if (value.isEmpty()) {
                 continue;
             }
-            switch (ele.getName()){
+            switch (ele.getName()) {
                 case "name" -> pathway.setName(value);
                 case "smpdb_id" -> pathway.setSmpdbId(value);
                 case "kegg_map_id" -> pathway.setKeggMapId(value);
@@ -308,7 +309,7 @@ public class HmdbParser implements IParser {
         return pathway;
     }
 
-    private List<Concentration> parseConcentrations(Element element){
+    private List<Concentration> parseConcentrations(Element element) {
         Iterator iter = element.elementIterator();
         List<Concentration> concentrations = new ArrayList<>();
         while (iter.hasNext()) {
@@ -318,16 +319,16 @@ public class HmdbParser implements IParser {
         return concentrations;
     }
 
-    private Concentration parseConcentration(Element element){
+    private Concentration parseConcentration(Element element) {
         Iterator iter = element.elementIterator();
         Concentration concentration = new Concentration();
         while (iter.hasNext()) {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
-            if (value.isEmpty()){
+            if (value.isEmpty()) {
                 continue;
             }
-            switch (ele.getName()){
+            switch (ele.getName()) {
                 case "biospecimen" -> concentration.setBiospecimen(value);
                 case "concentration_value" -> concentration.setValue(value);
                 case "concentration_units" -> concentration.setUnits(value);
@@ -343,7 +344,7 @@ public class HmdbParser implements IParser {
         return concentration;
     }
 
-    private List<Disease> parseDiseases(Element element){
+    private List<Disease> parseDiseases(Element element) {
         Iterator iter = element.elementIterator();
         List<Disease> diseases = new ArrayList<>();
         while (iter.hasNext()) {
@@ -353,16 +354,16 @@ public class HmdbParser implements IParser {
         return diseases;
     }
 
-    private Disease parseDisease(Element element){
+    private Disease parseDisease(Element element) {
         Iterator iter = element.elementIterator();
         Disease disease = new Disease();
         while (iter.hasNext()) {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
-            if (value.isEmpty()){
+            if (value.isEmpty()) {
                 continue;
             }
-            switch (ele.getName()){
+            switch (ele.getName()) {
                 case "name" -> disease.setName(value);
                 case "omim_id" -> disease.setOmimId(value);
                 case "references" -> disease.setReferences(parseReferences(ele));
@@ -371,7 +372,7 @@ public class HmdbParser implements IParser {
         return disease;
     }
 
-    private List<Reference> parseReferences(Element element){
+    private List<Reference> parseReferences(Element element) {
         Iterator iter = element.elementIterator();
         List<Reference> references = new ArrayList<>();
         while (iter.hasNext()) {
@@ -381,16 +382,16 @@ public class HmdbParser implements IParser {
         return references;
     }
 
-    private Reference parseReference(Element element){
+    private Reference parseReference(Element element) {
         Iterator iter = element.elementIterator();
         Reference reference = new Reference();
         while (iter.hasNext()) {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
-            if (value.isEmpty()){
+            if (value.isEmpty()) {
                 continue;
             }
-            switch (ele.getName()){
+            switch (ele.getName()) {
                 case "reference_text" -> reference.setText(value);
                 case "pubmed_id" -> reference.setPubMedId(value);
             }
@@ -398,7 +399,7 @@ public class HmdbParser implements IParser {
         return reference;
     }
 
-    private List<ProteinAssociation> parseProteinAssociations(Element element){
+    private List<ProteinAssociation> parseProteinAssociations(Element element) {
         Iterator iter = element.elementIterator();
         List<ProteinAssociation> associations = new ArrayList<>();
         while (iter.hasNext()) {
@@ -408,16 +409,16 @@ public class HmdbParser implements IParser {
         return associations;
     }
 
-    private ProteinAssociation parseProteinAssociation(Element element){
+    private ProteinAssociation parseProteinAssociation(Element element) {
         Iterator iter = element.elementIterator();
         ProteinAssociation association = new ProteinAssociation();
         while (iter.hasNext()) {
             Element ele = (Element) iter.next();
             String value = ele.getStringValue();
-            if (value.isEmpty()){
+            if (value.isEmpty()) {
                 continue;
             }
-            switch (ele.getName()){
+            switch (ele.getName()) {
                 case "name" -> association.setName(value);
                 case "protein_accession" -> association.setProteinAccession(value);
                 case "uniprot_id" -> association.setUniprotId(value);
@@ -428,7 +429,7 @@ public class HmdbParser implements IParser {
         return association;
     }
 
-    private List<String> parseList(Element node){
+    private List<String> parseList(Element node) {
         Iterator iter = node.elementIterator();
         List<String> list = new ArrayList<>();
         while (iter.hasNext()) {
