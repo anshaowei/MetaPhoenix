@@ -1,7 +1,6 @@
 package net.csibio.mslibrary.core.parser;
 
 import lombok.extern.slf4j.Slf4j;
-import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.constants.LibraryConst;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.hmdb.*;
@@ -17,11 +16,7 @@ import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
