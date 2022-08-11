@@ -1,4 +1,4 @@
-package net.csibio.mslibrary.core.parser;
+package net.csibio.mslibrary.core.parser.hmdb;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;

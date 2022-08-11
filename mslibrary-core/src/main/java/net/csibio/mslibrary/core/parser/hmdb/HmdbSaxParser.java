@@ -1,4 +1,4 @@
-package net.csibio.mslibrary.core.parser;
+package net.csibio.mslibrary.core.parser.hmdb;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.constants.LibraryConst;
@@ -10,13 +10,21 @@ import net.csibio.mslibrary.client.domain.query.CompoundQuery;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
+import net.csibio.mslibrary.core.parser.IParser;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -25,7 +33,7 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class HmdbParser implements IParser {
+public class HmdbSaxParser implements IParser {
 
     @Autowired
     CompoundService compoundService;
@@ -45,10 +53,21 @@ public class HmdbParser implements IParser {
             log.info("HMDB镜像库不存在,已创建新的HMDB库");
         }
 
-        //获取sax解析器的工厂对象
-//        SAXParserFactory parserFactory = SAXParserFactory.newInstance();
-        //通过工厂对象创建解析器对象
-//        SAXParser saxParser = parserFactory.newSAXParser();
+
+        SAXParserFactory parserFactory = SAXParserFactory.newInstance();
+        SAXParser saxParser;
+        try {
+            saxParser = parserFactory.newSAXParser();
+            File file = new File(filePath);
+            FileInputStream fis = new FileInputStream(file);
+            HmdbSaxHandler handler = new HmdbSaxHandler();
+            saxParser.parse(fis, handler);
+
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
         //编写处理器
         SAXReader reader = new SAXReader();
         compoundService.remove(new CompoundQuery(LibraryConst.HMDB), LibraryConst.HMDB);
