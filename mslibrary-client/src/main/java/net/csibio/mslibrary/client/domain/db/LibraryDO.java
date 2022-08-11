@@ -29,7 +29,7 @@ public class LibraryDO implements Serializable {
     String name;
 
     /**
-     * INS/ANA @see LibraryType
+     * @see LibraryType
      */
     @Indexed
     String type;
@@ -51,7 +51,7 @@ public class LibraryDO implements Serializable {
     /**
      * 库中含有的靶标的数量
      */
-    Integer compCount = 0;
+    Integer count = 0;
 
     /**
      * 库中含有的靶标的数量

@@ -54,10 +54,9 @@ public class HmdbParser {
             metaSingleBuilder.append(headerLine);
             boolean startAcquisition = true;
             boolean startParse = false;
-            long total = 0;
-            long batchCount = 1;
+            int total = 0;
+            int batchCount = 1;
             while (true) {
-                long batchTime = System.currentTimeMillis();
                 String line = reader.readLine();
                 if (line == null) {
                     break;
@@ -79,13 +78,11 @@ public class HmdbParser {
                 } else {
                     if (startParse) {
                         metaSingleBuilder.append("</root>");
-                        log.info("开始插入第"+total+"条化合物");
+                        log.info("开始插入第" + total + "条化合物");
                         hmdbParseTask.parse(new ByteArrayInputStream(metaSingleBuilder.toString().getBytes()), libraryId);
-
                         metaSingleBuilder = new StringBuilder("<root>");
                         batchCount = 0;
                         startParse = false;
-                        batchTime = System.currentTimeMillis();
                     }
                 }
             }
@@ -95,7 +92,9 @@ public class HmdbParser {
                 hmdbParseTask.parse(new ByteArrayInputStream(metaSingleBuilder.toString().getBytes()), libraryId);
             }
 
-            log.info(total + "条新化合物插入完毕,总耗时:" + (System.currentTimeMillis() - start) / 1000 + "秒");
+            library.setCount(total);
+            libraryService.update(library);
+            log.info(total + "条新化合物插入完毕");
         } catch (Exception e) {
             e.printStackTrace();
         }
