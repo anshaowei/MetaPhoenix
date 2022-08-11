@@ -139,6 +139,8 @@ public class HmdbParser implements IParser {
             log.info("旧数据删除完毕,开始插入新数据");
             long insertTime = System.currentTimeMillis();
             compoundService.insert(compounds, LibraryConst.HMDB);
+            library.setCompCount(compounds.size());
+            libraryService.update(library);
             log.info("新数据插入完毕,数据库插入耗时:"+(System.currentTimeMillis() - insertTime)/1000+"秒;总耗时:"+(System.currentTimeMillis() - start)/1000+"秒");
         } catch (DocumentException | ParseException e) {
             e.printStackTrace();
