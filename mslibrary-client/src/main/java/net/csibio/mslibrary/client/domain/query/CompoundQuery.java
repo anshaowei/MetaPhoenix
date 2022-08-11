@@ -15,6 +15,10 @@ public class CompoundQuery extends PageQuery {
 
     String name;
 
+    String state;
+
+    String status;
+
     String searchName;
 
     String libraryId;

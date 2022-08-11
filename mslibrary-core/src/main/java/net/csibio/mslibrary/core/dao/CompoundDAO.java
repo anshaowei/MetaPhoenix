@@ -52,6 +52,12 @@ public class CompoundDAO extends BaseMultiDAO<CompoundDO, CompoundQuery> {
         if (compoundQuery.getFormula() != null && !compoundQuery.getFormula().isEmpty()) {
             query.addCriteria(where("formula").is(compoundQuery.getFormula()));
         }
+        if (compoundQuery.getState() != null && !compoundQuery.getState().isEmpty()) {
+            query.addCriteria(where("state").is(compoundQuery.getState()));
+        }
+        if (compoundQuery.getStatus() != null && !compoundQuery.getStatus().isEmpty()) {
+            query.addCriteria(where("status").is(compoundQuery.getStatus()));
+        }
         return query;
     }
 
