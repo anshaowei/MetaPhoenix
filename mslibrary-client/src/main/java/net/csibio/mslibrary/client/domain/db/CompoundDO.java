@@ -51,18 +51,22 @@ public class CompoundDO {
     @Indexed
     String formula;
 
+    @Indexed
     String iupac;
 
+    @Indexed
     String traditionalIupac;
 
     /**
      * 国际化合物标识 International Chemical Identifier
      */
+    @Indexed
     String inchi;
 
     /**
      * 国际标识物key
      */
+    @Indexed
     String inchikey;
 
     /**
@@ -74,11 +78,13 @@ public class CompoundDO {
     /**
      * 平均分子质量
      */
+    @Indexed
     Double avgMw;
 
     /**
      * 天然同位素加权平均分子质量
      */
+    @Indexed
     Double monoMw;
 
     /**
@@ -92,13 +98,9 @@ public class CompoundDO {
     HashSet<Adduct> adducts = new HashSet<>();
 
     /**
-     * 分子结构式二维图的网络url地址
-     */
-    String structure2d;
-
-    /**
      * Smiles图
      */
+    @Indexed
     String smiles;
 
     @Indexed
@@ -152,8 +154,10 @@ public class CompoundDO {
 
 
     // 创建日期
+    @Indexed
     Date createDate;
     // 最后修改日期
+    @Indexed
     Date lastModifiedDate;
 
     String description;
