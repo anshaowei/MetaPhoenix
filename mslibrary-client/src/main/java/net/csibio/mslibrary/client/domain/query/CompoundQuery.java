@@ -2,10 +2,16 @@ package net.csibio.mslibrary.client.domain.query;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class CompoundQuery extends PageQuery {
 
     String id;
+
+    String formula;
+
+    List<String> ids;
 
     String name;
 

@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
 @Service
 public class CompoundDAO extends BaseMultiDAO<CompoundDO, CompoundQuery> {
 
@@ -35,7 +37,22 @@ public class CompoundDAO extends BaseMultiDAO<CompoundDO, CompoundQuery> {
 
     @Override
     protected Query buildQueryWithoutPage(CompoundQuery compoundQuery) {
-        return new Query();
+        Query query = new Query();
+        if (compoundQuery.getId() != null && !compoundQuery.getId().isEmpty()) {
+            query.addCriteria(where("id").is(compoundQuery.getId()));
+        } else if (compoundQuery.getIds() != null && compoundQuery.getIds().size() != 0) {
+            query.addCriteria(where("id").in(compoundQuery.getIds()));
+        }
+        if (compoundQuery.getLibraryId() != null && !compoundQuery.getLibraryId().isEmpty()) {
+            query.addCriteria(where("libraryId").is(compoundQuery.getLibraryId()));
+        }
+        if (compoundQuery.getName() != null && !compoundQuery.getName().isEmpty()) {
+            query.addCriteria(where("name").is(compoundQuery.getName()));
+        }
+        if (compoundQuery.getFormula() != null && !compoundQuery.getFormula().isEmpty()) {
+            query.addCriteria(where("formula").is(compoundQuery.getFormula()));
+        }
+        return query;
     }
 
     public List<CompoundDO> getAllByLibraryId(String libraryId) {

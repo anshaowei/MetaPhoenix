@@ -4,8 +4,9 @@ import com.alibaba.fastjson2.JSON;
 import lombok.Data;
 import net.csibio.aird.compressor.bytecomp.ZlibWrapper;
 import net.csibio.mslibrary.client.domain.bean.Adduct;
-import net.csibio.mslibrary.client.domain.bean.hmdb.*;
-import net.csibio.mslibrary.client.utils.CompressUtil;
+import net.csibio.mslibrary.client.domain.bean.hmdb.Biological;
+import net.csibio.mslibrary.client.domain.bean.hmdb.HmdbInfo;
+import net.csibio.mslibrary.client.domain.bean.hmdb.Pathway;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -14,7 +15,6 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
