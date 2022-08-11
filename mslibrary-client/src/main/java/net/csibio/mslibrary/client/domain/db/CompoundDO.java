@@ -68,6 +68,7 @@ public class CompoundDO {
     /**
      * 形态
      */
+    @Indexed
     String state;
 
     /**
@@ -103,23 +104,41 @@ public class CompoundDO {
     /**
      * 在外部数据库的ID
      */
+    @Indexed
     String pubChemId;
+    @Indexed
     String casId;
+    @Indexed
     String drugBankId;
+    @Indexed
     String foodbId;
+    @Indexed
     String keggId;
+    @Indexed
     String hmdbId;  //即Accession
+
     List<String> hmdbIds;
+    @Indexed
     String chemSpiderId;
+    @Indexed
     String pdbId;
+    @Indexed
     String chebiId;
+    @Indexed
     String phenolExplorerId;
+    @Indexed
     String knapsackId;
+    @Indexed
     String biocycId;
+    @Indexed
     String biggId;
+    @Indexed
     String wikipediaId;
+    @Indexed
     String metlinId;
+    @Indexed
     String vmhId;
+    @Indexed
     String fbontoId;
 
     // 创建日期

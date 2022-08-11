@@ -33,6 +33,7 @@ public class HmdbParser {
     private static int BATCH_SIZE = 10000;
 
     public Result parse(String filePath) {
+        long totalStart = System.currentTimeMillis();
         LibraryDO library = libraryService.getById(LibraryConst.HMDB);
         if (library == null) {
             library = new LibraryDO();
@@ -47,7 +48,6 @@ public class HmdbParser {
 
         BufferedReader reader = null;
         try {
-            long start = System.currentTimeMillis();
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath)));
             String headerLine = reader.readLine();
             while (!headerLine.equals("<metabolite>")) {
@@ -59,6 +59,7 @@ public class HmdbParser {
             boolean startParse = false;
             int total = 0;
             int batchCount = 1;
+            long start = System.currentTimeMillis();
             while (true) {
                 String line = reader.readLine();
                 if (line == null) {
@@ -83,6 +84,8 @@ public class HmdbParser {
                         metaSingleBuilder.append("</root>");
                         log.info("开始插入第" + total + "条化合物");
                         hmdbParseTask.parse(new ByteArrayInputStream(metaSingleBuilder.toString().getBytes()), libraryId);
+                        log.info("第" + total + "条化合物插入成功,耗时:" + (System.currentTimeMillis() - start) / 1000 + "秒");
+                        start = System.currentTimeMillis();
                         metaSingleBuilder = new StringBuilder("<root>");
                         batchCount = 0;
                         startParse = false;
@@ -97,7 +100,7 @@ public class HmdbParser {
 
             library.setCount(total);
             libraryService.update(library);
-            log.info(total + "条新化合物插入完毕");
+            log.info(total + "条新化合物插入完毕,耗时:" + (System.currentTimeMillis() - totalStart) / 1000 + "秒");
         } catch (Exception e) {
             e.printStackTrace();
         }

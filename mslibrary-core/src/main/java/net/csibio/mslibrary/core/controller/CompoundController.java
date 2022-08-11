@@ -17,6 +17,7 @@ import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -58,8 +59,9 @@ public class CompoundController {
 
     @RequestMapping(value = "/list")
     Result list(CompoundQuery query) {
+        query.setOrderBy(Sort.Direction.ASC);
+        query.setSortColumn("hmdbId");
         Result<List<CompoundDO>> result = compoundService.getList(query, query.getLibraryId());
-        result.getFeatureMap().put("ESIAdducts", ESIAdducts);
         return result;
     }
 

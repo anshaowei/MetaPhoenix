@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -26,9 +27,7 @@ public class HmdbParseTask {
     @Autowired
     CompoundService compoundService;
 
-    @Async("hmdbParse")
     public void parse(InputStream stream, String libraryId) throws DocumentException, ParseException {
-        long start = System.currentTimeMillis();
         List<CompoundDO> compounds = new ArrayList<>();
         SAXReader reader = new SAXReader();
         Document document = reader.read(stream);
@@ -96,6 +95,7 @@ public class HmdbParseTask {
                         case "protein_associations" -> hmdbInfo.setProteinAssociations(parseProteinAssociations(ele));
                     }
                 }
+                compound.setId(compound.getHmdbId());
                 compound.setHmdbInfo(hmdbInfo);
                 compound.encode();
                 compounds.add(compound);
