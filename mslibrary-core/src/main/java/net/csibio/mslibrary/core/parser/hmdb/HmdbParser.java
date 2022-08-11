@@ -29,6 +29,9 @@ public class HmdbParser {
     @Autowired
     HmdbParseTask hmdbParseTask;
 
+    //每批次处理的化合物数目
+    private static int BATCH_SIZE = 10000;
+
     public Result parse(String filePath) {
         LibraryDO library = libraryService.getById(LibraryConst.HMDB);
         if (library == null) {
@@ -67,8 +70,8 @@ public class HmdbParser {
                 }
                 if (line.equals("</metabolite>")) {
                     startAcquisition = false;
-                    if (batchCount == 10000) {
-                        total += 10000;
+                    if (batchCount == BATCH_SIZE) {
+                        total += BATCH_SIZE;
                         startParse = true;
                     }
                     metaSingleBuilder.append(line);

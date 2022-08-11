@@ -116,7 +116,7 @@ public class LibraryParserServiceImpl implements LibraryParserService {
             return Result.Error(e.getMessage());
         }
 
-        library.setCompCount(compList.size());
+        library.setCount(compList.size());
         libraryService.update(library);
         log.info("库" + library.getName() + "创建成功!," + compList.size() + "条靶标插入成功");
         Result result = new Result(true);

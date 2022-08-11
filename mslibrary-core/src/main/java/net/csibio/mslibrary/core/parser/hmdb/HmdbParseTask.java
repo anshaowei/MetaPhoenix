@@ -102,7 +102,6 @@ public class HmdbParseTask {
             }
         }
         compoundService.insert(compounds, libraryId);
-        log.info("耗时:" + (System.currentTimeMillis() - start) / 1000 + "秒");
     }
 
     private Taxonomy parseTaxonomy(Element taxonomyElement) {
