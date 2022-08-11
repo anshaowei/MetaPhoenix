@@ -33,18 +33,18 @@ public class HmdbParseTask {
         SAXReader reader = new SAXReader();
         Document document = reader.read(stream);
         Element rootElement = document.getRootElement();
-        Iterator iterator = rootElement.elementIterator();
+        Iterator<Element> iterator = rootElement.elementIterator();
         while (iterator.hasNext()) {
-            Element main = (Element) iterator.next();
+            Element main = iterator.next();
             if (main.getName().equals("metabolite")) {
                 //以metabolite标签为一个迭代来读取文件信息
                 CompoundDO compound = new CompoundDO();
                 compound.setLibraryId(libraryId);
                 HmdbInfo hmdbInfo = new HmdbInfo();
                 //此迭代用以遍历两个metabolite标签之间的内容
-                Iterator iter = main.elementIterator();
+                Iterator<Element> iter = main.elementIterator();
                 while (iter.hasNext()) {
-                    Element ele = (Element) iter.next();
+                    Element ele = iter.next();
                     String value = ele.getStringValue();
                     if (value.isEmpty()) {
                         continue;
@@ -105,10 +105,10 @@ public class HmdbParseTask {
     }
 
     private Taxonomy parseTaxonomy(Element taxonomyElement) {
-        Iterator iter = taxonomyElement.elementIterator();
+        Iterator<Element> iter = taxonomyElement.elementIterator();
         Taxonomy taxonomy = new Taxonomy();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()) {
                 continue;
@@ -130,10 +130,10 @@ public class HmdbParseTask {
     }
 
     private List<Descendant> parseDescendantList(Element ontology) {
-        Iterator iter = ontology.elementIterator();
+        Iterator<Element> iter = ontology.elementIterator();
         List<Descendant> descendants = new ArrayList<>();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             Descendant descendant = parseDescendant(ele);
             descendants.add(descendant);
         }
@@ -141,10 +141,10 @@ public class HmdbParseTask {
     }
 
     private Descendant parseDescendant(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         Descendant descendant = new Descendant();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()) {
                 continue;
@@ -163,10 +163,10 @@ public class HmdbParseTask {
     }
 
     private List<Property> parseProperties(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         List<Property> properties = new ArrayList<>();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             Property property = parseProperty(ele);
             properties.add(property);
         }
@@ -174,10 +174,10 @@ public class HmdbParseTask {
     }
 
     private Property parseProperty(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         Property property = new Property();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()) {
                 continue;
@@ -192,10 +192,10 @@ public class HmdbParseTask {
     }
 
     private List<SpectrumLink> parseSpectra(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         List<SpectrumLink> spectra = new ArrayList<>();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             SpectrumLink link = parseSpectrum(ele);
             spectra.add(link);
         }
@@ -203,10 +203,10 @@ public class HmdbParseTask {
     }
 
     private SpectrumLink parseSpectrum(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         SpectrumLink link = new SpectrumLink();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()) {
                 continue;
@@ -220,10 +220,10 @@ public class HmdbParseTask {
     }
 
     private Biological parseBiological(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         Biological biological = new Biological();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()) {
                 continue;
@@ -239,20 +239,20 @@ public class HmdbParseTask {
     }
 
     private List<Pathway> parsePathways(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         List<Pathway> pathways = new ArrayList<>();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             pathways.add(parsePathway(ele));
         }
         return pathways;
     }
 
     private Pathway parsePathway(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         Pathway pathway = new Pathway();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()) {
                 continue;
@@ -267,20 +267,20 @@ public class HmdbParseTask {
     }
 
     private List<Concentration> parseConcentrations(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         List<Concentration> concentrations = new ArrayList<>();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             concentrations.add(parseConcentration(ele));
         }
         return concentrations;
     }
 
     private Concentration parseConcentration(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         Concentration concentration = new Concentration();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()) {
                 continue;
@@ -302,20 +302,20 @@ public class HmdbParseTask {
     }
 
     private List<Disease> parseDiseases(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         List<Disease> diseases = new ArrayList<>();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             diseases.add(parseDisease(ele));
         }
         return diseases;
     }
 
     private Disease parseDisease(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         Disease disease = new Disease();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()) {
                 continue;
@@ -330,20 +330,20 @@ public class HmdbParseTask {
     }
 
     private List<Reference> parseReferences(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         List<Reference> references = new ArrayList<>();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             references.add(parseReference(ele));
         }
         return references;
     }
 
     private Reference parseReference(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         Reference reference = new Reference();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()) {
                 continue;
@@ -357,20 +357,20 @@ public class HmdbParseTask {
     }
 
     private List<ProteinAssociation> parseProteinAssociations(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         List<ProteinAssociation> associations = new ArrayList<>();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             associations.add(parseProteinAssociation(ele));
         }
         return associations;
     }
 
     private ProteinAssociation parseProteinAssociation(Element element) {
-        Iterator iter = element.elementIterator();
+        Iterator<Element> iter = element.elementIterator();
         ProteinAssociation association = new ProteinAssociation();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             if (value.isEmpty()) {
                 continue;
@@ -387,10 +387,10 @@ public class HmdbParseTask {
     }
 
     private List<String> parseList(Element node) {
-        Iterator iter = node.elementIterator();
+        Iterator<Element> iter = node.elementIterator();
         List<String> list = new ArrayList<>();
         while (iter.hasNext()) {
-            Element ele = (Element) iter.next();
+            Element ele = iter.next();
             String value = ele.getStringValue();
             list.add(value);
         }
