@@ -7,6 +7,10 @@ import java.util.List;
 @Data
 public class HmdbInfo {
 
+    /**
+     * 综合参考
+     */
+    String synthesisReference;
     Taxonomy taxonomy;
     List<Descendant> ontology;
     List<Property> experimentalProperties;

@@ -43,31 +43,16 @@ public class CompoundDO {
     @Indexed
     String name;
 
-    /**
-     * 靶标中文名
-     */
     @Indexed
     String cnName;
 
-    /**
-     * 化合物名称的同义词
-     */
     List<String> synonyms;
 
-    /**
-     * 化学方程式
-     */
     @Indexed
     String formula;
 
-    /**
-     * 有机物命名法
-     */
     String iupac;
 
-    /**
-     * 传统有机物命名法
-     */
     String traditionalIupac;
 
     /**
@@ -114,11 +99,6 @@ public class CompoundDO {
      * Smiles图
      */
     String smiles;
-
-    /**
-     * 综合参考
-     */
-    String synthesisReference;
 
     /**
      * 在外部数据库的ID

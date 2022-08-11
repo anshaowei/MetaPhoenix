@@ -23,8 +23,8 @@ public class AdminController {
 
     @RequestMapping(value = "/async")
     Result async() {
-//        String path = vmProperties.getRepository()+"/hmdb_metabolites.xml";
-        String path = vmProperties.getRepository()+"/hmdbSingle.xml";
+        String path = vmProperties.getRepository()+"/hmdb_metabolites.xml";
+//        String path = vmProperties.getRepository()+"/hmdbSingle.xml";
         hmdbParser.parse(path);
 //        libraryParserService.parseMassBank();
 //        libraryParserService.parseGNPS();
