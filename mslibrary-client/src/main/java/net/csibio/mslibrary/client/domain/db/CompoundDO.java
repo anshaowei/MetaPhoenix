@@ -101,6 +101,15 @@ public class CompoundDO {
      */
     String smiles;
 
+    @Indexed
+    List<String> cellulars;
+    @Indexed
+    List<String> bioSpecimens;
+    @Indexed
+    List<String> tissues;
+
+    List<Pathway> pathways;
+
     /**
      * 在外部数据库的ID
      */
@@ -141,6 +150,7 @@ public class CompoundDO {
     @Indexed
     String fbontoId;
 
+
     // 创建日期
     Date createDate;
     // 最后修改日期
@@ -162,5 +172,12 @@ public class CompoundDO {
             byte[] unzip = new ZlibWrapper().decode(zipHmdbInfo);
             hmdbInfo = JSON.parseObject(unzip, HmdbInfo.class);
         }
+    }
+
+    public void setBiological(Biological biological){
+        setBioSpecimens(biological.getBioSpecimens());
+        setCellulars(biological.getCellulars());
+        setTissues(biological.getTissues());
+        setPathways(biological.getPathways());
     }
 }
