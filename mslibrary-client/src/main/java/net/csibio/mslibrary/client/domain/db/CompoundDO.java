@@ -152,11 +152,8 @@ public class CompoundDO {
     @Indexed
     String fbontoId;
 
-
-    // 创建日期
     @Indexed
     Date createDate;
-    // 最后修改日期
     @Indexed
     Date lastModifiedDate;
 
