@@ -12,6 +12,7 @@ import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.domain.vo.CompoundUpdateVO;
 import net.csibio.mslibrary.client.domain.vo.SpectrumVO;
 import net.csibio.mslibrary.client.exceptions.XException;
+import net.csibio.mslibrary.client.service.BaseService;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -33,7 +34,7 @@ import static net.csibio.mslibrary.client.constants.AdductConst.ESIAdducts;
 
 @RestController
 @RequestMapping("compound")
-public class CompoundController {
+public class CompoundController{
 
     @Autowired
     CompoundService compoundService;
@@ -62,6 +63,29 @@ public class CompoundController {
         query.setOrderBy(Sort.Direction.ASC);
         query.setSortColumn("hmdbId");
         Result<List<CompoundDO>> result = compoundService.getList(query, query.getLibraryId());
+        return result;
+    }
+
+    @RequestMapping("/remove")
+    Result remove(@RequestParam(value = "ids") String[] ids, @RequestParam(value = "routerId") String libraryId) {
+        Result<List<String>> result = new Result<List<String>>();
+        List<String> errorList = new ArrayList<>();
+        List<String> deletedIds = new ArrayList<>();
+        for (String id : ids) {
+            Result removeResult = compoundService.remove(id, libraryId);
+            if (removeResult.isSuccess()) {
+                deletedIds.add(id);
+            } else {
+                errorList.add(removeResult.getMsgInfo());
+            }
+        }
+        if (deletedIds.size() != 0) {
+            result.setData(deletedIds);
+            result.setSuccess(true);
+        }
+        if (errorList.size() != 0) {
+            result.setErrorList(errorList);
+        }
         return result;
     }
 
