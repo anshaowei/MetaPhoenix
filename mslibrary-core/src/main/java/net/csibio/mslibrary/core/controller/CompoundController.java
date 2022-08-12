@@ -34,7 +34,7 @@ import static net.csibio.mslibrary.client.constants.AdductConst.ESIAdducts;
 
 @RestController
 @RequestMapping("compound")
-public class CompoundController{
+public class CompoundController {
 
     @Autowired
     CompoundService compoundService;
@@ -64,6 +64,13 @@ public class CompoundController{
         query.setSortColumn("hmdbId");
         Result<List<CompoundDO>> result = compoundService.getList(query, query.getLibraryId());
         return result;
+    }
+
+    @RequestMapping(value = "/detail")
+    Result detail(@RequestParam(value = "routerId") String libraryId, @RequestParam(value = "id") String compoundId) throws XException {
+        CompoundDO compound = compoundService.tryGetById(compoundId, libraryId, ResultCode.COMPOUND_NOT_EXISTED);
+        compound.decode();
+        return Result.OK(compound);
     }
 
     @RequestMapping("/remove")
