@@ -11,7 +11,6 @@ import java.text.ParseException;
 public interface LibraryParserService {
 
     /**
-     *
      * @param in
      * @param library
      * @param fileFormat 读取的格式, 1代表excel, 2代表csv
@@ -19,8 +18,5 @@ public interface LibraryParserService {
      */
     Result parse(InputStream in, LibraryDO library, int fileFormat);
 
-    Result parseMassBank(String filePath);
-
-    Result parseGNPS(String filePath) throws IOException, ParseException;
 
 }
