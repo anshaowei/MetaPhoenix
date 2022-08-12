@@ -15,7 +15,6 @@ import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +45,8 @@ public class GnpsParser {
             parser = jsonFactory.createParser(new File(filePath));
             List<SpectrumDO> spectrumDOS = new ArrayList<>();
             int spectrumCount = 0;
+            HashSet<String> libraries = new HashSet<>();
+            HashSet<String> compounds = new HashSet<>();
             log.info("开始执行GNPS数据库解析任务");
             while (!parser.isClosed()) {
                 JsonToken jsonToken = parser.nextToken();
@@ -53,12 +54,19 @@ public class GnpsParser {
                     if (parser.getCurrentName().equals("spectrum_id")) {
                         spectrumCount++;
                     }
+                    if (parser.getCurrentName().equals("library_membership")) {
+                        parser.nextToken();
+                        libraries.add(parser.getValueAsString());
+                    }
+                    if (parser.getCurrentName().equals("Compound_Name")) {
+                        parser.nextToken();
+                        compounds.add(parser.getValueAsString());
+                    }
                 }
             }
-            log.info("初步扫描完成，文件共包含" + spectrumCount + "张谱图");
+            log.info("初步扫描完成，文件共包含" + libraries.size() + "个库，大约" + compounds.size() + "个化合物，" + spectrumCount + "张谱图");
 
             parser = jsonFactory.createParser(new File(filePath));
-            List<String> compoundNames = new ArrayList<>();
             HashMap<String, String> libraryNameToIdMap = new HashMap<>();
             HashMap<String, List<String>> libraryIdToCompoundNamesMap = new HashMap<>();
             HashMap<String, String> compoundNameToIdMap = new HashMap<>();
@@ -258,7 +266,6 @@ public class GnpsParser {
                                     parser.nextToken();
                                     parser.nextToken();
                                     annotationHistory.setUserId(parser.getValueAsString());
-
                                     annotationHistoryList.add(annotationHistory);
                                 }
                             }
@@ -305,14 +312,14 @@ public class GnpsParser {
                             compoundNameToIdMap.put(compoundDO.getName(), compoundDO.getId() + "&" + libraryId);
                         } else {
                             CompoundDO compoundDO = compoundService.getById(compoundNameToIdMap.get(spectrumDO.getCompoundName()).split("&")[0], libraryId);
-                            if (!spectrumDO.getAdduct().isEmpty()) {
-                                Adduct currentAdduct = new Adduct();
+                            if (spectrumDO.getAdduct() != null && !spectrumDO.getAdduct().isEmpty()) {
+                                Adduct currentAdduct = null;
                                 for (Adduct adduct : AdductConst.ESIAdducts) {
                                     if (adduct.getIonForm().equals(spectrumDO.getAdduct())) {
                                         currentAdduct = adduct;
                                     }
                                 }
-                                if (!compoundDO.getAdducts().contains(currentAdduct)) {
+                                if (currentAdduct != null) {
                                     compoundDO.getAdducts().add(currentAdduct);
                                 }
                                 compoundService.update(compoundDO, libraryId);
