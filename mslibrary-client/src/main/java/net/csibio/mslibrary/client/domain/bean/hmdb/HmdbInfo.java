@@ -17,7 +17,8 @@ public class HmdbInfo {
     List<Property> predictedProperties;
     List<SpectrumLink> spectra;
 //    Biological biological; 已经迁移至CompoundDO
-    List<Concentration> concentrations;
+    List<Concentration> normalConcentrations;
+    List<Concentration> abnormalConcentrations;
     List<Disease> diseases;
     List<Reference> references;
     List<ProteinAssociation> proteinAssociations;

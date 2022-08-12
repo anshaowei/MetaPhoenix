@@ -89,7 +89,8 @@ public class HmdbParseTask {
                         case "predicted_properties" -> hmdbInfo.setPredictedProperties(parseProperties(ele));
                         case "spectra" -> hmdbInfo.setSpectra(parseSpectra(ele));
                         case "biological_properties" -> compound.setBiological(parseBiological(ele));
-                        case "concentrations" -> hmdbInfo.setConcentrations(parseConcentrations(ele));
+                        case "normal_concentrations" -> hmdbInfo.setNormalConcentrations(parseConcentrations(ele));
+                        case "abnormal_concentrations" -> hmdbInfo.setAbnormalConcentrations(parseConcentrations(ele));
                         case "diseases" -> hmdbInfo.setDiseases(parseDiseases(ele));
                         case "general_references" -> hmdbInfo.setReferences(parseReferences(ele));
                         case "protein_associations" -> hmdbInfo.setProteinAssociations(parseProteinAssociations(ele));
