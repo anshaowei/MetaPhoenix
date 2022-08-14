@@ -1,4 +1,4 @@
-package net.csibio.mslibrary.core.parser.hmdb;
+package net.csibio.mslibrary.core.parser.gnps;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
