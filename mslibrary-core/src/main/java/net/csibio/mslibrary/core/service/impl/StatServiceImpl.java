@@ -7,10 +7,7 @@ import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.constants.enums.StatDim;
 import net.csibio.mslibrary.client.constants.enums.StatType;
 import net.csibio.mslibrary.client.domain.db.StatDO;
-import net.csibio.mslibrary.client.domain.query.CompoundQuery;
-import net.csibio.mslibrary.client.domain.query.LibraryQuery;
-import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
-import net.csibio.mslibrary.client.domain.query.StatQuery;
+import net.csibio.mslibrary.client.domain.query.*;
 import net.csibio.mslibrary.client.exceptions.XException;
 import net.csibio.mslibrary.client.service.*;
 import net.csibio.mslibrary.core.dao.StatDAO;
@@ -34,6 +31,9 @@ public class StatServiceImpl implements StatService {
     CompoundService compoundService;
     @Autowired
     SpectrumService spectrumService;
+
+    @Autowired
+    ProteinService proteinService;
 
     @Override
     public long count(StatQuery query) {
@@ -84,6 +84,7 @@ public class StatServiceImpl implements StatService {
         long libraryNum = libraryService.count(new LibraryQuery());
         long hmdbNum = compoundService.count(new CompoundQuery(), LibraryConst.HMDB);
         long gnpsNum = compoundService.count(new CompoundQuery(), LibraryConst.GNPS);
+        long proteinNum = proteinService.count(new ProteinQuery());
         long massBankNum = compoundService.count(new CompoundQuery(), LibraryConst.MassBank);
         long mslibraryNum = compoundService.count(new CompoundQuery(), LibraryConst.Empty);
         long spectraNum = spectrumService.count(new SpectrumQuery());
@@ -94,7 +95,7 @@ public class StatServiceImpl implements StatService {
         statMap.put(StatConst.STAT_GNPS_COMPOUND_NUM, gnpsNum);
         statMap.put(StatConst.STAT_MASSBANK_COMPOUND_NUM, massBankNum);
         statMap.put(StatConst.STAT_MSLIBRARY_COMPOUND_NUM, mslibraryNum);
-        statMap.put(StatConst.STAT_SPECTRA_NUM, spectraNum);
+        statMap.put(StatConst.STAT_PROTEIN_NUM, proteinNum);
 
         stat.setStatMap(statMap);
         statDAO.insert(stat);
