@@ -30,7 +30,7 @@ public class StatController {
         SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
         Date date = sdf.parse(dateStr);
         statService.globalStat(StatDim.Day, date);
-
+        log.info("统计完成");
         return Result.OK();
     }
 

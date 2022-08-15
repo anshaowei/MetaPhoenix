@@ -49,23 +49,23 @@ public class AsyncController {
         log.info("开始同步HMDB基因数据");
         String proteinPath = vmProperties.getRepository() + "/hmdb/gene.fasta";
         HashMap<String, String> geneMap = fastaParser.parse(proteinPath);
-
+        String libraryId = LibraryConst.HMDB_GENE;
         List<GeneDO> genes = geneService.buildGenes(geneMap);
-        LibraryDO library = libraryService.getById(LibraryConst.HMDB_PROTEIN);
+        LibraryDO library = libraryService.getById(libraryId);
         if (library == null) {
             library = new LibraryDO();
             library.setType(LibraryType.Geneics.getName());
-            library.setName(LibraryConst.HMDB_GENE);
+            library.setName(libraryId);
             libraryService.insert(library);
             log.info("HMDB蛋白质镜像库不存在,已创建新的HMDB蛋白质库");
         }
         genes.forEach(gene -> {
             fastaParser.hmdbFormat(gene);
-            gene.setLibraryId(LibraryConst.HMDB_GENE);
+            gene.setLibraryId(libraryId);
         });
-        geneService.remove(new GeneQuery(LibraryConst.HMDB_GENE));
+        geneService.remove(new GeneQuery(), libraryId);
 
-        geneService.insert(genes);
+        geneService.insert(genes, libraryId);
         library.setCount(genes.size());
         libraryService.update(library);
         log.info("HMDB蛋白质数据同步完成");
@@ -86,23 +86,23 @@ public class AsyncController {
         log.info("开始同步HMDB蛋白质数据");
         String proteinPath = vmProperties.getRepository() + "/hmdb/protein.fasta";
         HashMap<String, String> proteinMap = fastaParser.parse(proteinPath);
-
+        String libraryId = LibraryConst.HMDB_PROTEIN;
         List<ProteinDO> proteins = proteinService.buildProteins(proteinMap);
-        LibraryDO library = libraryService.getById(LibraryConst.HMDB_PROTEIN);
+        LibraryDO library = libraryService.getById(libraryId);
         if (library == null) {
             library = new LibraryDO();
             library.setType(LibraryType.Proteomics.getName());
-            library.setName(LibraryConst.HMDB_PROTEIN);
+            library.setName(libraryId);
             libraryService.insert(library);
             log.info("HMDB蛋白质镜像库不存在,已创建新的HMDB蛋白质库");
         }
         proteins.forEach(protein -> {
             fastaParser.hmdbFormat(protein);
-            protein.setLibraryId(LibraryConst.HMDB_PROTEIN);
+            protein.setLibraryId(libraryId);
         });
-        proteinService.remove(new ProteinQuery(LibraryConst.HMDB_PROTEIN));
+        proteinService.remove(new ProteinQuery(), libraryId);
 
-        proteinService.insert(proteins);
+        proteinService.insert(proteins, libraryId);
         library.setCount(proteins.size());
         libraryService.update(library);
         log.info("HMDB蛋白质数据同步完成");
@@ -111,23 +111,31 @@ public class AsyncController {
 
     @RequestMapping(value = "/uniprotProteins")
     Result uniprotProteins() throws XException {
-        log.info("开始同步Fasta数据");
+        log.info("开始同步Uniprot蛋白质数据");
         String humanFasta = vmProperties.getRepository() + "/uniprot/reviewed_human.fasta";
 
+        String libraryId = LibraryConst.UNIPROT_PROTEIN;
         HashMap<String, String> humanReviewed = fastaParser.parse(humanFasta);
         List<ProteinDO> proteins = proteinService.buildProteins(humanReviewed, "human");
-        proteins.forEach(protein -> fastaParser.uniprotFormat(protein));
+        proteins.forEach(protein -> {
+            fastaParser.hmdbFormat(protein);
+            protein.setLibraryId(libraryId);
+        });
 
-        LibraryDO library = libraryService.getById(LibraryConst.HMDB_PROTEIN);
+        LibraryDO library = libraryService.getById(libraryId);
         if (library == null) {
             library = new LibraryDO();
-            library.setName(LibraryConst.HMDB_PROTEIN);
+            library.setName(libraryId);
+            library.setType(LibraryType.Proteomics.getName());
             libraryService.insert(library);
-            log.info("HMDB蛋白质镜像库不存在,已创建新的HMDB蛋白质库");
+            log.info("Uniprot蛋白质镜像库不存在,已创建新的Uniprot蛋白质库");
         }
-        proteinService.remove(new ProteinQuery(LibraryConst.HMDB_PROTEIN));
+        proteinService.remove(new ProteinQuery(), libraryId);
 
-        log.info("Fasta数据同步完成");
+        proteinService.insert(proteins, libraryId);
+        library.setCount(proteins.size());
+        libraryService.update(library);
+        log.info("Uniprot蛋白质数据同步完成");
         return Result.OK();
     }
 

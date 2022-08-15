@@ -32,35 +32,35 @@ public class ProteinController {
         libraryService.tryGetById(proteinUpdate.getLibraryId(), ResultCode.LIBRARY_NOT_EXISTED);
         ProteinDO newProtein = new ProteinDO();
         BeanUtils.copyProperties(proteinUpdate, newProtein);
-        return proteinService.insert(newProtein);
+        return proteinService.insert(newProtein, newProtein.getLibraryId());
     }
 
     @RequestMapping(value = "/update")
     Result update(ProteinUpdateVO proteinUpdate) throws XException {
-        ProteinDO proteinInDB = proteinService.tryGetById(proteinUpdate.getId(), ResultCode.PROTEIN_NOT_EXISTED);
+        ProteinDO proteinInDB = proteinService.tryGetById(proteinUpdate.getId(), proteinUpdate.getLibraryId(), ResultCode.PROTEIN_NOT_EXISTED);
         BeanUtils.copyProperties(proteinUpdate, proteinInDB);
-        return proteinService.update(proteinInDB);
+        return proteinService.update(proteinInDB, proteinInDB.getLibraryId());
     }
 
     @RequestMapping(value = "/list")
     Result list(ProteinQuery query) {
-        Result<List<ProteinDO>> result = proteinService.getList(query);
+        Result<List<ProteinDO>> result = proteinService.getList(query, query.getLibraryId());
         return result;
     }
 
     @RequestMapping(value = "/detail")
-    Result detail(@RequestParam(value = "id") String proteinId) throws XException {
-        ProteinDO protein = proteinService.tryGetById(proteinId, ResultCode.PROTEIN_NOT_EXISTED);
+    Result detail(@RequestParam(value = "id") String proteinId, @RequestParam(value = "routerId") String routerId) throws XException {
+        ProteinDO protein = proteinService.tryGetById(proteinId, routerId, ResultCode.PROTEIN_NOT_EXISTED);
         return Result.OK(protein);
     }
 
     @RequestMapping("/remove")
-    Result remove(@RequestParam(value = "ids") String[] ids) {
+    Result remove(@RequestParam(value = "ids") String[] ids, @RequestParam(value = "routerId") String routerId) {
         Result<List<String>> result = new Result<List<String>>();
         List<String> errorList = new ArrayList<>();
         List<String> deletedIds = new ArrayList<>();
         for (String id : ids) {
-            Result removeResult = proteinService.remove(id);
+            Result removeResult = proteinService.remove(id, routerId);
             if (removeResult.isSuccess()) {
                 deletedIds.add(id);
             } else {

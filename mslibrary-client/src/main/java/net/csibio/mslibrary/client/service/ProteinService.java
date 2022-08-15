@@ -6,7 +6,7 @@ import net.csibio.mslibrary.client.domain.query.ProteinQuery;
 import java.util.HashMap;
 import java.util.List;
 
-public interface ProteinService extends BaseService<ProteinDO, ProteinQuery> {
+public interface ProteinService extends BaseMultiService<ProteinDO, ProteinQuery> {
 
     List<ProteinDO> buildProteins(HashMap<String, String> map, String ...tags);
 }

@@ -85,12 +85,14 @@ public class StatServiceImpl implements StatService {
 
         long libraryNum = libraryService.count(new LibraryQuery());
 
-        long hmdbGeneNum = geneService.count(new GeneQuery(LibraryConst.HMDB_GENE));
-        long hmdbProteinNum = proteinService.count(new ProteinQuery(LibraryConst.HMDB_PROTEIN));
+        long hmdbGeneNum = geneService.count(new GeneQuery(), LibraryConst.HMDB_GENE);
+        long hmdbProteinNum = proteinService.count(new ProteinQuery(), LibraryConst.HMDB_PROTEIN);
         long hmdbCompoundNum = compoundService.count(new CompoundQuery(), LibraryConst.HMDB_COMPOUND);
 
-        long uniprotGeneNum = geneService.count(new GeneQuery(LibraryConst.UNIPROT_GENE));
-        long uniprotProteinNum = proteinService.count(new ProteinQuery(LibraryConst.UNIPROT_PROTEIN));
+        long uniprotGeneNum = geneService.count(new GeneQuery(), LibraryConst.UNIPROT_GENE);
+        long uniprotProteinNum = proteinService.count(new ProteinQuery(
+
+        ), LibraryConst.UNIPROT_PROTEIN);
 
         long gnpsNum = compoundService.count(new CompoundQuery(), LibraryConst.GNPS);
         long massBankNum = compoundService.count(new CompoundQuery(), LibraryConst.MassBank);

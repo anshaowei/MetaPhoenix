@@ -35,16 +35,16 @@ public class HmdbParser {
 
     public Result parse(String filePath) {
         long totalStart = System.currentTimeMillis();
-        LibraryDO library = libraryService.getById(LibraryConst.HMDB_COMPOUND);
+        String libraryId = LibraryConst.HMDB_COMPOUND;
+        LibraryDO library = libraryService.getById(libraryId);
         if (library == null) {
             library = new LibraryDO();
             library.setType(LibraryType.Metabolomics.getName());
-            library.setName(LibraryConst.HMDB_COMPOUND);
+            library.setName(libraryId);
             libraryService.insert(library);
             log.info("HMDB镜像库不存在,已创建新的HMDB库");
         }
-        String libraryId = library.getId();
-        compoundService.remove(new CompoundQuery(LibraryConst.HMDB_COMPOUND), LibraryConst.HMDB_COMPOUND);
+        compoundService.remove(new CompoundQuery(), libraryId);
         log.info("已经删除HMDB旧数据,开始解析新的源文件");
 
         BufferedReader reader = null;

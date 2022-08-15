@@ -12,7 +12,6 @@ import java.util.List;
 
 @Data
 @Document(collection = "protein")
-@CompoundIndexes({@CompoundIndex(name = "libraryId_id", def = "{'libraryId':1,'id':1}", unique = true)})
 public class ProteinDO {
 
     /**
