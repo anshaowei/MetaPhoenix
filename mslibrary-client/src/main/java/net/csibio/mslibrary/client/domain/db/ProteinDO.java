@@ -29,10 +29,10 @@ public class ProteinDO {
     String identifyLine;
 
     @Indexed
-    String uniprot;
+    Boolean reviewed;
 
     @Indexed
-    Boolean reviewed;
+    String uniProtId;
 
     /**
      * 蛋白质名称

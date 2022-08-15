@@ -73,6 +73,10 @@ public class FastaParser {
         protein.setGene(gn);
         protein.setOrganism(os);
         protein.setId(s[0]);
+        String[] identifiers = protein.getId().split("\\|", -1);
+        if (identifiers.length == 3) {
+            protein.setUniProtId(identifiers[1]);
+        }
         String substringName = name.substring(1, name.length() - 1);
         protein.setNames(Lists.newArrayList(substringName));
     }

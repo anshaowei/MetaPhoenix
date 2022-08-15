@@ -42,9 +42,6 @@ public class GeneDO {
     @Indexed
     String organism;
 
-    @Indexed
-    String gene;
-
     String sequence;
 
     Date createDate;

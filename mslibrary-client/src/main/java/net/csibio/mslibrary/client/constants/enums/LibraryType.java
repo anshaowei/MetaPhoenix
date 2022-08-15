@@ -2,7 +2,7 @@ package net.csibio.mslibrary.client.constants.enums;
 
 public enum LibraryType {
 
-    Geneics("Geneics","基因组学相关库"),
+    Genomics("Genomics","基因组学相关库"),
     Proteomics("Proteomics","蛋白质组学相关库"),
     Metabolomics("Metabolomics","代谢组学相关库"),
     ;

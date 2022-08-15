@@ -54,7 +54,7 @@ public class AsyncController {
         LibraryDO library = libraryService.getById(libraryId);
         if (library == null) {
             library = new LibraryDO();
-            library.setType(LibraryType.Geneics.getName());
+            library.setType(LibraryType.Genomics.getName());
             library.setName(libraryId);
             libraryService.insert(library);
             log.info("HMDB蛋白质镜像库不存在,已创建新的HMDB蛋白质库");
@@ -117,10 +117,6 @@ public class AsyncController {
         String libraryId = LibraryConst.UNIPROT_PROTEIN;
         HashMap<String, String> humanReviewed = fastaParser.parse(humanFasta);
         List<ProteinDO> proteins = proteinService.buildProteins(humanReviewed, "human");
-        proteins.forEach(protein -> {
-            fastaParser.hmdbFormat(protein);
-            protein.setLibraryId(libraryId);
-        });
 
         LibraryDO library = libraryService.getById(libraryId);
         if (library == null) {
@@ -131,6 +127,10 @@ public class AsyncController {
             log.info("Uniprot蛋白质镜像库不存在,已创建新的Uniprot蛋白质库");
         }
         proteinService.remove(new ProteinQuery(), libraryId);
+        proteins.forEach(protein -> {
+            fastaParser.uniprotFormat(protein);
+            protein.setLibraryId(libraryId);
+        });
 
         proteinService.insert(proteins, libraryId);
         library.setCount(proteins.size());
