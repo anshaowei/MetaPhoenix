@@ -1,15 +1,20 @@
 package net.csibio.mslibrary.core.parser.fasta;
 
+import com.google.common.collect.Lists;
+import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.constants.enums.ResultCode;
-import net.csibio.mslibrary.client.domain.Result;
+import net.csibio.mslibrary.client.domain.db.ProteinDO;
+import net.csibio.mslibrary.client.exceptions.XException;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
+import java.io.FileInputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 
 /**
  * Fasta文件的存储格式为（一行Protein信息，跟着多行该protein的完整序列）
@@ -17,145 +22,69 @@ import java.util.HashSet;
 @Component("fastaParser")
 public class FastaParser {
 
-    //TODO: params
-//    int minPepLen = 0;
-//    int minPepLen = 100;
-
-    public Result<HashSet<String>> getUniquePeptide(InputStream in, int minPepLen, int maxPepLen) {
-        Result<HashMap<String, HashSet<String>>> protMapResult = parseAsPeptides(in, minPepLen, maxPepLen);
-        if (protMapResult.isFailed()) {
-            Result<HashSet<String>> Result = new Result(false);
-            Result.setMsgInfo(protMapResult.getMsgInfo());
-            return Result;
-        }
-        HashSet<String> uniquePeptides = new HashSet<>();
-        HashSet<String> allPeptides = new HashSet<>();
-        for (HashSet<String> peptideSet : protMapResult.getData().values()) {
-            for (String peptide : peptideSet) {
-                if (allPeptides.contains(peptide) && uniquePeptides.contains(peptide)) {
-                    //若之前出现过，且在Unique中，移除
-                    uniquePeptides.remove(peptide);
-                } else {
-                    //若之前没出现过，暂且放在Unique中
-                    uniquePeptides.add(peptide);
-                }
-                allPeptides.add(peptide);
-            }
-        }
-        return new Result<HashSet<String>>(true).setData(uniquePeptides);
-    }
-
-    public Result<HashMap<String, HashSet<String>>> parseAsPeptides(InputStream in, int minPepLen, int maxPepLen) {
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-            String line = reader.readLine();
-            String lastProteinMessage = line;
-            //设置初始容量为128，避免重新分配空间造成的性能损失
-            StringBuilder lastSequence = new StringBuilder(128);
-            HashMap<String, HashSet<String>> proteinPeptideMap = new HashMap<>();
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith(">")) {
-                    //进入下一个protein的分析
-                    //此时lastSequence里面存有了当前protein的sequence
-                    if (!line.startsWith(">CON")) {
-
-                        HashSet<String> enzymedSequence = getEnzymeResult(lastSequence.toString(), minPepLen, maxPepLen);
-                        proteinPeptideMap.put(lastProteinMessage, enzymedSequence);
-                    }
-                    //分离为peptide之后，存储新protein的信息，并清空lastSequence
-                    lastProteinMessage = line;
-                    lastSequence.setLength(0);
-
-                } else {
-                    lastSequence.append(line);
-                }
-            }
-            HashSet<String> enzymedSequence = getEnzymeResult(lastSequence.toString(), minPepLen, maxPepLen);
-            proteinPeptideMap.put(lastProteinMessage, enzymedSequence);
-            return new Result<HashMap<String, HashSet<String>>>(true).setData(proteinPeptideMap);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Result.Error(ResultCode.PRM_FILE_FORMAT_NOT_SUPPORTED);
-        }
-    }
+    public static final String UNIPROT = ">";
+    public static final String HMDB = "HMDBP";
 
     /**
-     * 将K，R作为切分sequence的标志物
+     * 支持解码从Uniprot或者HMDBP下载的链表
      *
-     * @param proteinSequence
-     * @return
+     * @param path
+     * @return key为fasta文件的tag行, value为对应的sequence
      */
-    public HashSet<String> getEnzymeResult(String proteinSequence, int minPepLen, int maxPepLen) {
-        String[] result = proteinSequence.replaceAll("K", "K|").replaceAll("R", "R|").split("\\|");
-        HashSet<String> peptideSet = new HashSet<>();
-        for (String peptide : result) {
-            if (peptide.length() >= minPepLen && peptide.length() <= maxPepLen) {
-                peptideSet.add(peptide);
-            }
-        }
-        return peptideSet;
-    }
-
-    public Result<HashMap<String, String>> parse(InputStream inputStream) {
+    public HashMap<String, String> parse(String path) throws XException {
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
             String line = reader.readLine();
-            String lastProteinMessage = line;
+            String proteinTag = line;
             //设置初始容量为128，避免重新分配空间造成的性能损失
-            StringBuilder lastSequence = new StringBuilder(1024);
+            StringBuilder sequence = new StringBuilder(1024);
             HashMap<String, String> map = new HashMap<>();
             while ((line = reader.readLine()) != null) {
-                if (line.startsWith(">")) {
-                    map.put(lastProteinMessage, lastSequence.toString());
+                if (line.startsWith(UNIPROT) || line.startsWith(HMDB)) {
+                    map.put(proteinTag, sequence.toString());
                     //进入下一个protein的分析
-                    lastProteinMessage = line;
-                    lastSequence.setLength(0);
+                    proteinTag = line;
+                    sequence.setLength(0);
                 } else {
-                    lastSequence.append(line);
+                    sequence.append(line);
                 }
             }
-            map.put(lastProteinMessage, lastSequence.toString());
-            return Result.OK(map);
+            map.put(proteinTag, sequence.toString());
+            return map;
         } catch (Exception e) {
             e.printStackTrace();
-            return Result.Error(ResultCode.FASTA_FILE_FORMAT_NOT_SUPPORTED);
+            throw new XException(ResultCode.FASTA_FILE_FORMAT_NOT_SUPPORTED);
         }
     }
 
-    public Result<HashMap<String, String>> parseAllWithInput(InputStream inputStream, int minPepLen, int maxPepLen) {
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-            String line = reader.readLine();
-            String lastProteinMessage = line;
-            //设置初始容量为128，避免重新分配空间造成的性能损失
-            StringBuilder lastSequence = new StringBuilder(128);
-            HashMap<String, HashSet<String>> proteinPeptideMap = new HashMap<>();
-            HashMap<String, String> map = new HashMap<>();
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith(">")) {
-                    //进入下一个protein的分析
-                    //此时lastSequence里面存有了当前protein的sequence
-                    if (!line.startsWith(">CON")) {
-                        HashSet<String> enzymedSequence = getEnzymeResult(lastSequence.toString(), minPepLen, maxPepLen);
-                        proteinPeptideMap.put(lastProteinMessage, enzymedSequence);
-                    }
-                    //分离为peptide之后，存储新protein的信息，并清空lastSequence
-                    lastProteinMessage = line;
-                    lastSequence.setLength(0);
+    public void uniprotFormat(ProteinDO protein) {
+        StringBuilder keyBuilder = new StringBuilder(protein.getIdentifyLine());
+        keyBuilder.delete(0, 1);
+        String firstLine = keyBuilder.toString();
+        String newString = keyBuilder.toString();
+        String[] s = firstLine.split(SymbolConst.SPACE);
+        String newS = StringUtils.substringAfter(firstLine, s[0]);
+        String name = StringUtils.substringBefore(newS, "OS=");
+        String identifier = StringUtils.substringBefore(firstLine, "OS=");
+        protein.setId(identifier);
+        String gn = StringUtils.substringBetween(newString, "GN=", "PE=");
+        String os = StringUtils.substringBetween(firstLine, "OS=", "OX=");
+        protein.setGene(gn);
+        protein.setOrganism(os);
+        protein.setId(s[0]);
+        String substringName = name.substring(1, name.length() - 1);
+        protein.setNames(Lists.newArrayList(substringName));
+    }
 
-                } else {
-                    lastSequence.append(line);
-                }
-                map.put(lastProteinMessage, lastSequence.toString());
-            }
-            HashSet<String> enzymedSequence = getEnzymeResult(lastSequence.toString(), minPepLen, maxPepLen);
-
-            proteinPeptideMap.put(lastProteinMessage, enzymedSequence);
-            return new Result<HashMap<String, String>>(true).setData(map);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Result.Error(ResultCode.PRM_FILE_FORMAT_NOT_SUPPORTED);
+    public void hmdbFormat(ProteinDO protein) {
+        String identifyLine = protein.getIdentifyLine();
+        String[] identifies = identifyLine.split(SymbolConst.COMMA);
+        String nameTagStr = identifies[0];
+        String[] nameTagArray = nameTagStr.split(SymbolConst.SPACE);
+        protein.setId(nameTagArray[0]);
+        if (identifies.length > 1){
+            protein.setOrganism(identifies[1]);
         }
-
+        protein.setNames(Lists.newArrayList(nameTagStr.replace(nameTagArray[0],"").trim()));
     }
 }

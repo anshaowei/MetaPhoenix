@@ -50,6 +50,7 @@ public class HmdbParseTask {
                     }
                     switch (ele.getName()) {
                         case "name" -> compound.setName(value);
+                        case "version" -> compound.setVersion(value);
                         case "accession" -> compound.setHmdbId(value);
                         case "status" -> compound.setStatus(value);
                         case "chemical_formula" -> compound.setFormula(value);

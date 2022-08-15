@@ -8,6 +8,8 @@ public class StatConst {
     public static String STAT_MASSBANK_COMPOUND_NUM = "MassBankCompoundNum";
     public static String STAT_MSLIBRARY_COMPOUND_NUM = "MSLibraryCompoundNum";
     public static String STAT_SPECTRA_NUM = "SpectraNum";
+    public static String STAT_UNIPROT_PROTEIN_NUM = "UniprotProteinNum";
+    public static String STAT_HMDB_PROTEIN_NUM = "HMDBProteinNum";
 
     public static String STAT_PROTEIN_NUM = "ProteinNum";
 }

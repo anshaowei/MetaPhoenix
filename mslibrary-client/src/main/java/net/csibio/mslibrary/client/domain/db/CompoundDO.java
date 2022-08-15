@@ -43,6 +43,8 @@ public class CompoundDO {
     @Indexed
     String name;
 
+    String version;
+
     @Indexed
     String cnName;
 

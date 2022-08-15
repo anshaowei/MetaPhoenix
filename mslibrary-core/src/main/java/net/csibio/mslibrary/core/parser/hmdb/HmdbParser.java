@@ -2,6 +2,7 @@ package net.csibio.mslibrary.core.parser.hmdb;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.constants.LibraryConst;
+import net.csibio.mslibrary.client.constants.enums.LibraryType;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.query.CompoundQuery;
@@ -34,16 +35,16 @@ public class HmdbParser {
 
     public Result parse(String filePath) {
         long totalStart = System.currentTimeMillis();
-        LibraryDO library = libraryService.getById(LibraryConst.HMDB);
+        LibraryDO library = libraryService.getById(LibraryConst.HMDB_COMPOUND);
         if (library == null) {
             library = new LibraryDO();
-            library.setId(LibraryConst.HMDB);
-            library.setName(LibraryConst.HMDB);
+            library.setType(LibraryType.Metabolomics.getName());
+            library.setName(LibraryConst.HMDB_COMPOUND);
             libraryService.insert(library);
             log.info("HMDB镜像库不存在,已创建新的HMDB库");
         }
         String libraryId = library.getId();
-        compoundService.remove(new CompoundQuery(LibraryConst.HMDB), LibraryConst.HMDB);
+        compoundService.remove(new CompoundQuery(LibraryConst.HMDB_COMPOUND), LibraryConst.HMDB_COMPOUND);
         log.info("已经删除HMDB旧数据,开始解析新的源文件");
 
         BufferedReader reader = null;
