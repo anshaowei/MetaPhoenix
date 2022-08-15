@@ -1,7 +1,9 @@
 package net.csibio.mslibrary.core.dao;
 
+import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.domain.db.ProteinDO;
 import net.csibio.mslibrary.client.domain.query.ProteinQuery;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
@@ -9,15 +11,18 @@ import org.springframework.stereotype.Service;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @Service
-public class ProteinDAO extends BaseDAO<ProteinDO, ProteinQuery> {
+public class ProteinDAO extends BaseMultiDAO<ProteinDO, ProteinQuery> {
 
     public static String CollectionName = "protein";
 
     @Override
-    protected String getCollectionName() {
-        return CollectionName;
+    protected String getCollectionName(String routerId) {
+        if (StringUtils.isNotEmpty(routerId)) {
+            return CollectionName + SymbolConst.DELIMITER + routerId;
+        } else {
+            return CollectionName;
+        }
     }
-
     @Override
     protected Class getDomainClass() {
         return ProteinDO.class;

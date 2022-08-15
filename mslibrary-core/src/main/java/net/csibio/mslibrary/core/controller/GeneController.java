@@ -36,35 +36,35 @@ public class GeneController {
         libraryService.tryGetById(geneUpdate.getLibraryId(), ResultCode.LIBRARY_NOT_EXISTED);
         GeneDO newGene = new GeneDO();
         BeanUtils.copyProperties(geneUpdate, newGene);
-        return geneService.insert(newGene);
+        return geneService.insert(newGene, newGene.getLibraryId());
     }
 
     @RequestMapping(value = "/update")
     Result update(GeneUpdateVO geneUpdate) throws XException {
-        GeneDO geneInDB = geneService.tryGetById(geneUpdate.getId(), ResultCode.GENE_NOT_EXISTED);
+        GeneDO geneInDB = geneService.tryGetById(geneUpdate.getId(), geneUpdate.getLibraryId(), ResultCode.GENE_NOT_EXISTED);
         BeanUtils.copyProperties(geneUpdate, geneInDB);
-        return geneService.update(geneInDB);
+        return geneService.update(geneInDB, geneInDB.getLibraryId());
     }
 
     @RequestMapping(value = "/list")
     Result list(GeneQuery query) {
-        Result<List<GeneDO>> result = geneService.getList(query);
+        Result<List<GeneDO>> result = geneService.getList(query, query.getLibraryId());
         return result;
     }
 
     @RequestMapping(value = "/detail")
-    Result detail(@RequestParam(value = "id") String geneId) throws XException {
-        GeneDO gene = geneService.tryGetById(geneId, ResultCode.GENE_NOT_EXISTED);
+    Result detail(@RequestParam(value = "id") String geneId, @RequestParam(value = "routerId") String routerId) throws XException {
+        GeneDO gene = geneService.tryGetById(geneId, routerId, ResultCode.GENE_NOT_EXISTED);
         return Result.OK(gene);
     }
 
     @RequestMapping("/remove")
-    Result remove(@RequestParam(value = "ids") String[] ids) {
+    Result remove(@RequestParam(value = "ids") String[] ids, @RequestParam(value = "routerId") String routerId) {
         Result<List<String>> result = new Result<List<String>>();
         List<String> errorList = new ArrayList<>();
         List<String> deletedIds = new ArrayList<>();
         for (String id : ids) {
-            Result removeResult = geneService.remove(id);
+            Result removeResult = geneService.remove(id, routerId);
             if (removeResult.isSuccess()) {
                 deletedIds.add(id);
             } else {
