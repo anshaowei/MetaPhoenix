@@ -123,8 +123,7 @@ public class GnpsParser {
                         spectrumDO.setSpectrumStatus(parser.getValueAsInt());
                         parser.nextToken();
                         parser.nextToken();
-                        String[] values = parser.getValueAsString().replace("[", "").replace("]", "").replace(",", " ").split(" ");
-                        ;
+                        String[] values = parser.getValueAsString().replace("[", "").replace("]", "").replace(" ", "").replace(",", " ").split(" ");
                         int length = values.length / 2;
                         double[] mzs = new double[length];
                         double[] intensities = new double[length];

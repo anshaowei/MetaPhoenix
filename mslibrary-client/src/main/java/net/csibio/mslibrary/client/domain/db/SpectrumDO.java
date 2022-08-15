@@ -19,8 +19,13 @@ public class SpectrumDO {
     @Id
     String id;
 
+    @Indexed
     String compoundId;
 
+    @Indexed
+    String libraryId;
+
+    //自定义谱图唯一标识字段
     String spectrumId;
 
     String sourceFile;
@@ -81,6 +86,7 @@ public class SpectrumDO {
 
     String smiles;
 
+    @Indexed
     String inchi;
 
     String inchiAUX;
