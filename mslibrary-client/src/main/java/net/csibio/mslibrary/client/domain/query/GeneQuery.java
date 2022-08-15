@@ -3,7 +3,7 @@ package net.csibio.mslibrary.client.domain.query;
 import lombok.Data;
 
 @Data
-public class ProteinQuery extends PageQuery {
+public class GeneQuery extends PageQuery {
 
     String id;
 
@@ -13,13 +13,11 @@ public class ProteinQuery extends PageQuery {
 
     String gene;
 
-    Boolean reviewed;
-
-    public ProteinQuery() {
+    public GeneQuery() {
 
     }
 
-    public ProteinQuery(String libraryId) {
+    public GeneQuery(String libraryId) {
         this.libraryId = libraryId;
     }
 }

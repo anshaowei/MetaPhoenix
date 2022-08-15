@@ -43,9 +43,6 @@ public class ProteinDAO extends BaseDAO<ProteinDO, ProteinQuery> {
         if (proteinQuery.getReviewed() != null) {
             query.addCriteria(where("reviewed").is(proteinQuery.getReviewed()));
         }
-        if (proteinQuery.getCreateTag() != null) {
-            query.addCriteria(where("createTag").is(proteinQuery.getCreateTag()));
-        }
         if (proteinQuery.getOrganism() != null) {
             query.addCriteria(where("organism").is(proteinQuery.getOrganism()));
         }

@@ -187,6 +187,22 @@ public enum ResultCode implements Serializable {
     MZ_AND_RT_MUST_EXIST("MZ_AND_RT_MUST_EXIST", "必须先设置靶标的mz和rt"),
 
     /**
+     * ******
+     * Protein
+     * *******
+     */
+    PROTEIN_ID_CANNOT_BE_EMPTY("PROTEIN_ID_CANNOT_BE_EMPTY", "蛋白id不能为空"),
+    PROTEIN_NOT_EXISTED("PROTEIN_NOT_EXISTED", "该蛋白不存在"),
+
+    /**
+     * ******
+     * Gene
+     * *******
+     */
+    GENE_ID_CANNOT_BE_EMPTY("GENE_ID_CANNOT_BE_EMPTY", "基因id不能为空"),
+    GENE_NOT_EXISTED("GENE_NOT_EXISTED", "该基因不存在"),
+
+    /**
      * Spectra
      */
     SPECTRA_TYPE_CANNOT_BE_EMPTY("SPECTRA_TYPE_CANNOT_BE_EMPTY", "光谱图类型不能为空"),

@@ -3,6 +3,7 @@ package net.csibio.mslibrary.core.parser.fasta;
 import com.google.common.collect.Lists;
 import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.constants.enums.ResultCode;
+import net.csibio.mslibrary.client.domain.db.GeneDO;
 import net.csibio.mslibrary.client.domain.db.ProteinDO;
 import net.csibio.mslibrary.client.exceptions.XException;
 import org.apache.commons.lang3.ArrayUtils;
@@ -86,5 +87,17 @@ public class FastaParser {
             protein.setOrganism(identifies[1]);
         }
         protein.setNames(Lists.newArrayList(nameTagStr.replace(nameTagArray[0],"").trim()));
+    }
+
+    public void hmdbFormat(GeneDO gene) {
+        String identifyLine = gene.getIdentifyLine();
+        String[] identifies = identifyLine.split(SymbolConst.COMMA);
+        String nameTagStr = identifies[0];
+        String[] nameTagArray = nameTagStr.split(SymbolConst.SPACE);
+        gene.setId(nameTagArray[0]);
+        if (identifies.length > 1){
+            gene.setOrganism(identifies[1]);
+        }
+        gene.setNames(Lists.newArrayList(nameTagStr.replace(nameTagArray[0],"").trim()));
     }
 }
