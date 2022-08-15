@@ -1,6 +1,7 @@
 # Compiled class file
 *.class
 /.idea
+/.gz
 # Log file
 *.log
 target/

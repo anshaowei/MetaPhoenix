@@ -5,11 +5,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import lombok.extern.slf4j.Slf4j;
-import net.csibio.mslibrary.client.constants.AdductConst;
+import net.csibio.mslibrary.client.constants.enums.LibraryType;
+import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.domain.Result;
-import net.csibio.mslibrary.client.domain.bean.Adduct;
 import net.csibio.mslibrary.client.domain.bean.spectrum.AnnotationHistory;
-import net.csibio.mslibrary.client.domain.db.CompoundDO;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.CompoundService;
@@ -20,10 +19,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -36,18 +33,27 @@ public class GnpsParser {
     @Autowired
     SpectrumService spectrumService;
 
+    /**
+     * 该功能解析并将谱图插入数据库
+     *
+     * @param filePath
+     * @return
+     */
     public Result parse(String filePath) {
 
         long startTime = System.currentTimeMillis();
         JsonFactory jsonFactory = new MappingJsonFactory();
-        JsonParser parser = null;
+        JsonParser parser;
+
         try {
             parser = jsonFactory.createParser(new File(filePath));
             List<SpectrumDO> spectrumDOS = new ArrayList<>();
             int spectrumCount = 0;
-            HashSet<String> libraries = new HashSet<>();
-            HashSet<String> compounds = new HashSet<>();
+
+            HashSet<String> libraryNames = new HashSet<>();
+            HashSet<String> compoundIndexes = new HashSet<>();
             log.info("开始执行GNPS数据库解析任务");
+
             while (!parser.isClosed()) {
                 JsonToken jsonToken = parser.nextToken();
                 if (JsonToken.FIELD_NAME.equals(jsonToken)) {
@@ -56,15 +62,35 @@ public class GnpsParser {
                     }
                     if (parser.getCurrentName().equals("library_membership")) {
                         parser.nextToken();
-                        libraries.add(parser.getValueAsString());
-                    }
-                    if (parser.getCurrentName().equals("Compound_Name")) {
-                        parser.nextToken();
-                        compounds.add(parser.getValueAsString());
+                        libraryNames.add(parser.getValueAsString());
+                        String libraryName = parser.getValueAsString();
+                        int i = 0;
+                        while (i <= 9) {
+                            parser.nextToken();
+                            i++;
+                        }
+                        compoundIndexes.add(libraryName + "@" + parser.getValueAsString());
                     }
                 }
             }
-            log.info("初步扫描完成，文件共包含" + libraries.size() + "个库，大约" + compounds.size() + "个化合物，" + spectrumCount + "张谱图");
+            log.info("初步扫描完成，文件共包含" + libraryNames.size() + "个库，大约" + compoundIndexes.size() + "个化合物，" + spectrumCount + "张谱图");
+
+            //生成化合物库
+            List<LibraryDO> libraryDOS = new ArrayList<>();
+            for (String libraryName : libraryNames) {
+                LibraryDO libraryDO = new LibraryDO();
+                libraryDO.setName(libraryName);
+                libraryDO.setType(LibraryType.Metabolomics.getName());
+                libraryDOS.add(libraryDO);
+            }
+
+            //插入数据库
+            if (libraryService.insert(libraryDOS).isFailed()) {
+                log.error("生成化合物库失败，数据库中已存在同名数据库");
+                Result result = new Result(false);
+                return result.setErrorResult(ResultCode.LIBRARY_WITH_SAME_NAME_ALREADY_EXIST);
+            }
+            log.info("化合物库插入数据库成功");
 
             parser = jsonFactory.createParser(new File(filePath));
             HashMap<String, String> libraryNameToIdMap = new HashMap<>();
@@ -275,61 +301,17 @@ public class GnpsParser {
                         }
                         spectrumDO.setAnnotationHistoryList(annotationHistoryList);
                         spectrumDOS.add(spectrumDO);
-
-                        //化合物库生成
-                        String libraryId;
-                        if (libraryNameToIdMap.containsKey(spectrumDO.getLibraryMembership())) {
-                            LibraryDO libraryDO = libraryService.getById(libraryNameToIdMap.get(spectrumDO.getLibraryMembership()));
-                            libraryId = libraryDO.getId();
-                        } else {
-                            LibraryDO libraryDO = new LibraryDO();
-                            libraryDO.setName(spectrumDO.getLibraryMembership());
-                            libraryService.insert(libraryDO);
-                            libraryNameToIdMap.put(libraryDO.getName(), libraryDO.getId());
-                            libraryId = libraryDO.getId();
-                            libraryIdToCompoundNamesMap.put(libraryId, new ArrayList<>());
-                        }
-
-                        //化合物生成
-                        if (!libraryIdToCompoundNamesMap.get(libraryId).contains(spectrumDO.getCompoundName())) {
-                            CompoundDO compoundDO = new CompoundDO();
-                            compoundDO.setName(spectrumDO.getCompoundName());
-                            //加和物判断
-                            for (Adduct adduct : AdductConst.ESIAdducts) {
-                                if (adduct.getIonForm().equals(spectrumDO.getAdduct())) {
-                                    HashSet<Adduct> adducts = new HashSet<>();
-                                    adducts.add(adduct);
-                                    compoundDO.setAdducts(adducts);
-                                }
-                            }
-                            compoundDO.setFormula(spectrumDO.getFormulaSmiles());
-                            compoundDO.setInchi(spectrumDO.getInchi());
-                            compoundDO.setInchikey(spectrumDO.getInchiKeyInchi());
-                            compoundDO.setSmiles(spectrumDO.getSmiles());
-                            compoundDO.setPubChemId(spectrumDO.getPubmedId());
-                            libraryIdToCompoundNamesMap.get(libraryId).add(compoundDO.getName());
-                            compoundService.insert(compoundDO, libraryId);
-                            compoundNameToIdMap.put(compoundDO.getName(), compoundDO.getId() + "&" + libraryId);
-                        } else {
-                            CompoundDO compoundDO = compoundService.getById(compoundNameToIdMap.get(spectrumDO.getCompoundName()).split("&")[0], libraryId);
-                            if (spectrumDO.getAdduct() != null && !spectrumDO.getAdduct().isEmpty()) {
-                                Adduct currentAdduct = null;
-                                for (Adduct adduct : AdductConst.ESIAdducts) {
-                                    if (adduct.getIonForm().equals(spectrumDO.getAdduct())) {
-                                        currentAdduct = adduct;
-                                    }
-                                }
-                                if (currentAdduct != null) {
-                                    compoundDO.getAdducts().add(currentAdduct);
-                                }
-                                compoundService.update(compoundDO, libraryId);
-                            }
-                        }
                     }
                 }
             }
             log.info("解析完成，共用时" + (System.currentTimeMillis() - startTime) / 1000 + "秒，开始向数据库插入");
             spectrumService.insert(spectrumDOS);
+            Map<String, List<SpectrumDO>> dataMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getLibraryMembership));
+            for (String libraryName : dataMap.keySet()) {
+                LibraryDO libraryDO = libraryService.getById(libraryName);
+                libraryDO.setCount(dataMap.get(libraryName).size());
+                libraryService.update(libraryDO);
+            }
             log.info("向数据库共插入" + spectrumCount + "张谱图完成，共用时" + (System.currentTimeMillis() - startTime) / 1000 + "秒");
         } catch (Exception e) {
             e.printStackTrace();
