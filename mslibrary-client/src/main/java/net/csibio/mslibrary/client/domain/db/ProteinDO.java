@@ -55,30 +55,4 @@ public class ProteinDO {
     Date createDate;
 
     Date lastModifiedDate;
-
-    public String getUniProtLink() {
-        if (id != null) {
-            String[] identifiers = id.split("\\|", -1);
-            if (identifiers.length == 3) {
-                return "https://www.uniprot.org/uniprot/" + identifiers[1];
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
-    }
-
-    public String getAlphaFoldLink() {
-        if (id != null) {
-            String[] identifiers = id.split("\\|", -1);
-            if (identifiers.length == 3) {
-                return "https://www.alphafold.ebi.ac.uk/entry/" + identifiers[1];
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
-    }
 }
