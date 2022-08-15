@@ -9,4 +9,6 @@ import java.util.List;
 public interface ProteinService extends BaseMultiService<ProteinDO, ProteinQuery> {
 
     List<ProteinDO> buildProteins(HashMap<String, String> map, String ...tags);
+
+    void storeToDB(List<ProteinDO> proteins, String libraryId);
 }

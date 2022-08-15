@@ -2,13 +2,16 @@ package net.csibio.mslibrary.core.service.impl;
 
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.constants.enums.LibraryType;
 import net.csibio.mslibrary.client.domain.db.GeneDO;
+import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.query.GeneQuery;
 import net.csibio.mslibrary.client.exceptions.XException;
 import net.csibio.mslibrary.client.service.GeneService;
 import net.csibio.mslibrary.client.service.IMultiDAO;
+import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.core.dao.GeneDAO;
-import net.csibio.mslibrary.core.parser.fasta.FastaParser;
+import net.csibio.mslibrary.client.parser.fasta.FastaParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +28,8 @@ public class GeneServiceImpl implements GeneService {
     GeneDAO geneDAO;
     @Autowired
     FastaParser fastaParser;
+    @Autowired
+    LibraryService libraryService;
 
     @Override
     public long count(GeneQuery query, String routerId) {
@@ -62,5 +67,25 @@ public class GeneServiceImpl implements GeneService {
             geneList.add(gene);
         }
         return geneList;
+    }
+
+    @Override
+    public void storeToDB(List<GeneDO> genes, String libraryId) {
+        LibraryDO library = libraryService.getById(libraryId);
+        if (library == null) {
+            library = new LibraryDO();
+            library.setType(LibraryType.Genomics.getName());
+            library.setName(libraryId);
+            libraryService.insert(library);
+            log.info("HMDB蛋白质镜像库不存在,已创建新的HMDB蛋白质库");
+        }
+        genes.forEach(gene -> {
+            fastaParser.hmdbFormat(gene);
+            gene.setLibraryId(libraryId);
+        });
+        remove(new GeneQuery(), libraryId);
+        insert(genes, libraryId);
+        library.setCount(genes.size());
+        libraryService.update(library);
     }
 }

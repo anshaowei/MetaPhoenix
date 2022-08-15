@@ -48,6 +48,8 @@ public class LibraryDO implements Serializable {
 
     Set<String> tags = new HashSet<>();
 
+    Set<String> labels = new HashSet<>();
+
     /**
      * 库中含有的靶标的数量
      */

@@ -9,6 +9,8 @@ public class LibraryConst {
     public static String UNIPROT_GENE = "UNIPROT_GENE";
     public static String UNIPROT_PROTEIN = "UNIPROT_PROTEIN";
 
+    public static String PAN_HUMAN_2020_DPHL = "PAN_HUMAN_2020_DPHL";
+
     public static String GNPS = "GNPS";
     public static String MassBank = "MassBank";
     public static String Empty = "";
