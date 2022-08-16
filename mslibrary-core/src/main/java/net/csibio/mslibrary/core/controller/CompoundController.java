@@ -122,54 +122,54 @@ public class CompoundController {
      * @param libraryId
      * @return
      */
-    @RequestMapping(value = "/getSpectraAll")
-    Result getSpectraAll(@RequestParam(value = "compoundId") String compoundId,
-                         @RequestParam(value = "libraryId") String libraryId) throws XException {
-        CompoundDO compound = compoundService.tryGetById(compoundId, libraryId, ResultCode.COMPOUND_NOT_EXISTED);
-        List<SpectrumDO> spectraList = spectrumService.getAll(new SpectrumQuery(compound.getId()));
-        List<SpectrumVO> compoundList = new ArrayList<>();
-        spectraList.forEach(spectraDO -> {
-            SpectrumVO spectrumVO = new SpectrumVO();
-            BeanUtils.copyProperties(spectraDO, spectrumVO);
-            compoundList.add(spectrumVO);
-        });
+//    @RequestMapping(value = "/getSpectraAll")
+//    Result getSpectraAll(@RequestParam(value = "compoundId") String compoundId,
+//                         @RequestParam(value = "libraryId") String libraryId) throws XException {
+//        CompoundDO compound = compoundService.tryGetById(compoundId, libraryId, ResultCode.COMPOUND_NOT_EXISTED);
+//        List<SpectrumDO> spectraList = spectrumService.getAll(new SpectrumQuery(compound.getId()));
+//        List<SpectrumVO> compoundList = new ArrayList<>();
+//        spectraList.forEach(spectraDO -> {
+//            SpectrumVO spectrumVO = new SpectrumVO();
+//            BeanUtils.copyProperties(spectraDO, spectrumVO);
+//            compoundList.add(spectrumVO);
+//        });
+//
+//        if (spectraList.isEmpty()) {
+//            return Result.Error(ResultCode.SPECTRA_NOT_EXISTED);
+//        }
+//
+//        Map<String, List<SpectrumVO>> specMap = compoundList.stream().collect(Collectors.groupingBy(
+//                SpectrumVO::getType));
+//        specMap.forEach((key, value) -> {
+//            value.sort(Comparator.comparing(SpectrumVO::getCreateDate).reversed());
+//        });
+//        Result result = new Result(true);
+//        result.setData(specMap);
+//        result.getFeatureMap().put("compoundId", compoundId);
+//        return result;
+//    }
 
-        if (spectraList.isEmpty()) {
-            return Result.Error(ResultCode.SPECTRA_NOT_EXISTED);
-        }
-
-        Map<String, List<SpectrumVO>> specMap = compoundList.stream().collect(Collectors.groupingBy(
-                SpectrumVO::getType));
-        specMap.forEach((key, value) -> {
-            value.sort(Comparator.comparing(SpectrumVO::getCreateDate).reversed());
-        });
-        Result result = new Result(true);
-        result.setData(specMap);
-        result.getFeatureMap().put("compoundId", compoundId);
-        return result;
-    }
-
-    @RequestMapping(value = "/removeSpectras")
-    Result removeSpectras(@RequestParam(value = "spectraIds") String spectraIds) {
-        String[] spectraIdArray = spectraIds.split(SymbolConst.COMMA);
-        Result result = new Result();
-        List<String> errorList = new ArrayList<>();
-        List<String> deletedIds = new ArrayList<>();
-        for (String spectraId : spectraIdArray) {
-            Result spectraResult = spectrumService.remove(spectraId);
-            if (spectraResult.isSuccess()) {
-                deletedIds.add(spectraId);
-            } else {
-                errorList.add("SpectraId:" + spectraId + "--" + spectraResult.getMsgInfo());
-            }
-        }
-        if (deletedIds.size() != 0) {
-            result.setData(deletedIds);
-            result.setSuccess(true);
-        }
-        if (errorList.size() != 0) {
-            result.setErrorList(errorList);
-        }
-        return result;
-    }
+//    @RequestMapping(value = "/removeSpectras")
+//    Result removeSpectras(@RequestParam(value = "spectraIds") String spectraIds) {
+//        String[] spectraIdArray = spectraIds.split(SymbolConst.COMMA);
+//        Result result = new Result();
+//        List<String> errorList = new ArrayList<>();
+//        List<String> deletedIds = new ArrayList<>();
+//        for (String spectraId : spectraIdArray) {
+//            Result spectraResult = spectrumService.remove(spectraId);
+//            if (spectraResult.isSuccess()) {
+//                deletedIds.add(spectraId);
+//            } else {
+//                errorList.add("SpectraId:" + spectraId + "--" + spectraResult.getMsgInfo());
+//            }
+//        }
+//        if (deletedIds.size() != 0) {
+//            result.setData(deletedIds);
+//            result.setSuccess(true);
+//        }
+//        if (errorList.size() != 0) {
+//            result.setErrorList(errorList);
+//        }
+//        return result;
+//    }
 }

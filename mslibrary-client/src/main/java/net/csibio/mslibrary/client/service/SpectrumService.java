@@ -7,13 +7,11 @@ import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import java.util.ArrayList;
 import java.util.List;
 
-public interface SpectrumService extends BaseService<SpectrumDO, SpectrumQuery> {
+public interface SpectrumService extends BaseMultiService<SpectrumDO, SpectrumQuery> {
 
     List<SpectrumDO> getAllByLibraryId(String libraryId);
 
-    List<SpectrumDO> getAllByCompoundId(String compoundId);
-
-    Result insertAll(List<SpectrumDO> spectrumDOS);
+    List<SpectrumDO> getAllByCompoundId(String compoundId, String libraryId);
 
 
 }

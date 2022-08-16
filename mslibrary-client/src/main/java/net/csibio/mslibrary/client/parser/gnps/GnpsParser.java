@@ -304,7 +304,7 @@ public class GnpsParser {
                 }
             }
             log.info("解析完成，共用时" + (System.currentTimeMillis() - startTime) / 1000 + "秒，开始向数据库插入");
-            spectrumService.insert(spectrumDOS);
+            spectrumService.insert(spectrumDOS, "");
             Map<String, List<SpectrumDO>> dataMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getLibraryMembership));
             for (String libraryName : dataMap.keySet()) {
                 LibraryDO libraryDO = libraryService.getById(libraryName);

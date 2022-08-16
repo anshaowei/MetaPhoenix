@@ -6,6 +6,7 @@ import net.csibio.mslibrary.client.domain.bean.spectrum.SpectrumPoint;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.exceptions.XException;
+import net.csibio.mslibrary.client.service.BaseMultiService;
 import net.csibio.mslibrary.client.service.BaseService;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("spectrum")
-public class SpectrumController extends BaseController<SpectrumDO, SpectrumQuery> {
+public class SpectrumController {
 
     @Autowired
     SpectrumService spectrumService;
@@ -24,8 +25,8 @@ public class SpectrumController extends BaseController<SpectrumDO, SpectrumQuery
     CompoundService compoundService;
 
     @RequestMapping(value = "/getBaseSpectrum")
-    Result<SpectrumPoint> getBaseSpectrum(@RequestParam(value = "spectrumId", required = true) String spectrumId) throws XException {
-        SpectrumDO spectrumDO = spectrumService.tryGetById(spectrumId, ResultCode.SPECTRA_NOT_EXISTED);
+    Result<SpectrumPoint> getBaseSpectrum(@RequestParam(value = "spectrumId", required = true) String spectrumId, String libraryId) throws XException {
+        SpectrumDO spectrumDO = spectrumService.tryGetById(spectrumId, libraryId, ResultCode.SPECTRA_NOT_EXISTED);
         SpectrumPoint spectrum = new SpectrumPoint();
         spectrum.setMzs(spectrumDO.getMzs());
         spectrum.setInts(spectrumDO.getInts());
@@ -39,13 +40,9 @@ public class SpectrumController extends BaseController<SpectrumDO, SpectrumQuery
      * @return SpectraDO对象
      */
     @RequestMapping("/detail")
-    Result detail(@RequestParam(value = "spectraId", required = true) String spectraId) throws XException {
-        SpectrumDO spectra = spectrumService.tryGetById(spectraId, ResultCode.SPECTRUM_NOT_EXISTED);
+    Result detail(@RequestParam(value = "spectraId", required = true) String spectraId, String libraryId) throws XException {
+        SpectrumDO spectra = spectrumService.tryGetById(spectraId, libraryId, ResultCode.SPECTRUM_NOT_EXISTED);
         return Result.build(spectra);
     }
 
-    @Override
-    BaseService<SpectrumDO, SpectrumQuery> getBaseService() {
-        return spectrumService;
-    }
 }

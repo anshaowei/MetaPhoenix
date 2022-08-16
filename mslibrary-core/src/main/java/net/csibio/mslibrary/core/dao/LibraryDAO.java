@@ -53,7 +53,7 @@ public class LibraryDAO extends BaseDAO<LibraryDO, LibraryQuery> {
         if (libraryQuery.getMatrix() != null) {
             query.addCriteria(where("matrix").in(libraryQuery.getMatrix()));
         }
-        if (libraryQuery.getCreateDateStart() != null && libraryQuery.getCreateDateEnd() != null){
+        if (libraryQuery.getCreateDateStart() != null && libraryQuery.getCreateDateEnd() != null) {
             query.addCriteria(where("createDate").gte(libraryQuery.getCreateDateStart()).lt(libraryQuery.getCreateDateEnd()));
         }
         if (allowSort()) {

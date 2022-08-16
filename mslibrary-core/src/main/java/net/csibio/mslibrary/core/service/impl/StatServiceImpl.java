@@ -97,7 +97,6 @@ public class StatServiceImpl implements StatService {
         long gnpsNum = compoundService.count(new CompoundQuery(), LibraryConst.GNPS);
         long massBankNum = compoundService.count(new CompoundQuery(), LibraryConst.MassBank);
         long mslibraryNum = compoundService.count(new CompoundQuery(), LibraryConst.Empty);
-        long spectraNum = spectrumService.count(new SpectrumQuery());
 
         HashMap<String, Object> statMap = new HashMap<>();
         statMap.put(StatConst.STAT_LIBRARY_NUM, libraryNum);

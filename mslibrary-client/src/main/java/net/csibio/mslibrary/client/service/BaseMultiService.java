@@ -197,4 +197,5 @@ public interface BaseMultiService<T, Q extends PageQuery> {
     void beforeUpdate(T t, String routerId) throws XException;
 
     void beforeRemove(String id, String routerId) throws XException;
+
 }

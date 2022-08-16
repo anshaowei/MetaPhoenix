@@ -106,9 +106,7 @@ public class LibraryController extends BaseController<LibraryDO, LibraryQuery> {
     @RequestMapping(value = "/countSpectra")
     Result<Long> countSpectra(@RequestParam(value = "id", required = false) String id) {
         Result result = new Result(true);
-        SpectrumQuery query = new SpectrumQuery();
-        query.setLibraryId(id);
-        Long number = spectrumService.count(query);
+        Long number = spectrumService.count(new SpectrumQuery(), id);
         result.setData(number);
         return result;
     }
