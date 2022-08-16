@@ -9,4 +9,5 @@ import java.io.InputStream;
 public interface LibraryService extends BaseService<LibraryDO, LibraryQuery> {
 
     Result parseAndInsert(LibraryDO library, InputStream in, int fileFormat);
+
 }

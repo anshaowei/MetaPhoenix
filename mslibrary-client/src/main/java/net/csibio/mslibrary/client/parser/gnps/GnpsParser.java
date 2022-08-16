@@ -47,13 +47,13 @@ public class GnpsParser {
 
         try {
             parser = jsonFactory.createParser(new File(filePath));
-            List<SpectrumDO> spectrumDOS = new ArrayList<>();
             int spectrumCount = 0;
 
+            //文件估算及预解析
             HashSet<String> libraryNames = new HashSet<>();
             HashSet<String> compoundIndexes = new HashSet<>();
-            log.info("开始执行GNPS数据库解析任务");
 
+            log.info("开始执行GNPS数据库解析任务");
             while (!parser.isClosed()) {
                 JsonToken jsonToken = parser.nextToken();
                 if (JsonToken.FIELD_NAME.equals(jsonToken)) {
@@ -92,10 +92,12 @@ public class GnpsParser {
             }
             log.info("化合物库插入数据库成功");
 
+            HashMap<String, List<SpectrumDO>> spectrumMap = new HashMap<>();
+            for (String libraryName : libraryNames) {
+                spectrumMap.put(libraryName, new ArrayList<>());
+            }
+
             parser = jsonFactory.createParser(new File(filePath));
-            HashMap<String, String> libraryNameToIdMap = new HashMap<>();
-            HashMap<String, List<String>> libraryIdToCompoundNamesMap = new HashMap<>();
-            HashMap<String, String> compoundNameToIdMap = new HashMap<>();
             while (!parser.isClosed()) {
                 JsonToken jsonToken = parser.nextToken();
                 if (JsonToken.FIELD_NAME.equals(jsonToken)) {
@@ -220,7 +222,7 @@ public class GnpsParser {
                         parser.nextToken();
                         spectrumDO.setUrl(parser.getValueAsString());
                         List<AnnotationHistory> annotationHistoryList = new ArrayList<>();
-                        jsonToken = parser.currentToken();
+                        //jsonToken = parser.currentToken();
                         while (!parser.isClosed()) {
                             jsonToken = parser.nextToken();
                             if (JsonToken.FIELD_NAME.equals(jsonToken)) {
@@ -299,17 +301,16 @@ public class GnpsParser {
                             }
                         }
                         spectrumDO.setAnnotationHistoryList(annotationHistoryList);
-                        spectrumDOS.add(spectrumDO);
+                        spectrumMap.get(spectrumDO.getLibraryMembership()).add(spectrumDO);
                     }
                 }
             }
             log.info("解析完成，共用时" + (System.currentTimeMillis() - startTime) / 1000 + "秒，开始向数据库插入");
-            spectrumService.insert(spectrumDOS, "");
-            Map<String, List<SpectrumDO>> dataMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getLibraryMembership));
-            for (String libraryName : dataMap.keySet()) {
+            for (String libraryName : spectrumMap.keySet()) {
                 LibraryDO libraryDO = libraryService.getById(libraryName);
-                libraryDO.setCount(dataMap.get(libraryName).size());
+                libraryDO.setCount(spectrumMap.get(libraryName).size());
                 libraryService.update(libraryDO);
+                spectrumService.insert(spectrumMap.get(libraryName), libraryDO.getId());
             }
             log.info("向数据库共插入" + spectrumCount + "张谱图完成，共用时" + (System.currentTimeMillis() - startTime) / 1000 + "秒");
         } catch (Exception e) {

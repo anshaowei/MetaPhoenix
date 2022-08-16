@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-@Document(collection = "outerSpectrum")
+@Document(collection = "spectrum")
 public class SpectrumDO {
 
     //数据库索引信息
