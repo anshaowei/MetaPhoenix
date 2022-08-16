@@ -2,12 +2,6 @@ package net.csibio.mslibrary.core.service.impl;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.read.builder.ExcelReaderBuilder;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.HeaderColumnNameMappingStrategy;
@@ -19,31 +13,19 @@ import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.parser.csv.CsvCompound;
 import net.csibio.mslibrary.client.domain.bean.parser.listener.ExcelListener;
-import net.csibio.mslibrary.client.domain.bean.spectrum.AnnotationHistory;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
-import net.csibio.mslibrary.client.domain.db.SpectrumDO;
-import net.csibio.mslibrary.client.domain.query.CompoundQuery;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryParserService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.opencsv.ICSVWriter.NO_QUOTE_CHARACTER;
@@ -116,7 +98,7 @@ public class LibraryParserServiceImpl implements LibraryParserService {
             return Result.Error(e.getMessage());
         }
 
-        library.setCount(compList.size());
+        library.setCompoundCount(compList.size());
         libraryService.update(library);
         log.info("库" + library.getName() + "创建成功!," + compList.size() + "条靶标插入成功");
         Result result = new Result(true);

@@ -1,5 +1,6 @@
 package net.csibio.mslibrary.client.service;
 
+import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
 import net.csibio.mslibrary.client.domain.query.CompoundQuery;
 
@@ -9,5 +10,7 @@ public interface CompoundService extends BaseMultiService<CompoundDO, CompoundQu
 
     List<CompoundDO> getAllByLibraryId(String libraryId);
 
-    void removeAllByLibraryId(String libraryId);
+    Result removeAllByLibraryId(String libraryId);
+
+    Result removeAll();
 }

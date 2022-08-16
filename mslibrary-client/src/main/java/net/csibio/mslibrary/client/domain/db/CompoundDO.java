@@ -40,6 +40,11 @@ public class CompoundDO {
     @Indexed
     String status;
 
+    /**
+     * 数据库中化合物谱图的数量
+     */
+    Integer count = 0;
+
     @Indexed
     String name;
 
@@ -177,7 +182,7 @@ public class CompoundDO {
         }
     }
 
-    public void setBiological(Biological biological){
+    public void setBiological(Biological biological) {
         setBioSpecimens(biological.getBioSpecimens());
         setCellulars(biological.getCellulars());
         setTissues(biological.getTissues());

@@ -51,9 +51,14 @@ public class LibraryDO implements Serializable {
     Set<String> labels = new HashSet<>();
 
     /**
-     * 库中含有的靶标的数量
+     * 库中含有的化合物的数量
      */
-    Integer count = 0;
+    Integer compoundCount = 0;
+
+    /**
+     * 库中含有的谱图的数量
+     */
+    Integer spectrumCount = 0;
 
     /**
      * 库中含有的靶标的数量

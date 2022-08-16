@@ -99,7 +99,7 @@ public class HmdbParser {
                 hmdbParseTask.parse(new ByteArrayInputStream(metaSingleBuilder.toString().getBytes()), libraryId);
             }
 
-            library.setCount(total);
+            library.setCompoundCount(total);
             libraryService.update(library);
             log.info(total + "条新化合物插入完毕,耗时:" + (System.currentTimeMillis() - totalStart) / 1000 + "秒");
         } catch (Exception e) {

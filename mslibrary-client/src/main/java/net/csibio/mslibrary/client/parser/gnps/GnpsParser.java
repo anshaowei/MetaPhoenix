@@ -20,7 +20,6 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -308,7 +307,7 @@ public class GnpsParser {
             log.info("解析完成，共用时" + (System.currentTimeMillis() - startTime) / 1000 + "秒，开始向数据库插入");
             for (String libraryName : spectrumMap.keySet()) {
                 LibraryDO libraryDO = libraryService.getById(libraryName);
-                libraryDO.setCount(spectrumMap.get(libraryName).size());
+                libraryDO.setSpectrumCount(spectrumMap.get(libraryName).size());
                 libraryService.update(libraryDO);
                 spectrumService.insert(spectrumMap.get(libraryName), libraryDO.getId());
             }
