@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.client.parser.gnps;
 
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.Adduct;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
@@ -37,10 +38,12 @@ public class CompoundGenerator {
      * @return
      */
     public Result generateByInChI(List<String> libraryIds) {
-
-        for (String libraryId : libraryIds) {
-            LibraryDO libraryDO = libraryService.getById(libraryId);
-            List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        List<LibraryDO> libraryDOList = libraryService.getAllByIds(libraryIds);
+        if (libraryDOList == null || libraryDOList.size() == 0) {
+            return new Result(false);
+        }
+        for (LibraryDO libraryDO : libraryDOList) {
+            List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryDO.getId());
             if (spectrumDOS.size() == 0 || spectrumDOS == null) {
                 continue;
             }
@@ -63,7 +66,7 @@ public class CompoundGenerator {
                     }
                     synonyms.add(spectrumDO.getCompoundName());
                 }
-                compoundDO.setLibraryId(libraryId);
+                compoundDO.setLibraryId(libraryDO.getId());
                 compoundDO.setCount(currentSpectrumDOS.size());
                 compoundDO.setName(spectrumDOS.get(0).getCompoundName());
                 compoundDO.setSynonyms(new ArrayList<>(synonyms));
@@ -79,8 +82,8 @@ public class CompoundGenerator {
             }
             libraryDO.setCompoundCount(compoundDOS.size());
             libraryService.update(libraryDO);
-            compoundService.insert(compoundDOS, libraryId);
-            log.info(libraryId + "库的化合物已经生成并更新至数据库");
+            compoundService.insert(compoundDOS, libraryDO.getId());
+            log.info(libraryDO.getId() + "库的化合物已经生成并更新至数据库");
         }
         return new Result(true);
     }

@@ -70,4 +70,14 @@ public class LibraryServiceImpl implements LibraryService {
         }
         return result;
     }
+
+    @Override
+    public List<LibraryDO> getAllByIds(List<String> ids) {
+        try {
+            return libraryDAO.getAllByIds(ids);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }
