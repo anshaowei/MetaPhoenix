@@ -1,5 +1,7 @@
 package net.csibio.mslibrary.core.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
@@ -10,12 +12,13 @@ import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.IMultiDAO;
 import net.csibio.mslibrary.core.dao.CompoundDAO;
 import net.csibio.mslibrary.core.dao.LibraryDAO;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service("CompoundService")
 public class CompoundServiceImpl implements CompoundService {
 
@@ -24,6 +27,9 @@ public class CompoundServiceImpl implements CompoundService {
 
     @Autowired
     LibraryDAO libraryDAO;
+
+    @Autowired
+    MongoTemplate mongoTemplate;
 
     @Override
     public List<CompoundDO> getAllByLibraryId(String libraryId) {
@@ -36,6 +42,11 @@ public class CompoundServiceImpl implements CompoundService {
         return new Result(true);
     }
 
+    /**
+     * 高危操作，会清除数据库中所有化合物和化合物库
+     *
+     * @return
+     */
     @Override
     public Result removeAll() {
         CompoundQuery query = new CompoundQuery();
@@ -43,7 +54,9 @@ public class CompoundServiceImpl implements CompoundService {
         List<LibraryDO> libraryDOList = libraryDAO.getAll(libraryQuery);
         for (LibraryDO libraryDO : libraryDOList) {
             compoundDAO.remove(query, libraryDO.getId());
+            mongoTemplate.dropCollection("compound" + SymbolConst.DELIMITER + libraryDO.getId());
         }
+        log.info("全部化合物及化合物集合清除已经完成");
         return new Result(true);
     }
 

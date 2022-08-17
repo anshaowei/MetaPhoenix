@@ -35,8 +35,10 @@ public class LibraryDAO extends BaseDAO<LibraryDO, LibraryQuery> {
     @Override
     protected Query buildQueryWithoutPage(LibraryQuery libraryQuery) {
         Query query = new Query();
-        if (libraryQuery.getId() != null) {
+        if (libraryQuery.getId() != null && !libraryQuery.getId().isEmpty()) {
             query.addCriteria(where("id").is(libraryQuery.getId()));
+        } else if (libraryQuery.getIds() != null && libraryQuery.getIds().size() != 0) {
+            query.addCriteria(where("id").in(libraryQuery.getIds()));
         }
         if (libraryQuery.getName() != null) {
             query.addCriteria(where("name").regex(libraryQuery.getName(), "i"));
@@ -81,6 +83,11 @@ public class LibraryDAO extends BaseDAO<LibraryDO, LibraryQuery> {
 
     public List<IdName> getIdNameList(LibraryQuery query) {
         return mongoTemplate.find(buildQueryWithoutPage(query), IdName.class, CollectionName);
+    }
+
+    public List<LibraryDO> getAllByIds(List<String> ids) {
+        LibraryQuery libraryQuery = new LibraryQuery();
+        return mongoTemplate.find(buildQuery(libraryQuery), LibraryDO.class, getCollectionName());
     }
 
 

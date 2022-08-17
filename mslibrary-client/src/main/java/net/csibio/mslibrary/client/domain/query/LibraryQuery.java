@@ -21,6 +21,8 @@ public class LibraryQuery extends PageQuery {
 
     List<String> species;
 
+    List<String> ids;
+
     Date createDateStart;
 
     Date createDateEnd;
