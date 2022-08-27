@@ -16,5 +16,4 @@ public class IdentificationByGNPS {
         return new ArrayList<>();
     }
 
-
 }
