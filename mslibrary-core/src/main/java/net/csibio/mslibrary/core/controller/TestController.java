@@ -35,7 +35,6 @@ public class TestController {
     @RequestMapping("/1")
     public void test1() {
         gnpsParser.parse("/Users/anshaowei/Downloads/database/ALL_GNPS.json");
-
     }
 
     @RequestMapping("/2")
