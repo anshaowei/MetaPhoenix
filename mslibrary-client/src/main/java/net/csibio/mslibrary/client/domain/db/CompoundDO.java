@@ -3,7 +3,7 @@ package net.csibio.mslibrary.client.domain.db;
 import com.alibaba.fastjson2.JSON;
 import lombok.Data;
 import net.csibio.aird.compressor.bytecomp.ZlibWrapper;
-import net.csibio.mslibrary.client.domain.bean.Adduct;
+import net.csibio.mslibrary.client.domain.bean.adduct.Adduct;
 import net.csibio.mslibrary.client.domain.bean.hmdb.Biological;
 import net.csibio.mslibrary.client.domain.bean.hmdb.HmdbInfo;
 import net.csibio.mslibrary.client.domain.bean.hmdb.Pathway;

@@ -2,7 +2,7 @@ package net.csibio.mslibrary.client.parser.gnps;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.domain.Result;
-import net.csibio.mslibrary.client.domain.bean.Adduct;
+import net.csibio.mslibrary.client.domain.bean.adduct.Adduct;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;

@@ -10,7 +10,7 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class IdentificationByGNPS {
+public class Identification {
 
     public List<CompoundDO> identifyCompounds(SimpleSpectrum simpleSpectrum) {
         return new ArrayList<>();

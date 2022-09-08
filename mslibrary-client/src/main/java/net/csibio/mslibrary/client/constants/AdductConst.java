@@ -2,7 +2,7 @@ package net.csibio.mslibrary.client.constants;
 
 import com.google.common.collect.Lists;
 import net.csibio.mslibrary.client.constants.enums.ElementType;
-import net.csibio.mslibrary.client.domain.bean.Adduct;
+import net.csibio.mslibrary.client.domain.bean.adduct.Adduct;
 import net.csibio.mslibrary.client.domain.bean.chemical.OpElement;
 
 import java.util.HashMap;

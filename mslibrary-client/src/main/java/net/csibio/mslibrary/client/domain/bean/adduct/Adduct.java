@@ -1,4 +1,4 @@
-package net.csibio.mslibrary.client.domain.bean;
+package net.csibio.mslibrary.client.domain.bean.adduct;
 
 import lombok.Data;
 import net.csibio.mslibrary.client.constants.AdductConst;
