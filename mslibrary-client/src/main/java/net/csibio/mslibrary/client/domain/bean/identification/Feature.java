@@ -1,10 +1,11 @@
 package net.csibio.mslibrary.client.domain.bean.identification;
 
+import lombok.Data;
 import net.csibio.mslibrary.client.domain.bean.adduct.Adduct;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 
 import java.util.HashSet;
-
+@Data
 public class Feature {
 
     /**
