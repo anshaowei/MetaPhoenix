@@ -1,19 +1,16 @@
 package net.csibio.mslibrary.client.algorithm.search;
 
 import lombok.extern.slf4j.Slf4j;
-import net.csibio.mslibrary.client.domain.bean.spectrum.SimpleSpectrum;
-import net.csibio.mslibrary.client.domain.db.CompoundDO;
+import net.csibio.mslibrary.client.domain.bean.identification.Feature;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Component
 public class Identification {
 
-    public List<CompoundDO> identifyCompounds(SimpleSpectrum simpleSpectrum) {
-        return new ArrayList<>();
+    public Feature identifyFeature(Feature feature) {
+
+        return feature;
     }
 
 }
