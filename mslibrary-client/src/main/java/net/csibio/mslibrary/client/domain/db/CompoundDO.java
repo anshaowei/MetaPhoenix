@@ -188,4 +188,9 @@ public class CompoundDO {
         setTissues(biological.getTissues());
         setPathways(biological.getPathways());
     }
+
+    public Double calculateMz(Adduct adduct) {
+        return (this.monoMw + adduct.getMw()) / adduct.getCharge();
+    }
+
 }

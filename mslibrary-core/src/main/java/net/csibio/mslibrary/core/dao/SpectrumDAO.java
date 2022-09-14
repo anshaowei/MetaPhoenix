@@ -5,6 +5,7 @@ import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +39,7 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
     }
 
     @Override
-    protected Query buildQueryWithoutPage(SpectrumQuery outerSpectrumQuery) {
+    protected Query buildQueryWithoutPage(SpectrumQuery spectrumQuery) {
         return new Query();
     }
 
@@ -70,6 +71,12 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         Query query = new Query(where("compoundId").is(compoundId));
         DeleteResult result = mongoTemplate.remove(query, SpectrumDO.class, getCollectionName(libraryId));
         return result.getDeletedCount();
+    }
+
+    public List<SpectrumDO> getByPrecursorMz(Double minMz, Double maxMz, String libraryId){
+        Query query = new Query();
+        query.addCriteria(Criteria.where("precursorMz").gte(minMz).lte(maxMz));
+        return mongoTemplate.find(query, SpectrumDO.class, getCollectionName(libraryId));
     }
 
 }

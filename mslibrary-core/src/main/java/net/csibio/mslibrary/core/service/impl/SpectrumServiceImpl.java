@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.xml.namespace.QName;
 import java.util.List;
 
 @Slf4j
@@ -79,6 +78,11 @@ public class SpectrumServiceImpl implements SpectrumService {
             logger.error(e.getMessage());
             return null;
         }
+    }
+
+    @Override
+    public List<SpectrumDO> getByPrecursorMz(Double minMz, Double maxMz, String libraryId) {
+        return spectrumDAO.getByPrecursorMz(minMz, maxMz, libraryId);
     }
 
     /**

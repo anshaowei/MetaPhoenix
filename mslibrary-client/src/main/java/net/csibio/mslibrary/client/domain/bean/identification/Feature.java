@@ -1,10 +1,11 @@
 package net.csibio.mslibrary.client.domain.bean.identification;
 
 import lombok.Data;
+import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.domain.bean.adduct.Adduct;
-import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 
 import java.util.HashSet;
+
 @Data
 public class Feature {
 
@@ -16,8 +17,8 @@ public class Feature {
     Double rt;
     Double area;
     String mainAdduct;
-    SpectrumDO ms1Spectrum;
-    SpectrumDO ms2Spectrum;
+    Spectrum ms1Spectrum;
+    Spectrum ms2Spectrum;
     HashSet<Adduct> adducts = new HashSet<>();
 
     /**
