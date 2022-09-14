@@ -4,7 +4,9 @@ import lombok.Data;
 import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.domain.bean.adduct.Adduct;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 @Data
 public class Feature {
@@ -24,13 +26,6 @@ public class Feature {
     /**
      * 鉴定信息，只有当进行了化合物库比对后才会填充
      */
-    String compoundId;
-    String compoundName;
-    String formula;
-    String metaPathways;
-    Double matchScore;
-    String smiles;
-    String inChI;
-    String structure2d;
+    List<IdentificationInfo> identificationInfos = new ArrayList<>();
 
 }

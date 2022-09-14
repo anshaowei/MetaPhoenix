@@ -46,9 +46,9 @@ public class CompoundGenerator {
                 continue;
             }
             List<CompoundDO> compoundDOS = new ArrayList<>();
-            spectrumDOS.removeIf(spectrumDO -> spectrumDO.getInchi().isEmpty() || spectrumDO.getInchi() == null);
+            spectrumDOS.removeIf(spectrumDO -> spectrumDO.getInchI().isEmpty() || spectrumDO.getInchI() == null);
 
-            Map<String, List<SpectrumDO>> dataMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getInchi));
+            Map<String, List<SpectrumDO>> dataMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getInchI));
             for (String inchi : dataMap.keySet()) {
                 CompoundDO compoundDO = new CompoundDO();
                 List<SpectrumDO> currentSpectrumDOS = dataMap.get(inchi);

@@ -89,7 +89,7 @@ public class SpectrumDO {
     String smiles;
 
     @Indexed
-    String inchi;
+    String inchI;
 
     String inchiAUX;
 

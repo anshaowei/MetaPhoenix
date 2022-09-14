@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.algorithm.score.SpectrumScorer;
 import net.csibio.mslibrary.client.domain.bean.identification.Feature;
+import net.csibio.mslibrary.client.domain.bean.identification.IdentificationInfo;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
@@ -11,6 +12,8 @@ import net.csibio.mslibrary.client.service.SpectrumService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -48,10 +51,10 @@ public class Identification {
 
         //根据谱图进行匹配
         Double mzTolerance = 0.1;
+        List<IdentificationInfo> identificationInfos = new ArrayList<>();
         for (String libraryId : libraryIds) {
             List<SpectrumDO> spectrumDOS = spectrumService.getByPrecursorMz(feature.getMz() - 0.1, feature.getMz() + 0.1, libraryId);
             for (SpectrumDO spectrumDO : spectrumDOS) {
-
                 //PrecursorMz打分
                 Double precursorMzScore = Math.abs(spectrumDO.getPrecursorMz() - feature.getMz()) / feature.getMz();
 
@@ -65,10 +68,25 @@ public class Identification {
                 double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, mzTolerance);
                 double similarityScore = (ms1ForwardScore + ms1ReverseScore + ms2ForwardScore + ms2ReverseScore) / 4;
 
+                //计算总分
+                double totalScore = precursorMzScore + similarityScore;
 
-
+                //鉴定结果填充
+                IdentificationInfo identificationInfo = new IdentificationInfo();
+                identificationInfo.setCompoundId(spectrumDO.getCompoundId());
+                identificationInfo.setCompoundName(spectrumDO.getCompoundName());
+                identificationInfo.setMatchScore(totalScore);
+                identificationInfo.setSmiles(spectrumDO.getSmiles());
+                identificationInfo.setInChI(spectrumDO.getInchI());
+                identificationInfos.add(identificationInfo);
             }
         }
+        identificationInfos.sort(Comparator.comparing(IdentificationInfo::getMatchScore));
+        //取前10个
+        if (identificationInfos.size() > 10) {
+            identificationInfos = identificationInfos.subList(0, 10);
+        }
+        feature.setIdentificationInfos(identificationInfos);
 
         return feature;
     }
