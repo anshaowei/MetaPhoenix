@@ -2,7 +2,6 @@ package net.csibio.mslibrary.core.service.impl;
 
 import net.csibio.aird.bean.WindowRange;
 import net.csibio.mslibrary.client.constants.ResidueType;
-import net.csibio.mslibrary.client.constants.StatConst;
 import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.formula.FormulaCalculator;
@@ -17,7 +16,6 @@ import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.PeptideService;
 import net.csibio.mslibrary.client.utils.PeptideUtil;
 import net.csibio.mslibrary.core.dao.BaseDAO;
-import net.csibio.mslibrary.core.dao.LibraryDAO;
 import net.csibio.mslibrary.core.dao.PeptideDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

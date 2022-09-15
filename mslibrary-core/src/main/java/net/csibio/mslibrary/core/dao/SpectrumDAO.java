@@ -43,6 +43,26 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         return new Query();
     }
 
+    @Override
+    public SpectrumDO insert(SpectrumDO spectrumDO, String routerId) {
+        if (!mongoTemplate.collectionExists(getCollectionName(routerId))) {
+            mongoTemplate.createCollection(getCollectionName(routerId));
+            buildIndex(SpectrumDO.class, routerId);
+        }
+        mongoTemplate.insert(spectrumDO, getCollectionName(routerId));
+        return spectrumDO;
+    }
+
+    @Override
+    public List<SpectrumDO> insert(List<SpectrumDO> spectrumDOS, String routerId) {
+        if (!mongoTemplate.collectionExists(getCollectionName(routerId))) {
+            mongoTemplate.createCollection(getCollectionName(routerId));
+            buildIndex(SpectrumDO.class, routerId);
+        }
+        mongoTemplate.insert(spectrumDOS, getCollectionName(routerId));
+        return spectrumDOS;
+    }
+
     public List<SpectrumDO> getAllByCompoundId(String compoundId, String libraryId) {
         SpectrumQuery query = new SpectrumQuery();
         query.setCompoundId(compoundId);
@@ -73,7 +93,7 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         return result.getDeletedCount();
     }
 
-    public List<SpectrumDO> getByPrecursorMz(Double minMz, Double maxMz, String libraryId){
+    public List<SpectrumDO> getByPrecursorMz(Double minMz, Double maxMz, String libraryId) {
         Query query = new Query();
         query.addCriteria(Criteria.where("precursorMz").gte(minMz).lte(maxMz));
         return mongoTemplate.find(query, SpectrumDO.class, getCollectionName(libraryId));

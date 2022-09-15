@@ -31,8 +31,8 @@ public class Identification {
     @Autowired
     SpectrumScorer spectrumScorer;
 
-    public Feature identifyFeature(Feature feature, List<String> libraryIds) {
-        //根据谱图进行匹配
+    public Feature identifyFeatureBySpectrum(Feature feature, List<String> libraryIds) {
+
         Double mzTolerance = 0.1;
         List<IdentificationInfo> identificationInfos = new ArrayList<>();
         for (String libraryId : libraryIds) {
@@ -63,6 +63,7 @@ public class Identification {
                 IdentificationInfo identificationInfo = new IdentificationInfo();
                 identificationInfo.setCompoundId(spectrumDO.getCompoundId());
                 identificationInfo.setCompoundName(spectrumDO.getCompoundName());
+                identificationInfo.setLibraryName(spectrumDO.getLibraryId());
                 identificationInfo.setMatchScore(totalScore);
                 identificationInfo.setSmiles(spectrumDO.getSmiles());
                 identificationInfo.setInChI(spectrumDO.getInchI());
@@ -80,11 +81,16 @@ public class Identification {
         return feature;
     }
 
-    public List<Feature> identifyFeatures(List<Feature> features, List<String> libraryIds) {
-        features.stream().forEach(feature -> {
-            identifyFeature(feature, libraryIds);
-        });
-        return features;
+    public Feature identifyFeatureByCompound(Feature feature, List<String> libraryIds) {
+        return null;
+    }
+
+    public List<Feature> identifyFeaturesBySpectrum(List<Feature> features, List<String> libraryIds) {
+        return null;
+    }
+
+    public List<Feature> identifyFeaturesByCompound(List<Feature> features, List<String> libraryIds) {
+        return null;
     }
 
 }

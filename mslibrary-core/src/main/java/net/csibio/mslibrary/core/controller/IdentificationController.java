@@ -32,7 +32,7 @@ public class IdentificationController {
         for (LibraryDO libraryDO : libraryDOList) {
             libraryIds.add(libraryDO.getId());
         }
-        result.setData(identification.identifyFeature(feature, libraryIds));
+        result.setData(identification.identifyFeatureBySpectrum(feature, libraryIds));
         return result;
     }
 

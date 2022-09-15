@@ -7,6 +7,7 @@ public class IdentificationInfo {
 
     String compoundId;
     String compoundName;
+    String libraryName;
     String formula;
     String metaPathways;
     Double matchScore;
