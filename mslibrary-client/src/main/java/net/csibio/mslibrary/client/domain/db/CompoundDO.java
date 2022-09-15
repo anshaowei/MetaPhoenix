@@ -9,8 +9,6 @@ import net.csibio.mslibrary.client.domain.bean.hmdb.HmdbInfo;
 import net.csibio.mslibrary.client.domain.bean.hmdb.Pathway;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -20,9 +18,6 @@ import java.util.List;
 
 @Data
 @Document(collection = "compound")
-@CompoundIndexes({
-        @CompoundIndex(name = "libraryId_code", def = "{'libraryId':1,'code':1}", unique = true),
-        @CompoundIndex(name = "libraryId_name", def = "{'libraryId':1,'name':1}", unique = true)})
 public class CompoundDO {
 
     @Id
