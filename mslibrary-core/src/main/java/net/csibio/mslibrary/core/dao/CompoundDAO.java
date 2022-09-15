@@ -67,4 +67,24 @@ public class CompoundDAO extends BaseMultiDAO<CompoundDO, CompoundQuery> {
         return mongoTemplate.find(buildQueryWithoutPage(query), CompoundDO.class, getCollectionName(libraryId));
     }
 
+    @Override
+    public CompoundDO insert(CompoundDO compoundDO, String routerId) {
+        if (!mongoTemplate.collectionExists(getCollectionName(routerId))) {
+            mongoTemplate.createCollection(getCollectionName(routerId));
+            buildIndex(CompoundDO.class, routerId);
+        }
+        mongoTemplate.insert(compoundDO, getCollectionName(routerId));
+        return compoundDO;
+    }
+
+    @Override
+    public List<CompoundDO> insert(List<CompoundDO> compoundDOS, String routerId) {
+        if (!mongoTemplate.collectionExists(getCollectionName(routerId))) {
+            mongoTemplate.createCollection(getCollectionName(routerId));
+            buildIndex(CompoundDO.class, routerId);
+        }
+        mongoTemplate.insert(compoundDOS, getCollectionName(routerId));
+        return compoundDOS;
+    }
+
 }

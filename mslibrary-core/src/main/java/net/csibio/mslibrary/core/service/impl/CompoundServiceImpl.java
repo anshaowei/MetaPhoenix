@@ -80,4 +80,16 @@ public class CompoundServiceImpl implements CompoundService {
 
     }
 
+    @Override
+    public Result<List<CompoundDO>> insert(List<CompoundDO> compoundDOS, String routerId) {
+        compoundDAO.insert(compoundDOS, routerId);
+        return new Result<>(true);
+    }
+
+    @Override
+    public Result<CompoundDO> insert(CompoundDO compoundDO, String routerId) {
+        compoundDAO.insert(compoundDO, routerId);
+        return new Result<>(true);
+    }
+
 }

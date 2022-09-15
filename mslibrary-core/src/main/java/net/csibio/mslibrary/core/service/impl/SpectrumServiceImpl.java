@@ -98,14 +98,21 @@ public class SpectrumServiceImpl implements SpectrumService {
             SpectrumQuery spectrumQuery = new SpectrumQuery();
             spectrumDAO.remove(spectrumQuery, libraryDO.getId());
             mongoTemplate.dropCollection("spectrum" + SymbolConst.DELIMITER + libraryDO.getId());
+            log.info("已经移除库" + libraryDO.getName() + "的所有谱图");
         }
         log.info("已经移除所有谱图及集合");
         return null;
     }
 
     @Override
-    public Result insert(List<SpectrumDO> spectrumDOS, String libraryId) {
+    public Result<List<SpectrumDO>> insert(List<SpectrumDO> spectrumDOS, String libraryId) {
         spectrumDAO.insert(spectrumDOS, libraryId);
         return new Result(true);
+    }
+
+    @Override
+    public Result<SpectrumDO> insert(SpectrumDO spectrumDO, String libraryId) {
+        spectrumDAO.insert(spectrumDO, libraryId);
+        return new Result<>(true);
     }
 }
