@@ -44,7 +44,7 @@ public class SpectrumController {
     }
 
     @RequestMapping("/list")
-    Result list(SpectrumQuery query){
+    Result list(SpectrumQuery query) {
         Result<List<SpectrumDO>> res = spectrumService.getList(query, "HMDB");
         return res;
     }

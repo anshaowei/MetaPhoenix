@@ -40,7 +40,26 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
 
     @Override
     protected Query buildQueryWithoutPage(SpectrumQuery spectrumQuery) {
-        return new Query();
+        Query query = new Query();
+        if (StringUtils.isNotEmpty(spectrumQuery.getId())) {
+            query.addCriteria(where("id").is(spectrumQuery.getId()));
+        }
+        if (StringUtils.isNotEmpty(spectrumQuery.getSpectrumId())) {
+            query.addCriteria(where("spectrumId").is(spectrumQuery.getSpectrumId()));
+        }
+        if (StringUtils.isNotEmpty(spectrumQuery.getCompoundId())) {
+            query.addCriteria(where("compoundId").is(spectrumQuery.getCompoundId()));
+        }
+        if (StringUtils.isNotEmpty(spectrumQuery.getLibraryId())) {
+            query.addCriteria(where("libraryId").is(spectrumQuery.getLibraryId()));
+        }
+        if (spectrumQuery.getIds() != null && spectrumQuery.getIds().size() > 0) {
+            query.addCriteria(where("id").in(spectrumQuery.getIds()));
+        }
+        if (spectrumQuery.getCompoundIds() != null && spectrumQuery.getCompoundIds().size() > 0) {
+            query.addCriteria(where("compoundId").in(spectrumQuery.getCompoundIds()));
+        }
+        return query;
     }
 
     @Override
