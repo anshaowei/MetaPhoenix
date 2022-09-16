@@ -53,6 +53,9 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         if (StringUtils.isNotEmpty(spectrumQuery.getLibraryId())) {
             query.addCriteria(where("libraryId").is(spectrumQuery.getLibraryId()));
         }
+        if (StringUtils.isNotEmpty(spectrumQuery.getAdduct())) {
+            query.addCriteria(where("adduct").is(spectrumQuery.getAdduct()));
+        }
         if (spectrumQuery.getIds() != null && spectrumQuery.getIds().size() > 0) {
             query.addCriteria(where("id").in(spectrumQuery.getIds()));
         }

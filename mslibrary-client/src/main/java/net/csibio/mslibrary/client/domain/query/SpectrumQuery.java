@@ -16,6 +16,8 @@ public class SpectrumQuery extends PageQuery {
 
     String spectrumId;
 
+    String adduct;
+
     List<String> ids;
 
     List<String> compoundIds;
