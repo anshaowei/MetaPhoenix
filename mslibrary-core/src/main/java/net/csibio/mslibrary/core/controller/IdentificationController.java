@@ -3,6 +3,7 @@ package net.csibio.mslibrary.core.controller;
 import net.csibio.mslibrary.client.algorithm.search.Identification;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.Feature;
+import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.service.LibraryService;
@@ -28,11 +29,14 @@ public class IdentificationController {
         Result result = new Result();
         //默认搜索全库
         List<LibraryDO> libraryDOList = libraryService.getAll(new LibraryQuery());
+        IdentificationParams identificationParams = new IdentificationParams();
         List<String> libraryIds = new ArrayList<>();
         for (LibraryDO libraryDO : libraryDOList) {
             libraryIds.add(libraryDO.getId());
         }
-        result.setData(identification.identifyFeatureBySpectrum(feature, libraryIds));
+        identificationParams.setLibraryIds(libraryIds);
+        identificationParams.setMzTolerance(0.001);
+        result.setData(identification.identifyFeatureBySpectrum(feature, identificationParams));
         return result;
     }
 

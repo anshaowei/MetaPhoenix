@@ -5,6 +5,7 @@ import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.algorithm.score.SpectrumScorer;
 import net.csibio.mslibrary.client.domain.bean.identification.Feature;
 import net.csibio.mslibrary.client.domain.bean.identification.IdentificationInfo;
+import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
@@ -31,17 +32,27 @@ public class Identification {
     @Autowired
     SpectrumScorer spectrumScorer;
 
-    public Feature identifyFeatureBySpectrum(Feature feature, List<String> libraryIds) {
+    /**
+     * 根据MS2谱图进行匹配，并将打分最高的几个谱图的结果填充返回
+     *
+     * @param feature
+     * @param identificationParams
+     * @return
+     */
+    public Feature identifyFeatureBySpectrum(Feature feature, IdentificationParams identificationParams) {
 
-        Double mzTolerance = 0.1;
         List<IdentificationInfo> identificationInfos = new ArrayList<>();
-        for (String libraryId : libraryIds) {
+
+        for (String libraryId : identificationParams.getLibraryIds()) {
             List<SpectrumDO> spectrumDOS = spectrumService.getByPrecursorMz(feature.getMz() - 0.1, feature.getMz() + 0.1, libraryId);
             if (spectrumDOS.size() == 0) {
                 continue;
             }
             Map<Integer, List<SpectrumDO>> spectrumMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getMsLevel));
             List<SpectrumDO> ms2LibSpectra = spectrumMap.get(2);
+            if (ms2LibSpectra == null || ms2LibSpectra.size() == 0) {
+                continue;
+            }
             for (SpectrumDO spectrumDO : ms2LibSpectra) {
                 //PrecursorMz打分
                 Double precursorMzScore = Math.abs(spectrumDO.getPrecursorMz() - feature.getMz()) / feature.getMz();
@@ -51,30 +62,33 @@ public class Identification {
                 if (feature.getMs2Spectrum() != null) {
                     Spectrum ms2Spectrum = feature.getMs2Spectrum();
                     Spectrum libSpectrum = spectrumDO.getSpectrum();
-                    double ms2ForwardScore = spectrumScorer.ms2ForwardScore(ms2Spectrum, libSpectrum, mzTolerance);
-                    double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, mzTolerance);
+                    double ms2ForwardScore = spectrumScorer.ms2ForwardScore(ms2Spectrum, libSpectrum, identificationParams.getMzTolerance());
+                    double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, identificationParams.getMzTolerance());
                     similarityScore += ms2ForwardScore + ms2ReverseScore;
                 }
 
-                //计算总分
-                double totalScore = precursorMzScore + similarityScore;
+                //计算总分，两个分数权重一样
+                double matchScore = precursorMzScore + similarityScore;
 
                 //鉴定结果填充
                 IdentificationInfo identificationInfo = new IdentificationInfo();
                 identificationInfo.setCompoundId(spectrumDO.getCompoundId());
+                identificationInfo.setSpectrumId(spectrumDO.getSpectrumId());
                 identificationInfo.setCompoundName(spectrumDO.getCompoundName());
                 identificationInfo.setLibraryName(spectrumDO.getLibraryId());
-                identificationInfo.setMatchScore(totalScore);
+                identificationInfo.setAdduct(spectrumDO.getAdduct());
+                identificationInfo.setPrecursorMz(spectrumDO.getPrecursorMz());
                 identificationInfo.setSmiles(spectrumDO.getSmiles());
                 identificationInfo.setInChI(spectrumDO.getInchI());
+                identificationInfo.setMatchScore(matchScore);
                 identificationInfos.add(identificationInfo);
             }
         }
         identificationInfos.sort(Comparator.comparing(IdentificationInfo::getMatchScore));
 
-        //取前10个
-        if (identificationInfos.size() > 10) {
-            identificationInfos = identificationInfos.subList(identificationInfos.size() - 10, identificationInfos.size() - 1);
+        //取分数最大的前几个
+        if (identificationInfos.size() > identificationParams.getTopN()) {
+            identificationInfos = identificationInfos.subList(identificationInfos.size() - identificationParams.getTopN(), identificationInfos.size() - 1);
         }
         feature.setIdentificationInfos(identificationInfos);
 

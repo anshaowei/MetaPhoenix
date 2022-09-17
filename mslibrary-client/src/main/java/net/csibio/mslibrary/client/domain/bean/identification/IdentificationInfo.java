@@ -6,12 +6,24 @@ import lombok.Data;
 public class IdentificationInfo {
 
     String compoundId;
+
+    String spectrumId;
+
     String compoundName;
+
     String libraryName;
-    String formula;
-    String metaPathways;
-    Double matchScore;
+
+    String adduct;
+
+    Double precursorMz;
+
     String smiles;
+
     String inChI;
+
+    String url;
+
+    //打分
+    Double matchScore;
 
 }

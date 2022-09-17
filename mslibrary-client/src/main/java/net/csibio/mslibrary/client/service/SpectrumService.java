@@ -4,7 +4,6 @@ import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public interface SpectrumService extends BaseMultiService<SpectrumDO, SpectrumQuery> {
@@ -16,7 +15,6 @@ public interface SpectrumService extends BaseMultiService<SpectrumDO, SpectrumQu
     List<SpectrumDO> getByPrecursorMz(Double minMz, Double maxMz, String libraryId);
 
     Result removeAll();
-
 
 }
 
