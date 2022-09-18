@@ -75,11 +75,12 @@ public class Identification {
                 identificationInfo.setCompoundId(spectrumDO.getCompoundId());
                 identificationInfo.setSpectrumId(spectrumDO.getSpectrumId());
                 identificationInfo.setCompoundName(spectrumDO.getCompoundName());
-                identificationInfo.setLibraryName(spectrumDO.getLibraryId());
+                identificationInfo.setLibraryName(spectrumDO.getLibraryMembership());
                 identificationInfo.setAdduct(spectrumDO.getAdduct());
                 identificationInfo.setPrecursorMz(spectrumDO.getPrecursorMz());
                 identificationInfo.setSmiles(spectrumDO.getSmiles());
                 identificationInfo.setInChI(spectrumDO.getInchI());
+                identificationInfo.setUrl(spectrumDO.getUrl());
                 identificationInfo.setMatchScore(matchScore);
                 identificationInfos.add(identificationInfo);
             }
@@ -87,8 +88,8 @@ public class Identification {
         identificationInfos.sort(Comparator.comparing(IdentificationInfo::getMatchScore));
 
         //取分数最大的前几个
-        if (identificationInfos.size() > identificationParams.getTopN()) {
-            identificationInfos = identificationInfos.subList(identificationInfos.size() - identificationParams.getTopN(), identificationInfos.size() - 1);
+        if (identificationInfos.size() >= identificationParams.getTopN()) {
+            identificationInfos = identificationInfos.subList(identificationInfos.size() - identificationParams.getTopN(), identificationInfos.size());
         }
         feature.setIdentificationInfos(identificationInfos);
 

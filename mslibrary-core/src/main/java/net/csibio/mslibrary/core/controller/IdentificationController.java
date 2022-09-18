@@ -36,6 +36,7 @@ public class IdentificationController {
         }
         identificationParams.setLibraryIds(libraryIds);
         identificationParams.setMzTolerance(0.001);
+        identificationParams.setTopN(10);
         result.setData(identification.identifyFeatureBySpectrum(feature, identificationParams));
         return result;
     }

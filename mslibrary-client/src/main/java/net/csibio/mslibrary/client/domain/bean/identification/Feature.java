@@ -16,11 +16,17 @@ public class Feature {
      * 这里的值都是根据dataDO生成的平均值
      */
     Double mz;
+
     Double rt;
+
     Double area;
+
     String mainAdduct;
+
     Spectrum ms1Spectrum;
+
     Spectrum ms2Spectrum;
+
     HashSet<Adduct> adducts = new HashSet<>();
 
     /**
