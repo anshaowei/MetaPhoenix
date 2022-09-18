@@ -19,8 +19,6 @@ public class Feature {
 
     Double rt;
 
-    Double area;
-
     String mainAdduct;
 
     Spectrum ms1Spectrum;

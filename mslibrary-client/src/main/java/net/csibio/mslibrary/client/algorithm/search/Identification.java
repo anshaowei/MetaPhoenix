@@ -96,15 +96,15 @@ public class Identification {
         return feature;
     }
 
-    public Feature identifyFeatureByCompound(Feature feature, List<String> libraryIds) {
+    public List<Feature> identifyFeaturesBySpectrum(List<Feature> features, IdentificationParams identificationParams) {
         return null;
     }
 
-    public List<Feature> identifyFeaturesBySpectrum(List<Feature> features, List<String> libraryIds) {
+    public Feature identifyFeatureByCompound(Feature feature, IdentificationParams identificationParams) {
         return null;
     }
 
-    public List<Feature> identifyFeaturesByCompound(List<Feature> features, List<String> libraryIds) {
+    public List<Feature> identifyFeaturesByCompound(List<Feature> features, IdentificationParams identificationParams) {
         return null;
     }
 
