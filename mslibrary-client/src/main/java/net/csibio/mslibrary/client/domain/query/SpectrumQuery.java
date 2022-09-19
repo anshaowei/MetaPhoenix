@@ -14,6 +14,9 @@ public class SpectrumQuery extends PageQuery {
 
     String libraryId;
 
+    //此字段几乎等效于libraryId
+    String libraryMembership;
+
     String spectrumId;
 
     String adduct;

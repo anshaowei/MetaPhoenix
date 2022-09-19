@@ -122,6 +122,7 @@ public class GnpsParser {
                         parser.nextToken();
                         parser.nextToken();
                         spectrumDO.setLibraryMembership(parser.getValueAsString());
+                        spectrumDO.setLibraryId(parser.getValueAsString());
                         parser.nextToken();
                         parser.nextToken();
                         spectrumDO.setSpectrumStatus(parser.getValueAsInt());
