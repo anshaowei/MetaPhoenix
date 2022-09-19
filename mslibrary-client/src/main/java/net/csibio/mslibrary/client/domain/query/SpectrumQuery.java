@@ -14,12 +14,36 @@ public class SpectrumQuery extends PageQuery {
 
     String libraryId;
 
+    String spectrumId;
+
+    Integer msLevel;
+
     //此字段几乎等效于libraryId
     String libraryMembership;
 
-    String spectrumId;
+    Integer spectrumStatus;
+
+    String compoundName;
+
+    String ionSource;
+
+    String compoundSource;
+
+    String instrument;
 
     String adduct;
+
+    Double precursorMz;
+
+    Double exactMass;
+
+    Integer charge;
+
+    String inchI;
+
+    String libraryClass;
+
+    String ionMode;
 
     List<String> ids;
 

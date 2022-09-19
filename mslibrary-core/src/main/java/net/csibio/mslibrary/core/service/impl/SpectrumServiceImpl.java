@@ -81,8 +81,8 @@ public class SpectrumServiceImpl implements SpectrumService {
     }
 
     @Override
-    public List<SpectrumDO> getByPrecursorMz(Double minMz, Double maxMz, String libraryId) {
-        return spectrumDAO.getByPrecursorMz(minMz, maxMz, libraryId);
+    public List<SpectrumDO> getByPrecursorMz(Double precursorMz, String libraryId) {
+        return spectrumDAO.getByPrecursorMz(precursorMz, libraryId);
     }
 
     /**

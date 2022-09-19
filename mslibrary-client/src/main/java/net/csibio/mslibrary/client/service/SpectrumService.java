@@ -12,7 +12,7 @@ public interface SpectrumService extends BaseMultiService<SpectrumDO, SpectrumQu
 
     List<SpectrumDO> getAllByCompoundId(String compoundId, String libraryId);
 
-    List<SpectrumDO> getByPrecursorMz(Double minMz, Double maxMz, String libraryId);
+    List<SpectrumDO> getByPrecursorMz(Double precursorMz, String libraryId);
 
     Result removeAll();
 

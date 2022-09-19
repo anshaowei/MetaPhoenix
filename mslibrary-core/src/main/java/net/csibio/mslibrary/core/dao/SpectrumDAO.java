@@ -44,20 +44,66 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         if (StringUtils.isNotEmpty(spectrumQuery.getId())) {
             query.addCriteria(where("id").is(spectrumQuery.getId()));
         }
-        if (StringUtils.isNotEmpty(spectrumQuery.getSpectrumId())) {
-            query.addCriteria(where("spectrumId").is(spectrumQuery.getSpectrumId()));
-        }
         if (StringUtils.isNotEmpty(spectrumQuery.getCompoundId())) {
             query.addCriteria(where("compoundId").is(spectrumQuery.getCompoundId()));
         }
         if (StringUtils.isNotEmpty(spectrumQuery.getLibraryId())) {
             query.addCriteria(where("libraryId").is(spectrumQuery.getLibraryId()));
         }
+        if (StringUtils.isNotEmpty(spectrumQuery.getSpectrumId())) {
+            query.addCriteria(where("spectrumId").is(spectrumQuery.getSpectrumId()));
+        }
+        if (spectrumQuery.getMsLevel() != null) {
+            query.addCriteria(where("msLevel").is(spectrumQuery.getMsLevel()));
+        }
         if (StringUtils.isNotEmpty(spectrumQuery.getLibraryMembership())) {
             query.addCriteria(where("libraryMembership").is(spectrumQuery.getLibraryMembership()));
         }
+        if (spectrumQuery.getSpectrumStatus() != null) {
+            query.addCriteria(where("spectrumStatus").is(spectrumQuery.getSpectrumStatus()));
+        }
+        if (StringUtils.isNotEmpty(spectrumQuery.getCompoundName())) {
+            query.addCriteria(where("compoundName").is(spectrumQuery.getCompoundName()));
+        }
+        //ionSource
+        if (StringUtils.isNotEmpty(spectrumQuery.getIonSource())) {
+            query.addCriteria(where("ionSource").is(spectrumQuery.getIonSource()));
+        }
+        //compoundSource
+        if (StringUtils.isNotEmpty(spectrumQuery.getCompoundSource())) {
+            query.addCriteria(where("compoundSource").is(spectrumQuery.getCompoundSource()));
+        }
+        //instrument
+        if (StringUtils.isNotEmpty(spectrumQuery.getInstrument())) {
+            query.addCriteria(where("instrument").is(spectrumQuery.getInstrument()));
+        }
+        //adduct
         if (StringUtils.isNotEmpty(spectrumQuery.getAdduct())) {
             query.addCriteria(where("adduct").is(spectrumQuery.getAdduct()));
+        }
+        //precursorMz
+        if (spectrumQuery.getPrecursorMz() != null) {
+            query.addCriteria(where("precursorMz").gte(spectrumQuery.getPrecursorMz() - 0.01).lte(spectrumQuery.getPrecursorMz() + 0.01));
+        }
+        //exactMass
+        if (spectrumQuery.getExactMass() != null) {
+            query.addCriteria(where("exactMass").is(spectrumQuery.getExactMass()));
+        }
+        //charge
+        if (spectrumQuery.getCharge() != null) {
+            query.addCriteria(where("charge").is(spectrumQuery.getCharge()));
+        }
+        //inchI
+        if (StringUtils.isNotEmpty(spectrumQuery.getInchI())) {
+            query.addCriteria(where("inchI").is(spectrumQuery.getInchI()));
+        }
+        //libraryClass
+        if (StringUtils.isNotEmpty(spectrumQuery.getLibraryClass())) {
+            query.addCriteria(where("libraryClass").is(spectrumQuery.getLibraryClass()));
+        }
+        //ionMode
+        if (StringUtils.isNotEmpty(spectrumQuery.getIonMode())) {
+            query.addCriteria(where("ionMode").is(spectrumQuery.getIonMode()));
         }
         if (spectrumQuery.getIds() != null && spectrumQuery.getIds().size() > 0) {
             query.addCriteria(where("id").in(spectrumQuery.getIds()));
@@ -118,9 +164,9 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         return result.getDeletedCount();
     }
 
-    public List<SpectrumDO> getByPrecursorMz(Double minMz, Double maxMz, String libraryId) {
+    public List<SpectrumDO> getByPrecursorMz(Double precursorMz, String libraryId) {
         Query query = new Query();
-        query.addCriteria(Criteria.where("precursorMz").gte(minMz).lte(maxMz));
+        query.addCriteria(Criteria.where("precursorMz").gte(precursorMz - 0.01).lte(precursorMz + 0.01));
         return mongoTemplate.find(query, SpectrumDO.class, getCollectionName(libraryId));
     }
 

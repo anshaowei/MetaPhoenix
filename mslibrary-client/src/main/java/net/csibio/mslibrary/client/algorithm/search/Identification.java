@@ -44,7 +44,7 @@ public class Identification {
         List<IdentificationInfo> identificationInfos = new ArrayList<>();
 
         for (String libraryId : identificationParams.getLibraryIds()) {
-            List<SpectrumDO> spectrumDOS = spectrumService.getByPrecursorMz(feature.getMz() - 0.1, feature.getMz() + 0.1, libraryId);
+            List<SpectrumDO> spectrumDOS = spectrumService.getByPrecursorMz(feature.getMz(), libraryId);
             if (spectrumDOS.size() == 0) {
                 continue;
             }
