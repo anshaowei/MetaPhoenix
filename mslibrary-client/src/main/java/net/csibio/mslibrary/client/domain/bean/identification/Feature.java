@@ -19,7 +19,7 @@ public class Feature {
 
     Double rt;
 
-    String mainAdduct;
+    String ionForm;
 
     Spectrum ms1Spectrum;
 

@@ -1,18 +1,13 @@
 package net.csibio.mslibrary.core.controller;
 
 import net.csibio.aird.bean.common.IdName;
-import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.common.LabelValue;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
-import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.CompoundQuery;
-import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.domain.vo.CompoundUpdateVO;
-import net.csibio.mslibrary.client.domain.vo.SpectrumVO;
 import net.csibio.mslibrary.client.exceptions.XException;
-import net.csibio.mslibrary.client.service.BaseService;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -25,12 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static net.csibio.mslibrary.client.constants.AdductConst.ESIAdducts;
 
 @RestController
 @RequestMapping("compound")
