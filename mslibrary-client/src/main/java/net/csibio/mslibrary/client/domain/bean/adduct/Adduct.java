@@ -1,7 +1,6 @@
 package net.csibio.mslibrary.client.domain.bean.adduct;
 
 import lombok.Data;
-import net.csibio.mslibrary.client.constants.AdductConst;
 import net.csibio.mslibrary.client.domain.bean.chemical.OpElement;
 
 import java.util.ArrayList;
@@ -119,12 +118,4 @@ public class Adduct {
         return ionForm.hashCode();
     }
 
-    public Adduct parse(String ionForm) {
-        for (Adduct adduct : AdductConst.ESIAdducts) {
-            if (adduct.getIonForm().equals(ionForm)) {
-                return adduct;
-            }
-        }
-        return null;
-    }
 }

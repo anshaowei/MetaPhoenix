@@ -54,16 +54,17 @@ public class CompoundGenerator {
                 List<SpectrumDO> currentSpectrumDOS = dataMap.get(inchi);
 
                 //计算化合物加和物
+                //TODO 需要解析简易形式的加和物
                 HashSet<Adduct> adducts = new HashSet<>();
                 HashSet<String> synonyms = new HashSet<>();
-                for (SpectrumDO spectrumDO : currentSpectrumDOS) {
-                    Adduct adduct = new Adduct();
-                    adduct = adduct.parse(spectrumDO.getAdduct());
-                    if (adduct != null) {
-                        adducts.add(adduct);
-                    }
-                    synonyms.add(spectrumDO.getCompoundName());
-                }
+//                for (SpectrumDO spectrumDO : currentSpectrumDOS) {
+//                    Adduct adduct = new Adduct();
+//                    adduct = adduct.parse(spectrumDO.getAdduct());
+//                    if (adduct != null) {
+//                        adducts.add(adduct);
+//                    }
+//                    synonyms.add(spectrumDO.getCompoundName());
+//                }
                 compoundDO.setLibraryId(libraryDO.getId());
                 compoundDO.setCount(currentSpectrumDOS.size());
                 compoundDO.setName(spectrumDOS.get(0).getCompoundName());
