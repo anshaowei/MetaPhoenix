@@ -7,6 +7,7 @@ import net.csibio.mslibrary.client.domain.db.GeneDO;
 import net.csibio.mslibrary.client.domain.db.ProteinDO;
 import net.csibio.mslibrary.client.exceptions.XException;
 import net.csibio.mslibrary.client.parser.fasta.FastaParser;
+import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.hmdb.HmdbParser;
 import net.csibio.mslibrary.client.service.GeneService;
 import net.csibio.mslibrary.client.service.LibraryParserService;
@@ -39,6 +40,8 @@ public class AsyncController {
     GeneService geneService;
     @Autowired
     LibraryService libraryService;
+    @Autowired
+    GnpsParser gnpsParser;
 
     @RequestMapping(value = "/hmdbGenes")
     Result hmdbGenes() throws XException {
@@ -105,6 +108,14 @@ public class AsyncController {
         String libraryId = LibraryConst.PAN_HUMAN_2020_DPHL;
 
         log.info("PanHuman2020-DPHL蛋白-肽段DIA数据同步完成");
+        return Result.OK();
+    }
+
+    @RequestMapping(value = "/gnps")
+    Result gnpsMetabolites() throws XException {
+        log.info("开始同步GNPS化合物数据");
+        String gnps = vmProperties.getRepository() + "/ALL_GNPS.json";
+        gnpsParser.parse(gnps);
         return Result.OK();
     }
 
