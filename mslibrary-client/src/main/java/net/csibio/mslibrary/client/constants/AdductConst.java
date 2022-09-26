@@ -7,6 +7,10 @@ import net.csibio.mslibrary.client.domain.bean.chemical.OpElement;
 
 import java.util.List;
 
+/**
+ * Adduct列表参数参照链接
+ * https://fiehnlab.ucdavis.edu/staff/kind/Metabolomics/MS-Adduct-Calculator
+ */
 public class AdductConst {
     public static final List<Adduct> adductProbabilitiesList = Lists.newArrayList(
             Adduct.build(3, 1, 1d, OpElement.build("+", 1, ElementType.H)),
@@ -50,7 +54,6 @@ public class AdductConst {
             Adduct.build(1, 2, null, OpElement.build("+", 2, ElementType.H)),
             Adduct.build(1, 2, null, OpElement.build("+", 1, ElementType.H), OpElement.build("+", 1, ElementType.NH4)),
             Adduct.build(1, 2, null, OpElement.build("+", 1, ElementType.H), OpElement.build("+", 1, ElementType.Na)),
-            Adduct.build(1, 2, null, OpElement.build("+", 1, ElementType.H), OpElement.build("+", 1, ElementType.K)),
             Adduct.build(1, 2, null, OpElement.build("+", 1, ElementType.H), OpElement.build("+", 1, ElementType.K)),
             Adduct.build(1, 2, null, OpElement.build("+", 1, ElementType.ACN), OpElement.build("+", 2, ElementType.H)),
             Adduct.build(1, 2, null, OpElement.build("+", 2, ElementType.Na)),
