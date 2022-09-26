@@ -66,15 +66,15 @@ public class AdductConst {
             Adduct.build(1, 1, null, OpElement.build("+", 1, ElementType.IsoProp), OpElement.build("+", 1, ElementType.H)),
             Adduct.build(1, 1, null, OpElement.build("+", 1, ElementType.ACN), OpElement.build("+", 1, ElementType.Na)),
             Adduct.build(1, 1, null, OpElement.build("+", 2, ElementType.K), OpElement.build("-", 1, ElementType.H)),
-            Adduct.build(1, 1, null, OpElement.build("+", 2, ElementType.DMSO), OpElement.build("+", 1, ElementType.H)),
+            Adduct.build(1, 1, null, OpElement.build("+", 1, ElementType.DMSO), OpElement.build("+", 1, ElementType.H)),
             Adduct.build(1, 1, null, OpElement.build("+", 2, ElementType.ACN), OpElement.build("+", 1, ElementType.H)),
-            Adduct.build(1, 1, null, OpElement.build("+", 2, ElementType.IsoProp), OpElement.build("+", 1, ElementType.Na)),
-            Adduct.build(2, 1, null, OpElement.build("+", 2, ElementType.H)),
-            Adduct.build(2, 1, null, OpElement.build("+", 2, ElementType.NH4)),
-            Adduct.build(2, 1, null, OpElement.build("+", 2, ElementType.Na)),
-            Adduct.build(2, 1, null, OpElement.build("+", 2, ElementType.K)),
-            Adduct.build(2, 1, null, OpElement.build("+", 2, ElementType.ACN), OpElement.build("+", 2, ElementType.H)),
-            Adduct.build(2, 1, null, OpElement.build("+", 2, ElementType.ACN), OpElement.build("+", 2, ElementType.Na))
+            Adduct.build(1, 1, null, OpElement.build("+", 1, ElementType.IsoProp), OpElement.build("+", 1, ElementType.Na), OpElement.build("+", 1, ElementType.H)),
+            Adduct.build(2, 1, null, OpElement.build("+", 1, ElementType.H)),
+            Adduct.build(2, 1, null, OpElement.build("+", 1, ElementType.NH4)),
+            Adduct.build(2, 1, null, OpElement.build("+", 1, ElementType.Na)),
+            Adduct.build(2, 1, null, OpElement.build("+", 1, ElementType.K)),
+            Adduct.build(2, 1, null, OpElement.build("+", 1, ElementType.ACN), OpElement.build("+", 1, ElementType.H)),
+            Adduct.build(2, 1, null, OpElement.build("+", 1, ElementType.ACN), OpElement.build("+", 1, ElementType.Na))
     );
 
     // 负离子

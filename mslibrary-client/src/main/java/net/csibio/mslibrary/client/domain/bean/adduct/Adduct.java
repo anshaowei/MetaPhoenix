@@ -85,7 +85,7 @@ public class Adduct {
             sb.append("+");
         } else if (charge < 0) {
             if (charge < -1) {
-                sb.append(charge);
+                sb.append(-charge);
             }
             sb.append("-");
         }
