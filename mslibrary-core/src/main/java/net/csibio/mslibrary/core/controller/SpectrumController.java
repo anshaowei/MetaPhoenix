@@ -34,12 +34,12 @@ public class SpectrumController {
     /**
      * 根据给定的spectraId, 返回SpectraDO的信息
      *
-     * @param spectraId SpectraDO的数据库id
+     * @param id SpectraDO的数据库id
      * @return SpectraDO对象
      */
     @RequestMapping("/detail")
-    Result detail(@RequestParam(value = "spectraId", required = true) String spectraId, String libraryId) throws XException {
-        SpectrumDO spectra = spectrumService.tryGetById(spectraId, libraryId, ResultCode.SPECTRUM_NOT_EXISTED);
+    Result detail(@RequestParam(value = "id") String id, @RequestParam(value = "routerId")String routerId) throws XException {
+        SpectrumDO spectra = spectrumService.tryGetById(id, routerId, ResultCode.SPECTRUM_NOT_EXISTED);
         return Result.build(spectra);
     }
 
