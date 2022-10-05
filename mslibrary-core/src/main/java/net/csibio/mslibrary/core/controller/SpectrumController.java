@@ -38,7 +38,7 @@ public class SpectrumController {
      * @return SpectraDO对象
      */
     @RequestMapping("/detail")
-    Result detail(@RequestParam(value = "id") String id, @RequestParam(value = "routerId")String routerId) throws XException {
+    Result detail(@RequestParam(value = "id") String id, @RequestParam(value = "routerId") String routerId) throws XException {
         SpectrumDO spectra = spectrumService.tryGetById(id, routerId, ResultCode.SPECTRUM_NOT_EXISTED);
         return Result.build(spectra);
     }
