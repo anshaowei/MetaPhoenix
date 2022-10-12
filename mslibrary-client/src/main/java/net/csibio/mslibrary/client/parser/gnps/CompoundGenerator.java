@@ -40,6 +40,7 @@ public class CompoundGenerator {
         if (libraryDOList == null || libraryDOList.size() == 0) {
             return new Result(false);
         }
+        log.info("开始执行数据库谱图解析生成化合物");
         for (LibraryDO libraryDO : libraryDOList) {
             List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryDO.getId());
             if (spectrumDOS.size() == 0 || spectrumDOS == null) {
