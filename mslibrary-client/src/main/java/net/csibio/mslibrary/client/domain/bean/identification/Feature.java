@@ -30,6 +30,6 @@ public class Feature {
     /**
      * 鉴定信息，只有当进行了化合物库比对后才会填充
      */
-    List<IdentificationInfo> identificationInfos = new ArrayList<>();
+    List<LibraryHit> libraryHits = new ArrayList<>();
 
 }

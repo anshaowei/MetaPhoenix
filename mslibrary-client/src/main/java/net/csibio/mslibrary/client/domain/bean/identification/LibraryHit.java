@@ -3,7 +3,7 @@ package net.csibio.mslibrary.client.domain.bean.identification;
 import lombok.Data;
 
 @Data
-public class IdentificationInfo {
+public class LibraryHit {
 
     String compoundId;
 

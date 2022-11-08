@@ -1,6 +1,6 @@
 package net.csibio.mslibrary.core.controller;
 
-import net.csibio.mslibrary.client.algorithm.search.Identification;
+import net.csibio.mslibrary.client.algorithm.search.MetaProSearch;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.Feature;
 import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
@@ -20,7 +20,7 @@ import java.util.List;
 public class IdentificationController {
 
     @Autowired
-    Identification identification;
+    MetaProSearch metaProSearch;
     @Autowired
     LibraryService libraryService;
 
@@ -37,7 +37,7 @@ public class IdentificationController {
         identificationParams.setLibraryIds(libraryIds);
         identificationParams.setMzTolerance(0.001);
         identificationParams.setTopN(10);
-        result.setData(identification.identifyFeatureBySpectrum(feature, identificationParams));
+        result.setData(metaProSearch.identifyFeatureBySpectrum(feature, identificationParams));
         return result;
     }
 

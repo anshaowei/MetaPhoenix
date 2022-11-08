@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.algorithm.score.SpectrumScorer;
 import net.csibio.mslibrary.client.domain.bean.identification.Feature;
-import net.csibio.mslibrary.client.domain.bean.identification.IdentificationInfo;
+import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.CompoundService;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class Identification {
+public class MetaProSearch {
 
     @Autowired
     LibraryService libraryService;
@@ -41,7 +41,7 @@ public class Identification {
      */
     public Feature identifyFeatureBySpectrum(Feature feature, IdentificationParams identificationParams) {
 
-        List<IdentificationInfo> identificationInfos = new ArrayList<>();
+        List<LibraryHit> libraryHits = new ArrayList<>();
 
         for (String libraryId : identificationParams.getLibraryIds()) {
             List<SpectrumDO> spectrumDOS = spectrumService.getByPrecursorMz(feature.getMz(), libraryId);
@@ -71,27 +71,27 @@ public class Identification {
                 double matchScore = precursorMzScore + similarityScore;
 
                 //鉴定结果填充
-                IdentificationInfo identificationInfo = new IdentificationInfo();
-                identificationInfo.setCompoundId(spectrumDO.getCompoundId());
-                identificationInfo.setSpectrumId(spectrumDO.getSpectrumId());
-                identificationInfo.setCompoundName(spectrumDO.getCompoundName());
-                identificationInfo.setLibraryName(spectrumDO.getLibraryMembership());
-                identificationInfo.setAdduct(spectrumDO.getAdduct());
-                identificationInfo.setPrecursorMz(spectrumDO.getPrecursorMz());
-                identificationInfo.setSmiles(spectrumDO.getSmiles());
-                identificationInfo.setInChI(spectrumDO.getInchI());
-                identificationInfo.setUrl(spectrumDO.getUrl());
-                identificationInfo.setMatchScore(matchScore);
-                identificationInfos.add(identificationInfo);
+                LibraryHit libraryHit = new LibraryHit();
+                libraryHit.setCompoundId(spectrumDO.getCompoundId());
+                libraryHit.setSpectrumId(spectrumDO.getSpectrumId());
+                libraryHit.setCompoundName(spectrumDO.getCompoundName());
+                libraryHit.setLibraryName(spectrumDO.getLibraryMembership());
+                libraryHit.setAdduct(spectrumDO.getAdduct());
+                libraryHit.setPrecursorMz(spectrumDO.getPrecursorMz());
+                libraryHit.setSmiles(spectrumDO.getSmiles());
+                libraryHit.setInChI(spectrumDO.getInchI());
+                libraryHit.setUrl(spectrumDO.getUrl());
+                libraryHit.setMatchScore(matchScore);
+                libraryHits.add(libraryHit);
             }
         }
-        identificationInfos.sort(Comparator.comparing(IdentificationInfo::getMatchScore));
+        libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore));
 
         //取分数最大的前几个
-        if (identificationInfos.size() >= identificationParams.getTopN()) {
-            identificationInfos = identificationInfos.subList(identificationInfos.size() - identificationParams.getTopN(), identificationInfos.size());
+        if (libraryHits.size() >= identificationParams.getTopN()) {
+            libraryHits = libraryHits.subList(libraryHits.size() - identificationParams.getTopN(), libraryHits.size());
         }
-        feature.setIdentificationInfos(identificationInfos);
+        feature.setLibraryHits(libraryHits);
 
         return feature;
     }
