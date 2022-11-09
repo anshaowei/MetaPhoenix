@@ -2,7 +2,7 @@ package net.csibio.mslibrary.core.controller;
 
 import net.csibio.mslibrary.client.algorithm.search.MetaProSearch;
 import net.csibio.mslibrary.client.domain.Result;
-import net.csibio.mslibrary.client.domain.bean.identification.Feature;
+import net.csibio.mslibrary.client.domain.bean.identification.IdentificationForm;
 import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.query.LibraryQuery;
@@ -25,7 +25,7 @@ public class IdentificationController {
     LibraryService libraryService;
 
     @RequestMapping("identify")
-    Result identify(@RequestBody Feature feature) {
+    Result<IdentificationForm> identify(@RequestBody IdentificationForm identificationForm) {
         Result result = new Result();
         //默认搜索全库
         List<LibraryDO> libraryDOList = libraryService.getAll(new LibraryQuery());
@@ -37,7 +37,8 @@ public class IdentificationController {
         identificationParams.setLibraryIds(libraryIds);
         identificationParams.setMzTolerance(0.001);
         identificationParams.setTopN(10);
-        result.setData(metaProSearch.identifyFeatureBySpectrum(feature, identificationParams));
+        identificationParams.setStrategy(1);
+        result.setData(metaProSearch.identifyFeatures(identificationForm, identificationParams));
         return result;
     }
 

@@ -1,14 +1,12 @@
 package net.csibio.mslibrary.core.controller;
 
 
-import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.parser.gnps.CompoundGenerator;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
-import net.csibio.mslibrary.client.service.MetaProService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,9 +20,6 @@ public class TestController {
 
     @Autowired
     GnpsParser gnpsParser;
-    @Autowired
-    MetaProService metaProService;
-
     @Autowired
     CompoundGenerator compoundGenerator;
 
@@ -55,9 +50,4 @@ public class TestController {
         compoundGenerator.generateByInChI(libraryIds);
     }
 
-    @RequestMapping("/4")
-    public void test4() {
-        Result result = metaProService.getAllFeatureByOverviewId("630de94c5606996c620a9379", "test");
-        int a = 0;
-    }
 }
