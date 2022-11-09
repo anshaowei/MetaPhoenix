@@ -26,7 +26,7 @@ public class IdentificationController {
 
     @RequestMapping("identify")
     Result<IdentificationForm> identify(@RequestBody IdentificationForm identificationForm) {
-        Result result = new Result();
+        Result result = new Result<IdentificationForm>();
         //默认搜索全库
         List<LibraryDO> libraryDOList = libraryService.getAll(new LibraryQuery());
         IdentificationParams identificationParams = new IdentificationParams();

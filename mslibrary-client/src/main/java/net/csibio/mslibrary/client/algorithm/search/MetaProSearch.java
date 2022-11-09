@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.client.algorithm.search;
 
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.algorithm.score.SpectrumScorer;
 import net.csibio.mslibrary.client.domain.bean.identification.Feature;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -35,90 +37,54 @@ public class MetaProSearch {
 
         List<Feature> features = identificationForm.getFeatures();
         //针对每个化合物库进行检索
-        for (String libraryId : identificationParams.getLibraryIds()) {
-            features.parallelStream().forEach(feature -> {
 
-                //策略1：严格匹配满足仪器设备平台配置的谱图
+        features.parallelStream().forEach(feature -> {
+            //策略1：严格匹配满足仪器设备平台配置的谱图
+            List<SpectrumDO> spectrumDOS = new ArrayList<>();
+            for (String libraryId : identificationParams.getLibraryIds()) {
+                SpectrumQuery spectrumQuery = new SpectrumQuery();
+                spectrumQuery.setPrecursorMz(feature.getMz());
+                spectrumQuery.setLibraryId(libraryId);
+                spectrumQuery.setMsLevel(MsLevel.MS2.getCode());
                 if (identificationParams.getStrategy().equals(1)) {
-                    SpectrumQuery spectrumQuery = new SpectrumQuery();
-                    spectrumQuery.setLibraryId(libraryId);
+                    //TODO 仪器平台配置暂时不支持能量匹配
                     spectrumQuery.setInstrument(identificationForm.getInstrument());
-                    spectrumQuery.setPrecursorMz(feature.getMz());
                     spectrumQuery.setIonSource(identificationForm.getIonSource());
-
-                    List<SpectrumDO> spectrumDOS = spectrumService.getAll(spectrumQuery, libraryId);
-
-                    List<LibraryHit> libraryHits = new ArrayList<>();
-                    feature.setLibraryHits(libraryHits);
                 }
+                spectrumDOS.addAll(spectrumService.getAll(spectrumQuery, libraryId));
+            }
+            spectrumDOS = spectrumDOS.parallelStream().filter(spectrumDO -> Math.abs(spectrumDO.getPrecursorMz() - feature.getMz()) <= identificationParams.getMzTolerance()).toList();
 
-                //策略2：主要以谱图匹配分数为主，其他信息作为辅助参考信息
-                if (identificationParams.getStrategy().equals(2)) {
-                    SpectrumQuery spectrumQuery = new SpectrumQuery();
-                    spectrumQuery.setLibraryId(libraryId);
-                    spectrumQuery.setInstrument(identificationForm.getInstrument());
-                    spectrumQuery.setPrecursorMz(feature.getMz());
-                    spectrumQuery.setIonSource(identificationForm.getIonSource());
+            //对MS2谱图的匹配程度进行打分
+            List<LibraryHit> libraryHits = new ArrayList<>();
+            for (SpectrumDO spectrumDO : spectrumDOS) {
+                Double similarityScore = 0.0;
+                Spectrum ms2Spectrum = feature.getMs2Spectrum();
+                Spectrum libSpectrum = spectrumDO.getSpectrum();
+                double ms2ForwardScore = spectrumScorer.ms2ForwardScore(ms2Spectrum, libSpectrum, identificationParams.getMzTolerance());
+                double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, identificationParams.getMzTolerance());
+                similarityScore += ms2ForwardScore + ms2ReverseScore;
 
-                    List<SpectrumDO> spectrumDOS = spectrumService.getAll(spectrumQuery, libraryId);
+                //命中谱图结果填充
+                LibraryHit libraryHit = new LibraryHit();
+                libraryHit.setSpectrumId(spectrumDO.getSpectrumId());
+                libraryHit.setCompoundName(spectrumDO.getCompoundName());
+                libraryHit.setLibraryName(spectrumDO.getLibraryId());
+                libraryHit.setAdduct(spectrumDO.getAdduct());
+                libraryHit.setPrecursorMz(spectrumDO.getPrecursorMz());
+                libraryHit.setSmiles(spectrumDO.getSmiles());
+                libraryHit.setInChI(spectrumDO.getInchI());
+                libraryHit.setUrl(spectrumDO.getUrl());
+                libraryHit.setMatchScore(similarityScore);
+            }
 
-                    List<LibraryHit> libraryHits = new ArrayList<>();
-                    feature.setLibraryHits(libraryHits);
-                }
-            });
-        }
-
-
-//        for (String libraryId : identificationParams.getLibraryIds()) {
-//            List<SpectrumDO> spectrumDOS = spectrumService.getByPrecursorMz(feature.getMz(), libraryId);
-//            if (spectrumDOS.size() == 0) {
-//                continue;
-//            }
-//            Map<Integer, List<SpectrumDO>> spectrumMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getMsLevel));
-//            List<SpectrumDO> ms2LibSpectra = spectrumMap.get(2);
-//            if (ms2LibSpectra == null || ms2LibSpectra.size() == 0) {
-//                continue;
-//            }
-//            for (SpectrumDO spectrumDO : ms2LibSpectra) {
-//                //PrecursorMz打分
-//                Double precursorMzScore = Math.abs(spectrumDO.getPrecursorMz() - feature.getMz()) / feature.getMz();
-//
-//                //谱图相似性打分
-//                Double similarityScore = 0.0;
-//                if (feature.getMs2Spectrum() != null) {
-//                    Spectrum ms2Spectrum = feature.getMs2Spectrum();
-//                    Spectrum libSpectrum = spectrumDO.getSpectrum();
-//                    double ms2ForwardScore = spectrumScorer.ms2ForwardScore(ms2Spectrum, libSpectrum, identificationParams.getMzTolerance());
-//                    double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, identificationParams.getMzTolerance());
-//                    similarityScore += ms2ForwardScore + ms2ReverseScore;
-//                }
-//
-//                //计算总分，两个分数权重一样
-//                double matchScore = precursorMzScore + similarityScore;
-//
-//                //鉴定结果填充
-//                LibraryHit libraryHit = new LibraryHit();
-//                libraryHit.setCompoundId(spectrumDO.getCompoundId());
-//                libraryHit.setSpectrumId(spectrumDO.getSpectrumId());
-//                libraryHit.setCompoundName(spectrumDO.getCompoundName());
-//                libraryHit.setLibraryName(spectrumDO.getLibraryMembership());
-//                libraryHit.setAdduct(spectrumDO.getAdduct());
-//                libraryHit.setPrecursorMz(spectrumDO.getPrecursorMz());
-//                libraryHit.setSmiles(spectrumDO.getSmiles());
-//                libraryHit.setInChI(spectrumDO.getInchI());
-//                libraryHit.setUrl(spectrumDO.getUrl());
-//                libraryHit.setMatchScore(matchScore);
-//                libraryHits.add(libraryHit);
-//            }
-//        }
-//        libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore));
-//
-//        //取分数最大的前几个
-//        if (libraryHits.size() >= identificationParams.getTopN()) {
-//            libraryHits = libraryHits.subList(libraryHits.size() - identificationParams.getTopN(), libraryHits.size());
-//        }
-//        feature.setLibraryHits(libraryHits);
-
+            //取打分排名前若干名的谱图
+            libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore));
+            if (libraryHits.size() >= identificationParams.getTopN()) {
+                libraryHits = libraryHits.subList(libraryHits.size() - identificationParams.getTopN(), libraryHits.size());
+            }
+            feature.setLibraryHits(libraryHits);
+        });
         return identificationForm;
     }
 

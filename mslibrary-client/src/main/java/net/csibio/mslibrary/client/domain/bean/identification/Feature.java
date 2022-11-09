@@ -11,10 +11,14 @@ import java.util.List;
 @Data
 public class Feature {
 
-    /**
-     * 基础信息，生成FeatureDO时即会生成
-     * 这里的值都是根据dataDO生成的平均值
-     */
+    String id;
+
+    String overviewId;
+
+    List<String> dataIds = new ArrayList<>();
+
+    List<String> runIds = new ArrayList<>();
+
     Double mz;
 
     Double rt;
