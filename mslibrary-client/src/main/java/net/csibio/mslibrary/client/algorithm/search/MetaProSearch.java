@@ -76,6 +76,7 @@ public class MetaProSearch {
                 libraryHit.setInChI(spectrumDO.getInchI());
                 libraryHit.setUrl(spectrumDO.getUrl());
                 libraryHit.setMatchScore(similarityScore);
+                libraryHits.add(libraryHit);
             }
 
             //取打分排名前若干名的谱图
