@@ -208,6 +208,12 @@
             <artifactId>jna-platform</artifactId>
             <version>5.11.0</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/io.github.msdk/msdk-io-mgf -->
+        <dependency>
+            <groupId>io.github.msdk</groupId>
+            <artifactId>msdk-io-mgf</artifactId>
+            <version>0.0.27</version>
+        </dependency>
     </dependencies>
 
     <repositories>

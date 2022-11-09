@@ -1,5 +1,6 @@
 package net.csibio.mslibrary.core.controller;
 
+import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.algorithm.search.MetaProSearch;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.IdentificationForm;
@@ -23,6 +24,8 @@ public class IdentificationController {
     MetaProSearch metaProSearch;
     @Autowired
     LibraryService libraryService;
+    @Autowired
+    CommonSearch commonSearch;
 
     @RequestMapping("identify")
     Result<IdentificationForm> identify(@RequestBody IdentificationForm identificationForm) {
@@ -41,5 +44,14 @@ public class IdentificationController {
         result.setData(metaProSearch.identifyFeatures(identificationForm, identificationParams));
         return result;
     }
+
+    @RequestMapping("commonIdentify")
+    Result commonIdentify() {
+        String filePath = "/Users/anshaowei/Downloads/(Centroid)_Met_08_Sirius.mgf";
+        IdentificationParams identificationParams = new IdentificationParams();
+        commonSearch.identify(filePath, identificationParams);
+        return new Result(true);
+    }
+
 
 }
