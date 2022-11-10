@@ -44,6 +44,7 @@ public class MetaProSearch {
             for (String libraryId : identificationParams.getLibraryIds()) {
                 SpectrumQuery spectrumQuery = new SpectrumQuery();
                 spectrumQuery.setPrecursorMz(feature.getMz());
+                spectrumQuery.setMzTolerance(identificationParams.getMzTolerance());
                 spectrumQuery.setLibraryId(libraryId);
                 spectrumQuery.setMsLevel(MsLevel.MS2.getCode());
                 if (identificationParams.getStrategy().equals(1)) {

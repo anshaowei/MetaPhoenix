@@ -83,7 +83,7 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         }
         //precursorMz
         if (spectrumQuery.getPrecursorMz() != null) {
-            query.addCriteria(where("precursorMz").gte(spectrumQuery.getPrecursorMz() - 0.01).lte(spectrumQuery.getPrecursorMz() + 0.01));
+            query.addCriteria(where("precursorMz").gte(spectrumQuery.getPrecursorMz() - spectrumQuery.getMzTolerance()).lte(spectrumQuery.getPrecursorMz() + spectrumQuery.getMzTolerance()));
         }
         //exactMass
         if (spectrumQuery.getExactMass() != null) {

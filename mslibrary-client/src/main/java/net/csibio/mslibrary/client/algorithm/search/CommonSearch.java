@@ -50,9 +50,9 @@ public class CommonSearch {
             for (String libraryId : identificationParams.getLibraryIds()) {
                 SpectrumQuery spectrumQuery = new SpectrumQuery();
                 spectrumQuery.setPrecursorMz(precursorMz);
+                spectrumQuery.setMzTolerance(identificationParams.getMzTolerance());
                 spectrumQuery.setLibraryId(libraryId);
                 spectrumQuery.setMsLevel(MsLevel.MS2.getCode());
-
                 spectrumDOS.addAll(spectrumService.getAll(spectrumQuery, libraryId));
             }
             spectrumDOS = spectrumDOS.parallelStream().filter(spectrumDO -> Math.abs(spectrumDO.getPrecursorMz() - precursorMz) <= identificationParams.getMzTolerance()).toList();

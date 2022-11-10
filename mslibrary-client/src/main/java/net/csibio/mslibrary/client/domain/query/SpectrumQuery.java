@@ -35,6 +35,9 @@ public class SpectrumQuery extends PageQuery {
 
     Double precursorMz;
 
+    //默认mz搜索窗口
+    Double mzTolerance = 0.01;
+
     Double exactMass;
 
     Integer charge;
