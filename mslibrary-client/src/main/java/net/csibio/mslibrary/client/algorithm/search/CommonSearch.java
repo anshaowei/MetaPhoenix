@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
@@ -44,8 +45,12 @@ public class CommonSearch {
         }
 
         //2.搜索本地数据库
+        ConcurrentHashMap<MgfMsSpectrum, List<LibraryHit>> resultMap = new ConcurrentHashMap<>();
         mgfMsSpectrumList.parallelStream().forEach(mgfMsSpectrum -> {
-            Double precursorMz = mgfMsSpectrum.getPrecursorMass() / mgfMsSpectrum.getPrecursorCharge();
+            Double precursorMz = mgfMsSpectrum.getPrecursorMass();
+            if (mgfMsSpectrum.getPrecursorCharge() != null && mgfMsSpectrum.getPrecursorCharge() != 0) {
+                precursorMz = mgfMsSpectrum.getPrecursorMass() / mgfMsSpectrum.getPrecursorCharge();
+            }
             List<SpectrumDO> spectrumDOS = new ArrayList<>();
             for (String libraryId : identificationParams.getLibraryIds()) {
                 SpectrumQuery spectrumQuery = new SpectrumQuery();
@@ -55,7 +60,6 @@ public class CommonSearch {
                 spectrumQuery.setMsLevel(MsLevel.MS2.getCode());
                 spectrumDOS.addAll(spectrumService.getAll(spectrumQuery, libraryId));
             }
-            spectrumDOS = spectrumDOS.parallelStream().filter(spectrumDO -> Math.abs(spectrumDO.getPrecursorMz() - precursorMz) <= identificationParams.getMzTolerance()).toList();
 
             //对MS2谱图的匹配程度进行打分
             List<LibraryHit> libraryHits = new ArrayList<>();
@@ -66,7 +70,7 @@ public class CommonSearch {
                     intensityArray[i] = mgfMsSpectrum.getIntensityValues()[i];
                 }
                 Spectrum ms2Spectrum = new Spectrum(mgfMsSpectrum.getMzValues(), intensityArray);
-                Spectrum libSpectrum = spectrumDO.getSpectrum();
+                Spectrum libSpectrum = new Spectrum(spectrumDO.getMzs(), spectrumDO.getInts());
                 double ms2ForwardScore = spectrumScorer.ms2ForwardScore(ms2Spectrum, libSpectrum, identificationParams.getMzTolerance());
                 double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, identificationParams.getMzTolerance());
                 similarityScore += ms2ForwardScore + ms2ReverseScore;
@@ -86,13 +90,14 @@ public class CommonSearch {
             }
 
             //取打分排名前若干名的谱图
-            libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore));
+            libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
             if (libraryHits.size() >= identificationParams.getTopN()) {
-                libraryHits = libraryHits.subList(libraryHits.size() - identificationParams.getTopN(), libraryHits.size());
+                libraryHits = libraryHits.subList(0, identificationParams.getTopN());
             }
 
             //3.输出标准结果
-
+            resultMap.put(mgfMsSpectrum, libraryHits);
         });
+
     }
 }

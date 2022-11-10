@@ -54,14 +54,13 @@ public class MetaProSearch {
                 }
                 spectrumDOS.addAll(spectrumService.getAll(spectrumQuery, libraryId));
             }
-            spectrumDOS = spectrumDOS.parallelStream().filter(spectrumDO -> Math.abs(spectrumDO.getPrecursorMz() - feature.getMz()) <= identificationParams.getMzTolerance()).toList();
 
             //对MS2谱图的匹配程度进行打分
             List<LibraryHit> libraryHits = new ArrayList<>();
             for (SpectrumDO spectrumDO : spectrumDOS) {
                 Double similarityScore = 0.0;
                 Spectrum ms2Spectrum = feature.getMs2Spectrum();
-                Spectrum libSpectrum = spectrumDO.getSpectrum();
+                Spectrum libSpectrum = new Spectrum(spectrumDO.getMzs(), spectrumDO.getInts());
                 double ms2ForwardScore = spectrumScorer.ms2ForwardScore(ms2Spectrum, libSpectrum, identificationParams.getMzTolerance());
                 double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, identificationParams.getMzTolerance());
                 similarityScore += ms2ForwardScore + ms2ReverseScore;
@@ -81,10 +80,11 @@ public class MetaProSearch {
             }
 
             //取打分排名前若干名的谱图
-            libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore));
+            libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
             if (libraryHits.size() >= identificationParams.getTopN()) {
-                libraryHits = libraryHits.subList(libraryHits.size() - identificationParams.getTopN(), libraryHits.size());
+                libraryHits = libraryHits.subList(0, identificationParams.getTopN());
             }
+
             feature.setLibraryHits(libraryHits);
         });
         return identificationForm;

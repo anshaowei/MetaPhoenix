@@ -151,8 +151,4 @@ public class SpectrumDO {
         this.byteInts = CompressUtil.encode(ints);
     }
 
-    public Spectrum getSpectrum() {
-        return new Spectrum(this.mzs, this.ints);
-    }
-
 }
