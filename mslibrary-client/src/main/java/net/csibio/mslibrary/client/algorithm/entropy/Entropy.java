@@ -7,13 +7,8 @@ import org.springframework.stereotype.Component;
 @Component("entropy")
 public class Entropy {
 
-    /**
-     * 谱图需要经过归一化，使得每张谱图信号的和为1
-     *
-     * @param intensityArray
-     * @return
-     */
-    public Double getEntropy(double[] intensityArray) {
+
+    public double getEntropy(double[] intensityArray) {
         double sum = 0;
         for (double intensity : intensityArray) {
             sum += intensity;
@@ -26,11 +21,23 @@ public class Entropy {
         return -entropy;
     }
 
-    public Double getEntropy(Spectrum spectrum) {
+    /**
+     * 计算谱图熵的谱图必须经过归一化，使得每张谱图的信号和为1
+     *
+     * @param spectrum
+     * @return
+     */
+    public double getEntropy(Spectrum spectrum) {
         return getEntropy(spectrum.getInts());
     }
 
-    public Double getEntropy(SpectrumDO spectrumDO) {
+    /**
+     * 计算谱图熵的谱图必须经过归一化，使得每张谱图的信号和为1
+     *
+     * @param spectrumDO
+     * @return
+     */
+    public double getEntropy(SpectrumDO spectrumDO) {
         return getEntropy(spectrumDO.getInts());
     }
 

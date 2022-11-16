@@ -4,6 +4,14 @@ import java.util.List;
 
 public class ArrayUtil {
 
+    public static double sum(double[] array) {
+        double sum = 0;
+        for (double d : array) {
+            sum += d;
+        }
+        return sum;
+    }
+
     public static double[] toArray(List<Double> list) {
         double[] target = new double[list.size()];
         for (int i = 0; i < list.size(); i++) {
