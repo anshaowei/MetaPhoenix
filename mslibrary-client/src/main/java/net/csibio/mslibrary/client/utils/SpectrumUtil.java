@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.client.utils;
 
 import net.csibio.aird.bean.common.Spectrum;
+import org.springframework.beans.BeanUtils;
 
 import java.util.HashMap;
 import java.util.TreeSet;
@@ -12,7 +13,10 @@ public class SpectrumUtil {
         ArrayUtil.normalize(spectrum.getInts(), sum);
     }
 
-    public static Spectrum mix(Spectrum spectrumA, Spectrum spectrumB) {
+    public static Spectrum mix(Spectrum spectrum1, Spectrum spectrum2) {
+
+        Spectrum spectrumA = clone(spectrum1);
+        Spectrum spectrumB = clone(spectrum2);
         normalize(spectrumA);
         normalize(spectrumB);
 
@@ -41,6 +45,12 @@ public class SpectrumUtil {
         }
 
         return new Spectrum(mzs, ints);
+    }
+
+    public static Spectrum clone(Spectrum spectrum) {
+        Spectrum spectrum1 = new Spectrum(new double[spectrum.getMzs().length], new double[spectrum.getInts().length]);
+        BeanUtils.copyProperties(spectrum, spectrum1);
+        return spectrum1;
     }
 
 }

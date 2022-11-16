@@ -1,11 +1,17 @@
 package net.csibio.mslibrary.client.algorithm.similarity;
 
 import net.csibio.aird.bean.common.Spectrum;
+import net.csibio.mslibrary.client.algorithm.entropy.Entropy;
+import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import org.apache.commons.math3.stat.StatUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component("similarity")
 public class Similarity {
+
+    @Autowired
+    Entropy entropy;
 
     public double getDotProduct(Spectrum runSpectrum, Spectrum libSpectrum, double mzTolerance) {
         int expIndex = 0;
@@ -61,5 +67,20 @@ public class Similarity {
         return dotProduct / Math.sqrt(libNorm) / Math.sqrt(expNorm) * expCounter / libCounter;
     }
 
+    public double getEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2) {
+
+        Spectrum spectrumA = SpectrumUtil.clone(spectrum1);
+        Spectrum spectrumB = SpectrumUtil.clone(spectrum2);
+        SpectrumUtil.normalize(spectrumA);
+        SpectrumUtil.normalize(spectrumB);
+
+        Spectrum mixSpectrum = SpectrumUtil.mix(spectrumA, spectrumB);
+
+        double entropyA = entropy.getEntropy(spectrumA);
+        double entropyB = entropy.getEntropy(spectrumB);
+        double entropyMix = entropy.getEntropy(mixSpectrum);
+
+        return 1 - (entropyMix - 0.5 * (entropyA + entropyB)) / Math.log(2);
+    }
 
 }
