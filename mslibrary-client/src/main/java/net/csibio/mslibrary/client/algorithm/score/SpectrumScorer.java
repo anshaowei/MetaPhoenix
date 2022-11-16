@@ -1,9 +1,11 @@
 package net.csibio.mslibrary.client.algorithm.score;
 
 import net.csibio.aird.bean.common.Spectrum;
+import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
 import net.csibio.mslibrary.client.utils.ArrayUtil;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.util.FastMath;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -17,21 +19,23 @@ public class SpectrumScorer {
     IsotopeCalculator isotopeCalculator;
     @Autowired
     IsotopeFinder isotopeFinder;
+    @Autowired
+    Similarity similarity;
 
     public double ms1ForwardScore(Spectrum ms1Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return forwardSimilarity(ms1Spectrum, libSpectrum, mzTolerance);
+        return similarity.getDotProduct(ms1Spectrum, libSpectrum, mzTolerance);
     }
 
     public double ms1ReverseScore(Spectrum ms1Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return forwardSimilarity(libSpectrum, ms1Spectrum, mzTolerance);
+        return similarity.getDotProduct(libSpectrum, ms1Spectrum, mzTolerance);
     }
 
     public double ms2ForwardScore(Spectrum ms2Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return forwardSimilarity(ms2Spectrum, libSpectrum, mzTolerance);
+        return similarity.getDotProduct(ms2Spectrum, libSpectrum, mzTolerance);
     }
 
     public double ms2ReverseScore(Spectrum ms2Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return forwardSimilarity(libSpectrum, ms2Spectrum, mzTolerance);
+        return similarity.getDotProduct(libSpectrum, ms2Spectrum, mzTolerance);
     }
 
     public double ms1IsotopeScore(Spectrum ms1Spectrum, String formula, double monoMz, double mzTolerance, boolean isPpm) {
@@ -66,61 +70,6 @@ public class SpectrumScorer {
             }
         }
         return getAdductIntensitySimilarity(expIntensities, libIntensities);
-    }
-
-    //返回库的命中比例
-    private double forwardSimilarity(Spectrum runSpectrum, Spectrum libSpectrum, double mzTolerance) {
-        int expIndex = 0;
-        double[] libMzArray = libSpectrum.getMzs();
-        double[] libIntArray = libSpectrum.getInts();
-        double[] expMzArray = runSpectrum.getMzs();
-        double[] expIntArray = runSpectrum.getInts();
-
-        //librarySpectrum的最大值
-        double maxLibIntensity = StatUtils.max(libIntArray);
-        double maxExpIntensity = StatUtils.max(expIntArray);
-
-        int libCounter = 0, expCounter = 0;
-        double dotProduct = 0d, libNorm = 0d, expNorm = 0d;
-        for (int libIndex = 0; libIndex < libMzArray.length; libIndex++) {
-            double leftMz = libMzArray[libIndex] - mzTolerance;
-            double rightMz = libMzArray[libIndex] + mzTolerance;
-
-            //统计lib中大于最大值百分之一的部分
-            double libIntensity = libIntArray[libIndex];
-            if (libIntensity < 0.01 * maxLibIntensity) {
-                continue;
-            }
-            int libBinWidth = 1;
-            while (libIndex + libBinWidth < libMzArray.length && libMzArray[libIndex + libBinWidth] < rightMz) {
-                libIntensity += libIntArray[libIndex + libBinWidth];
-                libBinWidth++;
-            }
-            libIndex += libBinWidth - 1;
-            libCounter++;
-            //统计exp中和lib相对应的部分
-            double expIntensity = 0;
-            for (; expIndex < expMzArray.length; expIndex++) {
-                if (expMzArray[expIndex] < leftMz) {
-                    continue;
-                }
-                if (leftMz <= expMzArray[expIndex] && expMzArray[expIndex] < rightMz) {
-                    expIntensity += expIntArray[expIndex];
-                } else {
-                    break;
-                }
-            }
-            libNorm += libIntensity * libIntensity;
-            if (expIntensity > 0) {
-                expCounter++;
-            }
-            expNorm += expIntensity * expIntensity;
-            dotProduct += expIntensity * libIntensity;
-        }
-        if (libNorm == 0 || expNorm == 0 || libCounter == 0) {
-            return 0;
-        }
-        return dotProduct / Math.sqrt(libNorm) / Math.sqrt(expNorm) * expCounter / libCounter;
     }
 
     private double getIsotopeIntensitySimilarity(Double[] expDistribution, Double[] theoDistribution) {
