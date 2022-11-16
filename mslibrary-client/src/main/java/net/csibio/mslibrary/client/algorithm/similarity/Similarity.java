@@ -61,9 +61,5 @@ public class Similarity {
         return dotProduct / Math.sqrt(libNorm) / Math.sqrt(expNorm) * expCounter / libCounter;
     }
 
-    public double getSimilarityByEntropy(Spectrum spectrumA, Spectrum spectrumB) {
-        return 0.0;
-    }
-
 
 }
