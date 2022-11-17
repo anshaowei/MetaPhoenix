@@ -39,13 +39,14 @@ public class TestController {
 
     @RequestMapping("/1")
     public void test1() {
-        gnpsParser.parseJSON("/Users/anshaowei/Downloads/database/ALL_GNPS.json");
+        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
     }
 
     @RequestMapping("/2")
     public void test2() {
-        compoundService.removeAll();
+//        compoundService.removeAll();
 //        spectrumService.removeAll();
+//        libraryService.removeAll();
     }
 
     @RequestMapping("/3")

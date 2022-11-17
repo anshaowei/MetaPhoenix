@@ -13,4 +13,11 @@ public interface LibraryService extends BaseService<LibraryDO, LibraryQuery> {
 
     List<LibraryDO> getAllByIds(List<String> ids);
 
+    /**
+     * Warning: this method will remove libraries
+     *
+     * @return
+     */
+    Result removeAll();
+
 }

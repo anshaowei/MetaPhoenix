@@ -1,23 +1,18 @@
 package net.csibio.mslibrary.core.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import net.csibio.mslibrary.client.constants.enums.MigrationStrategy;
-import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.domain.Result;
-import net.csibio.mslibrary.client.domain.db.CompoundDO;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.exceptions.XException;
 import net.csibio.mslibrary.client.service.*;
 import net.csibio.mslibrary.core.dao.LibraryDAO;
-import net.csibio.mslibrary.core.dao.SpectrumDAO;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Date;
+import java.util.List;
 
 @Slf4j
 @Service("libraryService")
@@ -79,5 +74,12 @@ public class LibraryServiceImpl implements LibraryService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public Result removeAll() {
+        libraryDAO.remove(new LibraryQuery());
+        log.info("所有库已经被删除");
+        return new Result(true);
     }
 }
