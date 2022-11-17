@@ -22,7 +22,6 @@ public class Similarity {
 
         //librarySpectrum的最大值
         double maxLibIntensity = StatUtils.max(libIntArray);
-        double maxExpIntensity = StatUtils.max(expIntArray);
 
         int libCounter = 0, expCounter = 0;
         double dotProduct = 0d, libNorm = 0d, expNorm = 0d;
@@ -91,8 +90,8 @@ public class Similarity {
 
         double entropyA = entropy.getEntropy(spectrumA);
         double entropyB = entropy.getEntropy(spectrumB);
-        double weightA = 0d;
-        double weightB = 0d;
+        double weightA;
+        double weightB;
 
         //给出两个谱图的权重，取值范围0~1
         if (entropyA >= 3) {
