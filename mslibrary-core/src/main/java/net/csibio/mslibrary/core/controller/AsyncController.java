@@ -115,7 +115,7 @@ public class AsyncController {
     Result gnpsMetabolites() throws XException {
         log.info("开始同步GNPS化合物数据");
         String gnps = vmProperties.getRepository() + "/ALL_GNPS.json";
-        gnpsParser.parse(gnps);
+        gnpsParser.parseJSON(gnps);
         return Result.OK();
     }
 

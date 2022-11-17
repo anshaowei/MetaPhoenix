@@ -41,7 +41,7 @@ public class GnpsParser {
      * @param filePath
      * @return
      */
-    public Result parse(String filePath) {
+    public Result parseJSON(String filePath) {
 
         long startTime = System.currentTimeMillis();
         JsonFactory jsonFactory = new MappingJsonFactory();
