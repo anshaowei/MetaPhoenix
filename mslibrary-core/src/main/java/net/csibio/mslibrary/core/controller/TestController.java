@@ -1,7 +1,6 @@
 package net.csibio.mslibrary.core.controller;
 
 
-import io.github.msdk.MSDKException;
 import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
@@ -50,7 +49,7 @@ public class TestController {
     }
 
     @RequestMapping("/3")
-    public void test3() throws MSDKException {
+    public void test3() {
         String filePath = "/Users/anshaowei/Downloads/(Centroid)_Met_08_Sirius.mgf";
         List<LibraryDO> libraryDOList = libraryService.getAll(new LibraryQuery());
         IdentificationParams identificationParams = new IdentificationParams();

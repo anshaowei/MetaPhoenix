@@ -1,8 +1,8 @@
 package net.csibio.mslibrary.core.controller;
 
+import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.domain.Result;
-import net.csibio.mslibrary.client.domain.bean.spectrum.SimpleSpectrum;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.exceptions.XException;
@@ -25,9 +25,9 @@ public class SpectrumController {
     CompoundService compoundService;
 
     @RequestMapping(value = "/getBaseSpectrum")
-    Result<SimpleSpectrum> getBaseSpectrum(@RequestParam(value = "spectrumId", required = true) String spectrumId, String libraryId) throws XException {
+    Result<Spectrum> getBaseSpectrum(@RequestParam(value = "spectrumId", required = true) String spectrumId, String libraryId) throws XException {
         SpectrumDO spectrumDO = spectrumService.tryGetById(spectrumId, libraryId, ResultCode.SPECTRA_NOT_EXISTED);
-        SimpleSpectrum spectrum = new SimpleSpectrum(spectrumDO);
+        Spectrum spectrum = new Spectrum(spectrumDO.getMzs(), spectrumDO.getInts());
         return Result.build(spectrum);
     }
 
