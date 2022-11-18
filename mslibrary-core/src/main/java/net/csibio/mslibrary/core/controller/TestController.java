@@ -7,6 +7,7 @@ import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.parser.gnps.CompoundGenerator;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
+import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -35,6 +36,8 @@ public class TestController {
     SpectrumService spectrumService;
     @Autowired
     CommonSearch commonSearch;
+    @Autowired
+    SpectrumParser spectrumParser;
 
     @RequestMapping("/1")
     public void test1() {
@@ -63,6 +66,11 @@ public class TestController {
         identificationParams.setStrategy(1);
         commonSearch.identify(filePath, identificationParams);
         int a = 0;
+    }
+
+    @RequestMapping("/4")
+    public void test4() {
+        spectrumParser.parseSingleXML("/Users/anshaowei/Documents/Metabolomics/library/HMDB/hmdb_experimental_msms_spectra/HMDB0000001_ms_ms_spectrum_1_experimental.xml");
     }
 
 }

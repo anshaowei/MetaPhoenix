@@ -117,6 +117,11 @@ public class SpectrumDO {
 
     List<AnnotationHistory> annotationHistoryList;
 
+    String description;
+
+    @Indexed
+    Double collisionEnergy;
+
     /**
      * 创建日期
      */
