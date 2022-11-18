@@ -1,7 +1,6 @@
 package net.csibio.mslibrary.client.domain.db;
 
 import lombok.Data;
-import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.domain.bean.spectrum.AnnotationHistory;
 import net.csibio.mslibrary.client.utils.CompressUtil;
 import org.springframework.data.annotation.Id;
@@ -16,7 +15,10 @@ import java.util.List;
 @Document(collection = "spectrum")
 public class SpectrumDO {
 
-    //数据库索引信息
+    /**
+     * Common Item
+     */
+
     @Id
     String id;
 
@@ -26,23 +28,31 @@ public class SpectrumDO {
     @Indexed
     String libraryId;
 
-    //自定义谱图唯一标识字段
+    //identical to the outer database id
+    @Indexed
     String spectrumId;
-
-    String sourceFile;
-
-    String task;
-
-    Integer scan;
 
     @Indexed
     Integer msLevel;
 
-    @Indexed
-    String libraryMembership;
+    String splash;
 
     @Indexed
-    Integer spectrumStatus;
+    String ionSource;
+
+    String compoundName;
+
+    @Indexed
+    String instrument;
+
+    @Indexed
+    String adduct;
+
+    @Indexed
+    Double precursorMz;
+
+    @Indexed
+    String ionMode;
 
     byte[] byteMzs;
     byte[] byteInts;
@@ -52,34 +62,34 @@ public class SpectrumDO {
     @Transient
     double[] ints;
 
-    String splash;
+    Date createDate;
+
+    Date updateDate;
+
+    /**
+     * GNPS Item
+     */
+    String sourceFile;
+
+    String task;
+
+    Integer scan;
+
+    String libraryMembership;
+
+    @Indexed
+    Integer spectrumStatus;
 
     String submitUser;
 
-    String compoundName;
-
-    @Indexed
-    String ionSource;
-
-    @Indexed
     String compoundSource;
-
-    @Indexed
-    String instrument;
 
     String pi;
 
     String dataCollector;
 
-    @Indexed
-    String adduct;
-
-    @Indexed
-    Double precursorMz;
-
     Double exactMass;
 
-    @Indexed
     Integer charge;
 
     String casNumber;
@@ -88,18 +98,11 @@ public class SpectrumDO {
 
     String smiles;
 
-    @Indexed
     String inchI;
 
     String inchiAUX;
 
-    @Indexed
     Integer libraryClass;
-
-    @Indexed
-    String ionMode;
-
-    Date createTime;
 
     String taskId;
 
@@ -113,24 +116,17 @@ public class SpectrumDO {
 
     String formulaInchi;
 
-    String url;
-
     List<AnnotationHistory> annotationHistoryList;
 
-    String description;
+    String url;
 
+    /**
+     * HMDB Item
+     */
     @Indexed
     Double collisionEnergy;
 
-    /**
-     * 创建日期
-     */
-    Date createDate;
-
-    /**
-     * 最后修改日期
-     */
-    Date lastModifiedDate;
+    String notes;
 
     public double[] getMzs() {
         if (mzs == null && byteMzs != null) {

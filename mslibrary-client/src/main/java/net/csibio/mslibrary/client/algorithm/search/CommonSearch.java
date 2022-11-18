@@ -84,7 +84,6 @@ public class CommonSearch {
                 libraryHit.setPrecursorMz(spectrumDO.getPrecursorMz());
                 libraryHit.setSmiles(spectrumDO.getSmiles());
                 libraryHit.setInChI(spectrumDO.getInchI());
-                libraryHit.setUrl(spectrumDO.getUrl());
                 libraryHit.setMatchScore(similarityScore);
                 libraryHits.add(libraryHit);
             }

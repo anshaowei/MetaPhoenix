@@ -74,7 +74,6 @@ public class MetaProSearch {
                 libraryHit.setPrecursorMz(spectrumDO.getPrecursorMz());
                 libraryHit.setSmiles(spectrumDO.getSmiles());
                 libraryHit.setInChI(spectrumDO.getInchI());
-                libraryHit.setUrl(spectrumDO.getUrl());
                 libraryHit.setMatchScore(similarityScore);
                 libraryHits.add(libraryHit);
             }

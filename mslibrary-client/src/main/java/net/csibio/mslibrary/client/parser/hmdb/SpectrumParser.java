@@ -12,7 +12,6 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
-import java.util.Date;
 
 @Component
 @Slf4j
@@ -52,115 +51,134 @@ public class SpectrumParser {
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(file);
             NodeList nodeList = document.getElementsByTagName("ms-ms");
+            SpectrumDO spectrumDO = new SpectrumDO();
             for (int i = 0; i < nodeList.getLength(); i++) {
                 Node node = nodeList.item(i);
                 NodeList childNodes = node.getChildNodes();
-                SpectrumDO spectrumDO = new SpectrumDO();
                 for (int j = 0; j < childNodes.getLength(); j++) {
                     //id
                     if (childNodes.item(j).getNodeName().equals("id")) {
                         spectrumDO.setSpectrumId(childNodes.item(j).getTextContent());
                     }
                     //notes
-                    if(childNodes.item(j).getNodeName().equals("notes")){
-                        spectrumDO.setDescription(childNodes.item(j).getTextContent());
+                    if (childNodes.item(j).getNodeName().equals("notes")) {
+                        spectrumDO.setNotes(childNodes.item(j).getTextContent());
                     }
                     //sample-concentration
-                    if(childNodes.item(j).getNodeName().equals("sample-concentration")){
+                    if (childNodes.item(j).getNodeName().equals("sample-concentration")) {
                     }
                     //solvent
-                    if(childNodes.item(j).getNodeName().equals("solvent")){
+                    if (childNodes.item(j).getNodeName().equals("solvent")) {
                     }
                     //sample-mass
-                    if(childNodes.item(j).getNodeName().equals("sample-mass")){
+                    if (childNodes.item(j).getNodeName().equals("sample-mass")) {
                     }
                     //sample-assessment
-                    if(childNodes.item(j).getNodeName().equals("sample-assessment")){
+                    if (childNodes.item(j).getNodeName().equals("sample-assessment")) {
                     }
                     //sample-source
-                    if(childNodes.item(j).getNodeName().equals("sample-source")){
+                    if (childNodes.item(j).getNodeName().equals("sample-source")) {
                     }
                     //collection-date
-                    if(childNodes.item(j).getNodeName().equals("collection-date")){
+                    if (childNodes.item(j).getNodeName().equals("collection-date")) {
                     }
                     //instrument-type
-                    if(childNodes.item(j).getNodeName().equals("instrument-type")){
+                    if (childNodes.item(j).getNodeName().equals("instrument-type")) {
                         spectrumDO.setInstrument(childNodes.item(j).getTextContent());
                     }
                     //peak-counter
-                    if(childNodes.item(j).getNodeName().equals("peak-counter")){
+                    if (childNodes.item(j).getNodeName().equals("peak-counter")) {
                     }
                     //created-at
-                    if(childNodes.item(j).getNodeName().equals("created-at")){
+                    if (childNodes.item(j).getNodeName().equals("created-at")) {
                     }
                     //updated-at
-                    if(childNodes.item(j).getNodeName().equals("updated-at")){
+                    if (childNodes.item(j).getNodeName().equals("updated-at")) {
                     }
                     //mono-mass
-                    if(childNodes.item(j).getNodeName().equals("mono-mass")){
+                    if (childNodes.item(j).getNodeName().equals("mono-mass")) {
                     }
                     //energy-filed
-                    if(childNodes.item(j).getNodeName().equals("energy-filed")){
+                    if (childNodes.item(j).getNodeName().equals("energy-filed")) {
                     }
                     //collision-energy-level
-                    if(childNodes.item(j).getNodeName().equals("collision-energy-level")){
+                    if (childNodes.item(j).getNodeName().equals("collision-energy-level")) {
                     }
                     //collision-energy-voltage
-                    if(childNodes.item(j).getNodeName().equals("collision-energy-voltage")){
+                    if (childNodes.item(j).getNodeName().equals("collision-energy-voltage")) {
                     }
                     //ionization-mode
-                    if(childNodes.item(j).getNodeName().equals("ionization-mode")){
+                    if (childNodes.item(j).getNodeName().equals("ionization-mode")) {
                         spectrumDO.setIonMode(childNodes.item(j).getTextContent());
                     }
                     //sample-concentration-units
-                    if(childNodes.item(j).getNodeName().equals("sample-concentration-units")){
+                    if (childNodes.item(j).getNodeName().equals("sample-concentration-units")) {
                     }
                     //sample-mass-units
-                    if(childNodes.item(j).getNodeName().equals("sample-mass-units")){
+                    if (childNodes.item(j).getNodeName().equals("sample-mass-units")) {
                     }
                     //predicted
-                    if(childNodes.item(j).getNodeName().equals("predicted")){
+                    if (childNodes.item(j).getNodeName().equals("predicted")) {
                     }
                     //structure-id
-                    if(childNodes.item(j).getNodeName().equals("structure-id")){
+                    if (childNodes.item(j).getNodeName().equals("structure-id")) {
                     }
                     //splash-key
-                    if(childNodes.item(j).getNodeName().equals("splash-key")){
+                    if (childNodes.item(j).getNodeName().equals("splash-key")) {
                         spectrumDO.setSplash(childNodes.item(j).getTextContent());
                     }
                     //chromatography-type
-                    if(childNodes.item(j).getNodeName().equals("chromatography-type")){
+                    if (childNodes.item(j).getNodeName().equals("chromatography-type")) {
                     }
                     //analyzer-type
-                    if(childNodes.item(j).getNodeName().equals("analyzer-type")){
+                    if (childNodes.item(j).getNodeName().equals("analyzer-type")) {
                     }
                     //ionization-type
-                    if(childNodes.item(j).getNodeName().equals("ionization-type")){
+                    if (childNodes.item(j).getNodeName().equals("ionization-type")) {
+                        spectrumDO.setIonSource(childNodes.item(j).getTextContent());
                     }
                     //charge-type
-                    if(childNodes.item(j).getNodeName().equals("charge-type")){
+                    if (childNodes.item(j).getNodeName().equals("charge-type")) {
                     }
                     //data-source
-                    if(childNodes.item(j).getNodeName().equals("data-source")){
+                    if (childNodes.item(j).getNodeName().equals("data-source")) {
                     }
                     //data-source-id
-                    if(childNodes.item(j).getNodeName().equals("data-source-id")){
+                    if (childNodes.item(j).getNodeName().equals("data-source-id")) {
                     }
                     //adduct
-                    if(childNodes.item(j).getNodeName().equals("adduct")){
+                    if (childNodes.item(j).getNodeName().equals("adduct")) {
                         spectrumDO.setAdduct(childNodes.item(j).getTextContent());
                     }
                     //adduct-type
-                    if(childNodes.item(j).getNodeName().equals("adduct-type")){
+                    if (childNodes.item(j).getNodeName().equals("adduct-type")) {
                     }
                     //adduct-mass
-                    if(childNodes.item(j).getNodeName().equals("adduct-mass")){
+                    if (childNodes.item(j).getNodeName().equals("adduct-mass")) {
                     }
                     //database-id
-                    if(childNodes.item(j).getNodeName().equals("database-id")){
+                    if (childNodes.item(j).getNodeName().equals("database-id")) {
                         spectrumDO.setCompoundId(childNodes.item(j).getTextContent());
                     }
+                    //references
+                    if (childNodes.item(j).getNodeName().equals("references")) {
+                    }
+                    //ms-ms-peaks
+                    if (childNodes.item(j).getNodeName().equals("ms-ms-peaks")) {
+                        NodeList peaks = childNodes.item(j).getChildNodes();
+                        double[] mzs = new double[peaks.getLength()];
+                        double[] intensities = new double[peaks.getLength()];
+                        for (int k = 0; k < peaks.getLength(); k++) {
+                            if (peaks.item(k).getNodeName().equals("mass-charge")) {
+                                mzs[k] = Double.parseDouble(peaks.item(k).getTextContent());
+                            }
+                            if (peaks.item(k).getNodeName().equals("intensity")) {
+                                intensities[k] = Double.parseDouble(peaks.item(k).getTextContent());
+                            }
+                        }
+                    }
                 }
+                int a = 0;
             }
         } catch (Exception e) {
             e.printStackTrace();

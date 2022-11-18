@@ -202,7 +202,7 @@ public class GnpsParser {
                         parser.nextToken();
                         parser.nextToken();
                         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        spectrumDO.setCreateTime(simpleDateFormat.parse(parser.getValueAsString()));
+                        spectrumDO.setCreateDate(simpleDateFormat.parse(parser.getValueAsString()));
                         parser.nextToken();
                         parser.nextToken();
                         spectrumDO.setTaskId(parser.getValueAsString());

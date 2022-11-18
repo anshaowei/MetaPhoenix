@@ -70,14 +70,9 @@ public class CompoundGenerator {
                 compoundDO.setCount(currentSpectrumDOS.size());
                 compoundDO.setName(spectrumDOS.get(0).getCompoundName());
                 compoundDO.setSynonyms(new ArrayList<>(synonyms));
-                compoundDO.setFormula(spectrumDOS.get(0).getFormulaSmiles());
                 compoundDO.setInchi(inchi);
-                compoundDO.setInchikey(spectrumDOS.get(0).getInchiKeyInchi());
-                compoundDO.setAvgMw(spectrumDOS.get(0).getExactMass());
-                compoundDO.setMonoMw(spectrumDOS.get(0).getExactMass());
                 compoundDO.setAdducts(adducts);
                 compoundDO.setSmiles(spectrumDOS.get(0).getSmiles());
-                compoundDO.setPubChemId(spectrumDOS.get(0).getPubmedId());
                 compoundDOS.add(compoundDO);
             }
             libraryDO.setCompoundCount(compoundDOS.size());
