@@ -8,7 +8,6 @@ import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.query.CompoundQuery;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
-import net.csibio.mslibrary.client.service.SpectrumService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -26,9 +25,7 @@ public class HmdbParser {
     @Autowired
     LibraryService libraryService;
     @Autowired
-    SpectrumService spectrumService;
-    @Autowired
-    HmdbParseTask hmdbParseTask;
+    MetaboliteParser metaboliteParser;
 
     //每批次处理的化合物数目
     private static int BATCH_SIZE = 10000;
@@ -84,7 +81,7 @@ public class HmdbParser {
                     if (startParse) {
                         metaSingleBuilder.append("</root>");
                         log.info("开始插入第" + total + "条化合物");
-                        hmdbParseTask.parse(new ByteArrayInputStream(metaSingleBuilder.toString().getBytes()), libraryId);
+                        metaboliteParser.parse(new ByteArrayInputStream(metaSingleBuilder.toString().getBytes()), libraryId);
                         log.info("第" + total + "条化合物插入成功,耗时:" + (System.currentTimeMillis() - start) / 1000 + "秒");
                         start = System.currentTimeMillis();
                         metaSingleBuilder = new StringBuilder("<root>");
@@ -96,7 +93,7 @@ public class HmdbParser {
             if (batchCount > 0) {
                 metaSingleBuilder.append("</root>");
                 total += batchCount;
-                hmdbParseTask.parse(new ByteArrayInputStream(metaSingleBuilder.toString().getBytes()), libraryId);
+                metaboliteParser.parse(new ByteArrayInputStream(metaSingleBuilder.toString().getBytes()), libraryId);
             }
 
             library.setCompoundCount(total);
