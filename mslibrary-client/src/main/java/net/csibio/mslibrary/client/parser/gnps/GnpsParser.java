@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.constants.enums.IonMode;
 import net.csibio.mslibrary.client.constants.enums.LibraryType;
 import net.csibio.mslibrary.client.constants.enums.ResultCode;
 import net.csibio.mslibrary.client.domain.Result;
@@ -198,7 +199,11 @@ public class GnpsParser {
                         parser.nextToken();
                         parser.nextToken();
                         parser.nextToken();
-                        spectrumDO.setIonMode(parser.getValueAsString());
+                        if (parser.getValueAsString().equalsIgnoreCase(IonMode.Positive.getName())) {
+                            spectrumDO.setIonSource(IonMode.Positive.getName());
+                        } else if (parser.getValueAsString().equalsIgnoreCase(IonMode.Negative.getName())) {
+                            spectrumDO.setIonSource(IonMode.Negative.getName());
+                        }
                         parser.nextToken();
                         parser.nextToken();
                         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.client.parser.hmdb;
 
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.constants.enums.IonMode;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,7 +110,11 @@ public class SpectrumParser {
                     }
                     //ionization-mode
                     if (childNodes.item(j).getNodeName().equals("ionization-mode")) {
-                        spectrumDO.setIonMode(childNodes.item(j).getTextContent());
+                        if (childNodes.item(j).getTextContent().equalsIgnoreCase(IonMode.Positive.getName())) {
+                            spectrumDO.setIonMode(IonMode.Positive.getName());
+                        } else if (childNodes.item(j).getTextContent().equalsIgnoreCase(IonMode.Negative.getName())) {
+                            spectrumDO.setIonMode(IonMode.Negative.getName());
+                        }
                     }
                     //sample-concentration-units
                     if (childNodes.item(j).getNodeName().equals("sample-concentration-units")) {

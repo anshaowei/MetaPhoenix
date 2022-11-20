@@ -28,7 +28,7 @@ public class SpectrumDO {
     @Indexed
     String libraryId;
 
-    //identical to the outer database id
+    //The outer database id
     @Indexed
     String spectrumId;
 
@@ -51,6 +51,7 @@ public class SpectrumDO {
     @Indexed
     Double precursorMz;
 
+    //
     @Indexed
     String ionMode;
 
