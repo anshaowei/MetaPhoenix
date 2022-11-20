@@ -70,7 +70,7 @@ public class TestController {
 
     @RequestMapping("/4")
     public void test4() {
-        spectrumParser.parseSingleXML("/Users/anshaowei/Documents/Metabolomics/library/HMDB/hmdb_experimental_msms_spectra/HMDB0000001_ms_ms_spectrum_1_experimental.xml");
+        spectrumParser.parse("/Users/anshaowei/Downloads/test");
     }
 
 }

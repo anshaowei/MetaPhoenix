@@ -34,8 +34,8 @@ public class SpectrumParser {
         //search all .xml files
         for (File f : files) {
             if (f.isFile() && f.getName().endsWith(".xml")) {
-                log.info("开始解析文件:" + f.getName());
                 parseSingleXML(f.getAbsolutePath());
+                log.info("解析文件并插入数据库完成:" + f.getName());
             }
         }
     }
@@ -53,6 +53,7 @@ public class SpectrumParser {
             Document document = builder.parse(file);
             NodeList nodeList = document.getElementsByTagName("ms-ms");
             SpectrumDO spectrumDO = new SpectrumDO();
+            spectrumDO.setLibraryId("HMDB");
             for (int i = 0; i < nodeList.getLength(); i++) {
                 Node node = nodeList.item(i);
                 NodeList childNodes = node.getChildNodes();
@@ -79,6 +80,7 @@ public class SpectrumParser {
                     }
                     //sample-source
                     if (childNodes.item(j).getNodeName().equals("sample-source")) {
+                        spectrumDO.setSampleSource(childNodes.item(j).getTextContent());
                     }
                     //collection-date
                     if (childNodes.item(j).getNodeName().equals("collection-date")) {
@@ -107,6 +109,7 @@ public class SpectrumParser {
                     }
                     //collision-energy-voltage
                     if (childNodes.item(j).getNodeName().equals("collision-energy-voltage")) {
+//                        spectrumDO.setCollisionEnergy(Double.parseDouble(childNodes.item(j).getTextContent()));
                     }
                     //ionization-mode
                     if (childNodes.item(j).getNodeName().equals("ionization-mode")) {
@@ -124,9 +127,11 @@ public class SpectrumParser {
                     }
                     //predicted
                     if (childNodes.item(j).getNodeName().equals("predicted")) {
+                        spectrumDO.setPredicted(Boolean.parseBoolean(childNodes.item(j).getTextContent()));
                     }
                     //structure-id
                     if (childNodes.item(j).getNodeName().equals("structure-id")) {
+                        spectrumDO.setStructureId(childNodes.item(j).getTextContent());
                     }
                     //splash-key
                     if (childNodes.item(j).getNodeName().equals("splash-key")) {
@@ -171,20 +176,23 @@ public class SpectrumParser {
                     //ms-ms-peaks
                     if (childNodes.item(j).getNodeName().equals("ms-ms-peaks")) {
                         NodeList peaks = childNodes.item(j).getChildNodes();
-                        double[] mzs = new double[peaks.getLength()];
-                        double[] intensities = new double[peaks.getLength()];
+                        double[] mzs = new double[(peaks.getLength() - 1) / 2];
+                        double[] intensities = new double[(peaks.getLength() - 1) / 2];
+                        int peakIndex = 0;
                         for (int k = 0; k < peaks.getLength(); k++) {
-                            if (peaks.item(k).getNodeName().equals("mass-charge")) {
-                                mzs[k] = Double.parseDouble(peaks.item(k).getTextContent());
-                            }
-                            if (peaks.item(k).getNodeName().equals("intensity")) {
-                                intensities[k] = Double.parseDouble(peaks.item(k).getTextContent());
+                            if (peaks.item(k).getNodeName().equals("ms-ms-peak")) {
+                                NodeList peak = peaks.item(k).getChildNodes();
+                                mzs[peakIndex] = Double.parseDouble(peak.item(5).getTextContent());
+                                intensities[peakIndex] = Double.parseDouble(peak.item(7).getTextContent());
+                                peakIndex++;
                             }
                         }
+                        spectrumDO.setMzs(mzs);
+                        spectrumDO.setInts(intensities);
                     }
                 }
-                int a = 0;
             }
+            spectrumService.insert(spectrumDO, "HMDB");
         } catch (Exception e) {
             e.printStackTrace();
         }

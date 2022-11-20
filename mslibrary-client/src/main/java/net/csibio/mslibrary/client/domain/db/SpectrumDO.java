@@ -51,7 +51,9 @@ public class SpectrumDO {
     @Indexed
     Double precursorMz;
 
-    //
+    /**
+     * @see net.csibio.mslibrary.client.constants.enums.IonMode
+     */
     @Indexed
     String ionMode;
 
@@ -128,6 +130,12 @@ public class SpectrumDO {
     Double collisionEnergy;
 
     String notes;
+
+    String sampleSource;
+
+    boolean predicted;
+
+    String structureId;
 
     public double[] getMzs() {
         if (mzs == null && byteMzs != null) {
