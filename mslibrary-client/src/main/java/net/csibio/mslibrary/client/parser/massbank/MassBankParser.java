@@ -1,5 +1,6 @@
 package net.csibio.mslibrary.client.parser.massbank;
 
+import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.constants.enums.IonMode;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class MassBankParser {
 
     public Result parse(String filePath) {
@@ -17,11 +19,26 @@ public class MassBankParser {
         File file = new File(filePath);
         FileInputStream fis = null;
         try {
+            //fast read of spectra information
             fis = new FileInputStream(file);
             BufferedReader br = new BufferedReader(new java.io.InputStreamReader(fis));
             String line = null;
-            List<SpectrumDO> spectrumDOS = new ArrayList<>();
+            Integer spectrumCount = 0;
             while ((line = br.readLine()) != null) {
+                String lowerLine = line.toLowerCase();
+                if (lowerLine.startsWith("name")) {
+                    spectrumCount++;
+                }
+            }
+            br.close();
+            fis.close();
+            log.info("Start importing, Total spectrum count: {}", spectrumCount);
+
+            fis = new FileInputStream(file);
+            br = new BufferedReader(new java.io.InputStreamReader(fis));
+            line = br.readLine();
+            List<SpectrumDO> spectrumDOS = new ArrayList<>();
+            while (line != null) {
                 String lowerLine = line.toLowerCase();
                 if (lowerLine.startsWith("name")) {
                     String[] items = line.split(" ");
@@ -29,8 +46,13 @@ public class MassBankParser {
                     if (items.length > 1) {
                         spectrumDO.setCompoundName(items[1]);
                     }
-                    while ((line = br.readLine()) != null) {
+                    line = br.readLine();
+                    while (line != null) {
                         lowerLine = line.toLowerCase();
+                        //break if next spectrum
+                        if (lowerLine.startsWith("name")) {
+                            break;
+                        }
                         //precursor m/z
                         if (lowerLine.startsWith("precursormz")) {
                             String[] items2 = line.split(" ");
@@ -123,43 +145,36 @@ public class MassBankParser {
                             }
                         }
                         //num peaks
-//                        else if (lowerLine.startsWith("num peaks")) {
-//                            List<Double> mzList = new ArrayList<>();
-//                            List<Double> intensityList = new ArrayList<>();
-//                            while (!Objects.equals(line = br.readLine(), "\n") && line != null) {
-//                                String lowerLine2 = line.toLowerCase();
-//                                if (lowerLine2.startsWith("name")) {
-//                                    break;
-//                                }
-//                                String[] values = line.split(" ");
-//                                if (values.length > 1) {
-//                                    double mz = Double.parseDouble(values[0]);
-//                                    double intensity = Double.parseDouble(values[1]);
-//                                    mzList.add(mz);
-//                                    intensityList.add(intensity);
-//                                }
-//                            }
-//                            //convert mzList to Array
-//                            double[] mzArray = new double[mzList.size()];
-//                            for (int i = 0; i < mzList.size(); i++) {
-//                                mzArray[i] = mzList.get(i);
-//                            }
-//                            //convert intensityList to Array
-//                            double[] intensityArray = new double[intensityList.size()];
-//                            for (int i = 0; i < intensityList.size(); i++) {
-//                                intensityArray[i] = intensityList.get(i);
-//                            }
-//                            spectrumDO.setMzs(mzArray);
-//                            spectrumDO.setInts(intensityArray);
-//                        }
-                        else if (lowerLine.startsWith("name")) {
-                            break;
+                        else if (lowerLine.startsWith("num peaks")) {
+                            List<Double> mzList = new ArrayList<>();
+                            List<Double> intensityList = new ArrayList<>();
+                            line = br.readLine();
+                            while (line != null && !line.isEmpty()) {
+                                String[] values = line.split("\t");
+                                if (values.length > 1) {
+                                    double mz = Double.parseDouble(values[0]);
+                                    double intensity = Double.parseDouble(values[1]);
+                                    mzList.add(mz);
+                                    intensityList.add(intensity);
+                                }
+                                line = br.readLine();
+                            }
+                            double[] mzArray = new double[mzList.size()];
+                            double[] intensityArray = new double[intensityList.size()];
+                            for (int i = 0; i < mzList.size(); i++) {
+                                mzArray[i] = mzList.get(i);
+                                intensityArray[i] = intensityList.get(i);
+                            }
+                            spectrumDO.setMzs(mzArray);
+                            spectrumDO.setInts(intensityArray);
                         }
+                        line = br.readLine();
                     }
                     spectrumDOS.add(spectrumDO);
+                } else {
+                    line = br.readLine();
                 }
             }
-            int a = 0;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
