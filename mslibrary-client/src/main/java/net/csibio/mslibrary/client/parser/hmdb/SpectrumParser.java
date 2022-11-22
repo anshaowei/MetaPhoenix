@@ -13,6 +13,8 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -31,13 +33,20 @@ public class SpectrumParser {
         File file = new File(directoryPath);
         File[] files = file.listFiles();
         assert files != null;
+        List<SpectrumDO> spectrumDOS = new ArrayList<>();
+
         //search all .xml files
         for (File f : files) {
             if (f.isFile() && f.getName().endsWith(".xml")) {
-                parseSingleXML(f.getAbsolutePath());
+                SpectrumDO spectrumDO = parseSingleXML(f.getAbsolutePath());
+                if (spectrumDO != null) {
+                    spectrumDOS.add(spectrumDO);
+                }
                 log.info("解析文件并插入数据库完成:" + f.getName());
             }
         }
+        //insert into database
+        spectrumService.insert(spectrumDOS, "HMDB");
     }
 
     /**
@@ -45,7 +54,7 @@ public class SpectrumParser {
      *
      * @param filePath
      */
-    public void parseSingleXML(String filePath) {
+    public SpectrumDO parseSingleXML(String filePath) {
         try {
             File file = new File(filePath);
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -192,10 +201,11 @@ public class SpectrumParser {
                     }
                 }
             }
-            spectrumService.insert(spectrumDO, "HMDB");
+            return spectrumDO;
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return null;
     }
 
 }

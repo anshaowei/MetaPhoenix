@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.constants.enums.IonMode;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
+import net.csibio.mslibrary.client.service.SpectrumService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
@@ -13,6 +15,9 @@ import java.util.List;
 @Component
 @Slf4j
 public class MassBankParser {
+
+    @Autowired
+    SpectrumService spectrumService;
 
     public Result parse(String filePath) {
         //read file use buffer
@@ -175,6 +180,8 @@ public class MassBankParser {
                     line = br.readLine();
                 }
             }
+            spectrumService.insert(spectrumDOS, "MassBank");
+            log.info("Finish importing, inserted spectrum count: {}", spectrumCount);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
