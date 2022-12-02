@@ -1,7 +1,6 @@
 package net.csibio.mslibrary.client.parser.gnps;
 
 import lombok.extern.slf4j.Slf4j;
-import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.constants.enums.IonMode;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
@@ -71,58 +70,106 @@ public class MspGNPSParser {
                         if (lowerLine.startsWith("name")) {
                             break;
                         }
-                        //synon
-                        if (lowerLine.startsWith("synon")) {
-                            String[] synonItems = line.split(" ");
-                            if (synonItems.length > 1) {
-                                spectrumDO.setSynon(synonItems[1]);
+                        //precursor m/z
+                        if (lowerLine.startsWith("precursormz")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
+                                spectrumDO.setPrecursorMz(Double.parseDouble(items2[1]));
+                            }
+                        }
+                        //precursor type
+                        else if (lowerLine.startsWith("precursortype")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
+
+                            }
+                        }
+                        //formula
+                        else if (lowerLine.startsWith("formula")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
+                                spectrumDO.setFormula(items2[1]);
+                            }
+                        }
+                        //ontology
+                        else if (lowerLine.startsWith("ontology")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
                             }
                         }
                         //inchiKey
-                        if (lowerLine.startsWith("inchikey")) {
-                            String[] inchiKeyItems = line.split(" ");
-                            if (inchiKeyItems.length > 1) {
-                                spectrumDO.setInchiKeyInchi(inchiKeyItems[1]);
+                        else if (lowerLine.startsWith("inchikey")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
+                                spectrumDO.setInchiKeyInchi(items2[1]);
                             }
                         }
                         //inchi
-                        if (lowerLine.startsWith("inchi")) {
-                            String[] inchiItems = line.split(" ");
-                            if (inchiItems.length > 1) {
-                                spectrumDO.setInchI(inchiItems[1]);
+                        else if (lowerLine.startsWith("inchi")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
+                                spectrumDO.setInchI(items2[1]);
                             }
                         }
                         //smiles
-                        if (lowerLine.startsWith("smiles")) {
-                            String[] smilesItems = line.split(" ");
-                            if (smilesItems.length > 1) {
-                                spectrumDO.setSmiles(smilesItems[1]);
+                        else if (lowerLine.startsWith("smiles")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
+                                spectrumDO.setSmiles(items2[1]);
                             }
                         }
-                        //precursor_type
-                        if (lowerLine.startsWith("precursor_type")) {
-                            String[] precursorTypeItems = line.split(" ");
-                            if (precursorTypeItems.length > 1) {
-                                spectrumDO.setPrecursorAdduct(precursorTypeItems[1]);
+                        //retention time
+                        else if (lowerLine.startsWith("retentiontime")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
                             }
                         }
-                        //spectrum_type
-                        if (lowerLine.startsWith("spectrum_type")) {
-                            String[] spectrumTypeItems = line.split(" ");
-                            if (spectrumTypeItems.length > 1) {
-                                if (spectrumTypeItems[1].equals("MS1")) {
-                                    spectrumDO.setMsLevel(MsLevel.MS1.getCode());
+                        //ionMode
+                        else if (lowerLine.startsWith("ionmode")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
+                                if (items2[1].equalsIgnoreCase(IonMode.Positive.getName())) {
+                                    spectrumDO.setIonMode(IonMode.Positive.getName());
                                 }
-                                if (spectrumTypeItems[1].equals("MS2")) {
-                                    spectrumDO.setMsLevel(MsLevel.MS2.getCode());
-                                }
-                                if (spectrumTypeItems[1].equals("MS3")) {
-                                    break;
+                                if (items2[1].equalsIgnoreCase(IonMode.Negative.getName())) {
+                                    spectrumDO.setIonMode(IonMode.Negative.getName());
                                 }
                             }
                         }
-
-
+                        //instrumentType
+                        else if (lowerLine.startsWith("instrumenttype")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
+                                spectrumDO.setInstrumentType(items2[1]);
+                            }
+                        }
+                        //instrument
+                        else if (lowerLine.startsWith("instrument")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
+                                spectrumDO.setInstrument(items2[1]);
+                            }
+                        }
+                        //collisionEnergy
+                        else if (lowerLine.startsWith("collisionenergy")) {
+                            String[] items2 = line.split(" ");
+                            Double collisionEnergy = null;
+                            if (items2.length > 1) {
+                                try {
+                                    collisionEnergy = Double.parseDouble(items2[1]);
+                                } catch (Exception e) {
+                                    log.error("Collision energy parse error: {}", spectrumDO.getCompoundName());
+                                }
+                                spectrumDO.setCollisionEnergy(collisionEnergy);
+                            }
+                        }
+                        //comment
+                        else if (lowerLine.startsWith("comment")) {
+                            String[] items2 = line.split(" ");
+                            if (items2.length > 1) {
+                                spectrumDO.setComments(items2[1]);
+                            }
+                        }
                         //num peaks
                         else if (lowerLine.startsWith("num peaks")) {
                             List<Double> mzList = new ArrayList<>();

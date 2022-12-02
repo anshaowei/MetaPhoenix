@@ -42,6 +42,8 @@ public class SpectrumDO {
 
     String compoundName;
 
+    String instrumentType;
+
     @Indexed
     String instrument;
 

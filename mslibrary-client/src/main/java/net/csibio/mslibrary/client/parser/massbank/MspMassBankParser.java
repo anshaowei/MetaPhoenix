@@ -122,7 +122,10 @@ public class MspMassBankParser {
                         }
                         //instrument_type
                         if (lowerLine.startsWith("instrument_type")) {
-
+                            String[] instrumentTypeItems = line.split(" ");
+                            if (instrumentTypeItems.length > 1) {
+                                spectrumDO.setInstrumentType(instrumentTypeItems[1]);
+                            }
                         }
                         //instrument
                         if (lowerLine.startsWith("instrument")) {
