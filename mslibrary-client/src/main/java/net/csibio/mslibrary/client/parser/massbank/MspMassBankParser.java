@@ -129,7 +129,13 @@ public class MspMassBankParser {
                         if (lowerLine.startsWith("precursormz")) {
                             String[] precursorMzItems = line.split(" ");
                             if (precursorMzItems.length > 1) {
-                                spectrumDO.setPrecursorMz(Double.valueOf(precursorMzItems[1]));
+                                Double precursorMz = null;
+                                try {
+                                    precursorMz = Double.parseDouble(precursorMzItems[1]);
+                                } catch (Exception e) {
+                                    log.error("Parse precursorMz failed, precursorMz: {}", precursorMzItems[1]);
+                                }
+                                spectrumDO.setPrecursorMz(precursorMz);
                             }
                         }
                         //instrument_type
@@ -162,7 +168,13 @@ public class MspMassBankParser {
                         if (lowerLine.startsWith("collision_energy")) {
                             String[] collisionEnergyItems = line.split(" ");
                             if (collisionEnergyItems.length > 1) {
-                                spectrumDO.setCollisionEnergy(Double.valueOf(collisionEnergyItems[1]));
+                                Double collisionEnergy = null;
+                                try {
+                                    collisionEnergy = Double.valueOf(collisionEnergyItems[1]);
+                                } catch (Exception e) {
+                                    log.error("Parse collision energy failed, value: {}", collisionEnergyItems[1]);
+                                }
+                                spectrumDO.setCollisionEnergy(collisionEnergy);
                             }
                         }
                         //formula

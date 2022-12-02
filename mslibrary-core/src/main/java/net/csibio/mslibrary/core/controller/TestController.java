@@ -74,7 +74,6 @@ public class TestController {
     @RequestMapping("/4")
     public void test4() {
         mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-        int a = 0;
     }
 
 }
