@@ -57,6 +57,15 @@ public class SpectrumDO {
     @Indexed
     String ionMode;
 
+    @Indexed
+    Double collisionEnergy;
+
+    String formula;
+
+    Double exactMass;
+
+    String comments;
+
     byte[] byteMzs;
     byte[] byteInts;
 
@@ -91,8 +100,6 @@ public class SpectrumDO {
 
     String dataCollector;
 
-    Double exactMass;
-
     Integer charge;
 
     String casNumber;
@@ -126,9 +133,6 @@ public class SpectrumDO {
     /**
      * HMDB Item
      */
-    @Indexed
-    Double collisionEnergy;
-
     String notes;
 
     String sampleSource;
