@@ -13,7 +13,7 @@ public class LibraryHit {
 
     String libraryName;
 
-    String adduct;
+    String precursorAdduct;
 
     Double precursorMz;
 

@@ -1,7 +1,6 @@
 package net.csibio.mslibrary.core.controller;
 
 
-import io.github.msdk.MSDKException;
 import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
@@ -9,7 +8,7 @@ import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.parser.gnps.CompoundGenerator;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
-import net.csibio.mslibrary.client.parser.massbank.MassBankParser;
+import net.csibio.mslibrary.client.parser.massbank.MspMassBankParser;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -17,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +40,7 @@ public class TestController {
     @Autowired
     SpectrumParser spectrumParser;
     @Autowired
-    MassBankParser massBankParser;
+    MspMassBankParser mspMassBankParser;
 
     @RequestMapping("/1")
     public void test1() {
@@ -74,9 +72,9 @@ public class TestController {
     }
 
     @RequestMapping("/4")
-    public void test4() throws MSDKException, IOException {
-//        spectrumParser.parse("/Users/anshaowei/Downloads/test");
-        massBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.msp");
+    public void test4() {
+        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+        int a = 0;
     }
 
 }

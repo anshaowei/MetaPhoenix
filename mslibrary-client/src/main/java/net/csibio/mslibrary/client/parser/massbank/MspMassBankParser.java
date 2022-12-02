@@ -14,7 +14,11 @@ import java.util.List;
 
 @Component
 @Slf4j
-public class MassBankParser {
+/**
+ * 基于MassBank NIST数据格式进行解析
+ * https://massbank.eu/MassBank/
+ */
+public class MspMassBankParser {
 
     @Autowired
     SpectrumService spectrumService;

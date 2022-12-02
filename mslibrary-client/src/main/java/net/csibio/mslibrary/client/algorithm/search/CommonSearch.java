@@ -80,7 +80,7 @@ public class CommonSearch {
                 libraryHit.setSpectrumId(spectrumDO.getSpectrumId());
                 libraryHit.setCompoundName(spectrumDO.getCompoundName());
                 libraryHit.setLibraryName(spectrumDO.getLibraryId());
-                libraryHit.setAdduct(spectrumDO.getAdduct());
+                libraryHit.setPrecursorAdduct(spectrumDO.getPrecursorAdduct());
                 libraryHit.setPrecursorMz(spectrumDO.getPrecursorMz());
                 libraryHit.setSmiles(spectrumDO.getSmiles());
                 libraryHit.setInChI(spectrumDO.getInchI());

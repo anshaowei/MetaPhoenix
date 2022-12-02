@@ -46,7 +46,7 @@ public class SpectrumDO {
     String instrument;
 
     @Indexed
-    String adduct;
+    String precursorAdduct;
 
     @Indexed
     Double precursorMz;
@@ -136,6 +136,11 @@ public class SpectrumDO {
     boolean predicted;
 
     String structureId;
+
+    /**
+     * MassBank Item
+     */
+    String synon;
 
     public double[] getMzs() {
         if (mzs == null && byteMzs != null) {

@@ -165,7 +165,7 @@ public class GnpsParser {
                         spectrumDO.setDataCollector(parser.getValueAsString());
                         parser.nextToken();
                         parser.nextToken();
-                        spectrumDO.setAdduct(parser.getValueAsString());
+                        spectrumDO.setPrecursorAdduct(parser.getValueAsString());
                         parser.nextToken();
                         parser.nextToken();
                         parser.nextToken();

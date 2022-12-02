@@ -167,7 +167,7 @@ public class SpectrumParser {
                     }
                     //adduct
                     if (childNodes.item(j).getNodeName().equals("adduct")) {
-                        spectrumDO.setAdduct(childNodes.item(j).getTextContent());
+                        spectrumDO.setPrecursorAdduct(childNodes.item(j).getTextContent());
                     }
                     //adduct-type
                     if (childNodes.item(j).getNodeName().equals("adduct-type")) {
