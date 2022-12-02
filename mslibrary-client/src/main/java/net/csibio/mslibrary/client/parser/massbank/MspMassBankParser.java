@@ -4,7 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.constants.enums.IonMode;
 import net.csibio.mslibrary.client.domain.Result;
+import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
+import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,8 +25,18 @@ public class MspMassBankParser {
 
     @Autowired
     SpectrumService spectrumService;
+    @Autowired
+    LibraryService libraryService;
 
     public Result parse(String filePath) {
+        //create library
+        LibraryDO libraryDO = new LibraryDO();
+        libraryDO.setName("MassBank");
+        if (libraryService.insert(libraryDO).isFailed()) {
+            log.error("Create library failed");
+            return Result.Error("Create library failed");
+        }
+
         //read file use buffer
         File file = new File(filePath);
         FileInputStream fis = null;

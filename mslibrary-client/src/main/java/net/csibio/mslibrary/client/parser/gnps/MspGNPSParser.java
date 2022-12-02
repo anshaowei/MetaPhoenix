@@ -22,10 +22,10 @@ public class MspGNPSParser {
     @Autowired
     LibraryService libraryService;
 
-    public Result parse(String filePath, String libraryName) {
+    public Result parse(String filePath) {
         //create library
         LibraryDO libraryDO = new LibraryDO();
-        libraryDO.setName(libraryName);
+        libraryDO.setName("GNPS");
         if (libraryService.insert(libraryDO).isFailed()) {
             log.error("Create library failed");
             return Result.Error("Create library failed");
@@ -201,7 +201,7 @@ public class MspGNPSParser {
                     line = br.readLine();
                 }
             }
-            spectrumService.insert(spectrumDOS, libraryName);
+            spectrumService.insert(spectrumDOS, "GNPS");
             log.info("Finish importing, inserted spectrum count: {}", spectrumCount);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
