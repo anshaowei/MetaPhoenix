@@ -45,8 +45,8 @@ public class SpectrumController {
 
     @RequestMapping("/list")
     Result list(SpectrumQuery query) {
-        if (query.getLibraryMembership() != null) {
-            query.setLibraryId(query.getLibraryMembership());
+        if (query.getLibraryId() != null) {
+            query.setLibraryId(query.getLibraryId());
         }
         Result<List<SpectrumDO>> res = spectrumService.getList(query, query.getLibraryId());
         return res;

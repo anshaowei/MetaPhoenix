@@ -18,33 +18,28 @@ public class SpectrumQuery extends PageQuery {
 
     Integer msLevel;
 
-    //此字段几乎等效于libraryId
-    String libraryMembership;
-
-    Integer spectrumStatus;
-
     String compoundName;
 
     String ionSource;
 
-    String compoundSource;
+    String instrumentType;
 
     String instrument;
 
-    String adduct;
+    String precursorAdduct;
 
     Double precursorMz;
+
+    Double collisionEnergy;
+
+    String formula;
 
     //默认mz搜索窗口
     Double mzTolerance = 0.01;
 
     Double exactMass;
 
-    Integer charge;
-
     String inchI;
-
-    String libraryClass;
 
     String ionMode;
 

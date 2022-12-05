@@ -4,7 +4,9 @@ package net.csibio.mslibrary.core.controller;
 import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
+import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.LibraryQuery;
+import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.parser.gnps.CompoundGenerator;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
@@ -74,6 +76,14 @@ public class TestController {
     @RequestMapping("/4")
     public void test4() {
         mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+    }
+
+    @RequestMapping("/5")
+    public void test5(){
+        SpectrumQuery spectrumQuery = new SpectrumQuery();
+        spectrumQuery.setPrecursorAdduct("[M+Na]+");
+        List<SpectrumDO> spectrumDOList = spectrumService.getAll(spectrumQuery, "MassBank");
+        int a = 0;
     }
 
 }

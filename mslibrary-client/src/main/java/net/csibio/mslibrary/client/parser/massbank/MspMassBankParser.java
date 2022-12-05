@@ -217,7 +217,7 @@ public class MspMassBankParser {
                             List<Double> intensityList = new ArrayList<>();
                             line = br.readLine();
                             while (line != null && !line.isEmpty()) {
-                                String[] values = line.split("\t");
+                                String[] values = line.split(" ");
                                 if (values.length > 1) {
                                     double mz = Double.parseDouble(values[0]);
                                     double intensity = Double.parseDouble(values[1]);

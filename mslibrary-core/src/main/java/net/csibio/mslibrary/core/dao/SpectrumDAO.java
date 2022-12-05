@@ -56,12 +56,6 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         if (spectrumQuery.getMsLevel() != null) {
             query.addCriteria(where("msLevel").is(spectrumQuery.getMsLevel()));
         }
-        if (StringUtils.isNotEmpty(spectrumQuery.getLibraryMembership())) {
-            query.addCriteria(where("libraryMembership").is(spectrumQuery.getLibraryMembership()));
-        }
-        if (spectrumQuery.getSpectrumStatus() != null) {
-            query.addCriteria(where("spectrumStatus").is(spectrumQuery.getSpectrumStatus()));
-        }
         if (StringUtils.isNotEmpty(spectrumQuery.getCompoundName())) {
             query.addCriteria(where("compoundName").is(spectrumQuery.getCompoundName()));
         }
@@ -69,17 +63,17 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         if (StringUtils.isNotEmpty(spectrumQuery.getIonSource())) {
             query.addCriteria(where("ionSource").is(spectrumQuery.getIonSource()));
         }
-        //compoundSource
-        if (StringUtils.isNotEmpty(spectrumQuery.getCompoundSource())) {
-            query.addCriteria(where("compoundSource").is(spectrumQuery.getCompoundSource()));
-        }
         //instrument
         if (StringUtils.isNotEmpty(spectrumQuery.getInstrument())) {
             query.addCriteria(where("instrument").is(spectrumQuery.getInstrument()));
         }
+        //instrumentType
+        if (StringUtils.isNotEmpty(spectrumQuery.getInstrumentType())) {
+            query.addCriteria(where("instrumentType").is(spectrumQuery.getInstrumentType()));
+        }
         //adduct
-        if (StringUtils.isNotEmpty(spectrumQuery.getAdduct())) {
-            query.addCriteria(where("adduct").is(spectrumQuery.getAdduct()));
+        if (StringUtils.isNotEmpty(spectrumQuery.getPrecursorAdduct())) {
+            query.addCriteria(where("precursorAdduct").is(spectrumQuery.getPrecursorAdduct()));
         }
         //precursorMz
         if (spectrumQuery.getPrecursorMz() != null) {
@@ -89,17 +83,17 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         if (spectrumQuery.getExactMass() != null) {
             query.addCriteria(where("exactMass").is(spectrumQuery.getExactMass()));
         }
-        //charge
-        if (spectrumQuery.getCharge() != null) {
-            query.addCriteria(where("charge").is(spectrumQuery.getCharge()));
-        }
         //inchI
         if (StringUtils.isNotEmpty(spectrumQuery.getInchI())) {
             query.addCriteria(where("inchI").is(spectrumQuery.getInchI()));
         }
-        //libraryClass
-        if (StringUtils.isNotEmpty(spectrumQuery.getLibraryClass())) {
-            query.addCriteria(where("libraryClass").is(spectrumQuery.getLibraryClass()));
+        //collisionEnergy
+        if (spectrumQuery.getCollisionEnergy() != null) {
+            query.addCriteria(where("collisionEnergy").is(spectrumQuery.getCollisionEnergy()));
+        }
+        //formula
+        if (StringUtils.isNotEmpty(spectrumQuery.getFormula())) {
+            query.addCriteria(where("formula").is(spectrumQuery.getFormula()));
         }
         //ionMode
         if (StringUtils.isNotEmpty(spectrumQuery.getIonMode())) {
