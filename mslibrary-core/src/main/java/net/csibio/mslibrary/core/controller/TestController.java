@@ -52,20 +52,21 @@ public class TestController {
     @Autowired
     Similarity similarity;
 
-    @RequestMapping("/1")
-    public void test1() {
-        gnpsParser.parseJSON("C:\\Database\\ALL_GNPS.json");
+    @RequestMapping("/importLibrary")
+    public void importLibrary() {
+        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
+        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
     }
 
-    @RequestMapping("/2")
-    public void test2() {
+    @RequestMapping("/clean")
+    public void clean() {
 //        compoundService.removeAll();
 //        spectrumService.removeAll();
 //        libraryService.removeAll();
     }
 
-    @RequestMapping("/3")
-    public void test3() {
+    @RequestMapping("/identify")
+    public void identify() {
         String filePath = "/Users/anshaowei/Downloads/(Centroid)_Met_08_Sirius.mgf";
         List<LibraryDO> libraryDOList = libraryService.getAll(new LibraryQuery());
         IdentificationParams identificationParams = new IdentificationParams();
@@ -79,11 +80,6 @@ public class TestController {
         identificationParams.setStrategy(1);
         commonSearch.identify(filePath, identificationParams);
         int a = 0;
-    }
-
-    @RequestMapping("/4")
-    public void test4() {
-        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
     }
 
     @RequestMapping("/recall")
@@ -103,7 +99,7 @@ public class TestController {
             List<SpectrumDO> libSpectrumDOList = spectrumService.getAll(targetSpectrumQuery, "MassBank");
             for (SpectrumDO libSpectrumDO : libSpectrumDOList) {
                 LibraryHit libraryHit = new LibraryHit();
-                libraryHit.setMatchScore(similarity.getEntropySimilarity(spectrumDO.getSpectrum(), libSpectrumDO.getSpectrum()));
+                libraryHit.setMatchScore(similarity.getDotProduct(spectrumDO.getSpectrum(), libSpectrumDO.getSpectrum(), 0.001));
                 libraryHit.setSpectrumId(libSpectrumDO.getId());
                 libraryHit.setPrecursorMz(libSpectrumDO.getPrecursorMz());
                 libraryHit.setPrecursorAdduct(libSpectrumDO.getPrecursorAdduct());
