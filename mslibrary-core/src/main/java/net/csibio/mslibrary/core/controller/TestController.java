@@ -89,7 +89,6 @@ public class TestController {
         List<SpectrumDO> targetSpectrumDOList = spectrumService.getAll(spectrumQuery, "MassBank");
         HashMap<SpectrumDO, List<LibraryHit>> result = new HashMap<>();
         Integer right = 0;
-        Integer falsePositive = 0;
         for (SpectrumDO spectrumDO : targetSpectrumDOList) {
             Double precursorMz = spectrumDO.getPrecursorMz();
             List<LibraryHit> libraryHits = new ArrayList<>();
@@ -106,16 +105,24 @@ public class TestController {
                 libraryHits.add(libraryHit);
             }
 
-            libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
-            if (libraryHits.size() >= 5) {
-                libraryHits = libraryHits.subList(0, 5);
+            for(LibraryHit libraryHit : libraryHits){
+                if(libraryHit.getSpectrumId().equals(spectrumDO.getId())){
+                    right++;
+                    log.info("right:{}", spectrumDO.getSpectrumId());
+                    break;
+                }
             }
-            if (libraryHits.get(0).getSpectrumId().equals(spectrumDO.getId())) {
-                right++;
-            } else {
-                log.info("fail_id : {}, fail_score : {}", spectrumDO.getId(), libraryHits.get(0).getMatchScore());
-            }
-            result.put(spectrumDO, libraryHits);
+
+//            libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
+//            if (libraryHits.size() >= 5) {
+//                libraryHits = libraryHits.subList(0, 5);
+//            }
+//            if (libraryHits.get(0).getSpectrumId().equals(spectrumDO.getId())) {
+//                right++;
+//            } else {
+//                log.info("fail_id : {}, fail_score : {}", spectrumDO.getId(), libraryHits.get(0).getMatchScore());
+//            }
+//            result.put(spectrumDO, libraryHits);
         }
         log.info("total spectrum: {}, right: {}", targetSpectrumDOList.size(), right);
         int a = 0;
