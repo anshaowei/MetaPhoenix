@@ -54,7 +54,7 @@ public class TestController {
 
     @RequestMapping("/1")
     public void test1() {
-        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
+        gnpsParser.parseJSON("C:\\Database\\ALL_GNPS.json");
     }
 
     @RequestMapping("/2")
@@ -93,6 +93,7 @@ public class TestController {
         List<SpectrumDO> targetSpectrumDOList = spectrumService.getAll(spectrumQuery, "MassBank");
         HashMap<SpectrumDO, List<LibraryHit>> result = new HashMap<>();
         Integer right = 0;
+        Integer falsePositive = 0;
         for (SpectrumDO spectrumDO : targetSpectrumDOList) {
             Double precursorMz = spectrumDO.getPrecursorMz();
             List<LibraryHit> libraryHits = new ArrayList<>();
