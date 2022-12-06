@@ -1,7 +1,10 @@
 package net.csibio.mslibrary.core.controller;
 
 
+import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
+import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
+import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -19,10 +22,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
 @RequestMapping("test")
+@Slf4j
 public class TestController {
 
     @Autowired
@@ -43,6 +49,8 @@ public class TestController {
     SpectrumParser spectrumParser;
     @Autowired
     MspMassBankParser mspMassBankParser;
+    @Autowired
+    Similarity similarity;
 
     @RequestMapping("/1")
     public void test1() {
@@ -78,11 +86,41 @@ public class TestController {
         mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
     }
 
-    @RequestMapping("/5")
-    public void test5(){
+    @RequestMapping("/recall")
+    public void recall() {
         SpectrumQuery spectrumQuery = new SpectrumQuery();
-        spectrumQuery.setPrecursorAdduct("[M+Na]+");
-        List<SpectrumDO> spectrumDOList = spectrumService.getAll(spectrumQuery, "MassBank");
+        spectrumQuery.setPrecursorAdduct("[M-H]-");
+        List<SpectrumDO> targetSpectrumDOList = spectrumService.getAll(spectrumQuery, "MassBank");
+        HashMap<SpectrumDO, List<LibraryHit>> result = new HashMap<>();
+        Integer right = 0;
+        for (SpectrumDO spectrumDO : targetSpectrumDOList) {
+            Double precursorMz = spectrumDO.getPrecursorMz();
+            List<LibraryHit> libraryHits = new ArrayList<>();
+            SpectrumQuery targetSpectrumQuery = new SpectrumQuery();
+            targetSpectrumQuery.setPrecursorMz(precursorMz);
+            targetSpectrumQuery.setMzTolerance(0.001);
+            List<SpectrumDO> libSpectrumDOList = spectrumService.getAll(targetSpectrumQuery, "MassBank");
+            for (SpectrumDO libSpectrumDO : libSpectrumDOList) {
+                LibraryHit libraryHit = new LibraryHit();
+                libraryHit.setMatchScore(similarity.getEntropySimilarity(spectrumDO.getSpectrum(), libSpectrumDO.getSpectrum()));
+                libraryHit.setSpectrumId(libSpectrumDO.getId());
+                libraryHit.setPrecursorMz(libSpectrumDO.getPrecursorMz());
+                libraryHit.setPrecursorAdduct(libSpectrumDO.getPrecursorAdduct());
+                libraryHits.add(libraryHit);
+            }
+
+            libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
+            if (libraryHits.size() >= 5) {
+                libraryHits = libraryHits.subList(0, 5);
+            }
+            if (libraryHits.get(0).getSpectrumId().equals(spectrumDO.getId())) {
+                right++;
+            } else {
+                log.info("fail_id : {}, fail_score : {}", spectrumDO.getId(), libraryHits.get(0).getMatchScore());
+            }
+            result.put(spectrumDO, libraryHits);
+        }
+        log.info("total spectrum: {}, right: {}", targetSpectrumDOList.size(), right);
         int a = 0;
     }
 

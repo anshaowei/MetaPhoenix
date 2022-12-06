@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.client.domain.db;
 
 import lombok.Data;
+import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.domain.bean.spectrum.AnnotationHistory;
 import net.csibio.mslibrary.client.utils.CompressUtil;
 import org.springframework.data.annotation.Id;
@@ -170,6 +171,10 @@ public class SpectrumDO {
     public void setInts(double[] ints) {
         this.ints = ints;
         this.byteInts = CompressUtil.encode(ints);
+    }
+
+    public Spectrum getSpectrum() {
+        return new Spectrum(getMzs(), getInts());
     }
 
 }
