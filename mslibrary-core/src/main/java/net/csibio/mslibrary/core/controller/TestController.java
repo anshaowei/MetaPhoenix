@@ -12,6 +12,7 @@ import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.parser.gnps.CompoundGenerator;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
+import net.csibio.mslibrary.client.parser.gnps.MspGNPSParser;
 import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
 import net.csibio.mslibrary.client.parser.massbank.MspMassBankParser;
 import net.csibio.mslibrary.client.service.CompoundService;
@@ -51,18 +52,30 @@ public class TestController {
     MspMassBankParser mspMassBankParser;
     @Autowired
     Similarity similarity;
+    @Autowired
+    MspGNPSParser mspGNPSParser;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
-        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
-        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+//        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
+//        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+        mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.msp");
     }
 
     @RequestMapping("/clean")
     public void clean() {
-//        compoundService.removeAll();
-//        spectrumService.removeAll();
-//        libraryService.removeAll();
+        //数据库清理
+        //1. 只有存在smiles/InChI的谱图会被保留
+
+        //2. 只有结构式和precursor mass满足两者相差10ppm的谱图会被保留
+
+    }
+
+    @RequestMapping("/remove")
+    public void remove() {
+//        compoundService.removeByLibraryId("GNPS");
+//        spectrumService.removeByLibraryId("GNPS");
+//        libraryService.removeByLibraryId("GNPS");
     }
 
     @RequestMapping("/identify")
@@ -105,8 +118,8 @@ public class TestController {
                 libraryHits.add(libraryHit);
             }
 
-            for(LibraryHit libraryHit : libraryHits){
-                if(libraryHit.getSpectrumId().equals(spectrumDO.getId())){
+            for (LibraryHit libraryHit : libraryHits) {
+                if (libraryHit.getSpectrumId().equals(spectrumDO.getId())) {
                     right++;
                     log.info("right:{}", spectrumDO.getSpectrumId());
                     break;

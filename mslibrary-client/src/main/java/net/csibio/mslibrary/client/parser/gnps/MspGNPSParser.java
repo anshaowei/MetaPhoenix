@@ -81,7 +81,7 @@ public class MspGNPSParser {
                         else if (lowerLine.startsWith("precursortype")) {
                             String[] items2 = line.split(" ");
                             if (items2.length > 1) {
-
+                                spectrumDO.setPrecursorAdduct(items2[1]);
                             }
                         }
                         //formula
@@ -95,13 +95,14 @@ public class MspGNPSParser {
                         else if (lowerLine.startsWith("ontology")) {
                             String[] items2 = line.split(" ");
                             if (items2.length > 1) {
+                                spectrumDO.setOntology(items2[1]);
                             }
                         }
                         //inchiKey
                         else if (lowerLine.startsWith("inchikey")) {
                             String[] items2 = line.split(" ");
                             if (items2.length > 1) {
-                                spectrumDO.setInchiKeyInchi(items2[1]);
+                                spectrumDO.setInChIKey(items2[1]);
                             }
                         }
                         //inchi

@@ -84,6 +84,10 @@ public class SpectrumDO {
     /**
      * GNPS Item
      */
+    String ontology;
+
+    String inChIKey;
+
     String sourceFile;
 
     String task;
