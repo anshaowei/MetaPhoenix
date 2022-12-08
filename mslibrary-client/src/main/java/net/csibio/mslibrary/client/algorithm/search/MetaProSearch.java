@@ -73,7 +73,7 @@ public class MetaProSearch {
                 libraryHit.setPrecursorAdduct(spectrumDO.getPrecursorAdduct());
                 libraryHit.setPrecursorMz(spectrumDO.getPrecursorMz());
                 libraryHit.setSmiles(spectrumDO.getSmiles());
-                libraryHit.setInChI(spectrumDO.getInchI());
+                libraryHit.setInChI(spectrumDO.getInChI());
                 libraryHit.setMatchScore(similarityScore);
                 libraryHits.add(libraryHit);
             }

@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -65,7 +64,15 @@ public class TestController {
     @RequestMapping("/clean")
     public void clean() {
         //数据库清理
-        //1. 只有存在smiles/InChI的谱图会被保留
+        LibraryDO libraryDO = libraryService.getById("GNPS");
+        //1. 只有存在smiles的谱图会被保留
+        List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryDO.getId());
+        int count = spectrumDOS.size();
+        //remove spectrum without smiles
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getSmiles().equals("NA"));
+        spectrumService.remove(new SpectrumQuery(), libraryDO.getId());
+        log.info("remove " + (count - spectrumDOS.size()) + " spectra without smiles");
+        spectrumService.insert(spectrumDOS, libraryDO.getId());
 
         //2. 只有结构式和precursor mass满足两者相差10ppm的谱图会被保留
 

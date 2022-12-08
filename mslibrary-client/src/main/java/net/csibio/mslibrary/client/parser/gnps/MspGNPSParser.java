@@ -109,7 +109,7 @@ public class MspGNPSParser {
                         else if (lowerLine.startsWith("inchi")) {
                             String[] items2 = line.split(" ");
                             if (items2.length > 1) {
-                                spectrumDO.setInchI(items2[1]);
+                                spectrumDO.setInChI(items2[1]);
                             }
                         }
                         //smiles

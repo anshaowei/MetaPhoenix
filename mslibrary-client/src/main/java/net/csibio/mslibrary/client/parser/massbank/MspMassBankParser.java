@@ -93,7 +93,7 @@ public class MspMassBankParser {
                         if (lowerLine.startsWith("inchi")) {
                             String[] inchiItems = line.split(" ");
                             if (inchiItems.length > 1) {
-                                spectrumDO.setInchI(inchiItems[1]);
+                                spectrumDO.setInChI(inchiItems[1]);
                             }
                         }
                         //smiles

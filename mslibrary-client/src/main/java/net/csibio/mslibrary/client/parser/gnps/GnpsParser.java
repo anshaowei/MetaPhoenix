@@ -188,7 +188,7 @@ public class GnpsParser {
                         spectrumDO.setSmiles(parser.getValueAsString());
                         parser.nextToken();
                         parser.nextToken();
-                        spectrumDO.setInchI(parser.getValueAsString());
+                        spectrumDO.setInChI(parser.getValueAsString());
                         parser.nextToken();
                         parser.nextToken();
                         spectrumDO.setInchiAUX(parser.getValueAsString());

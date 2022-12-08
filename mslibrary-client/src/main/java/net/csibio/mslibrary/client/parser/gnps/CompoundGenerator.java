@@ -47,15 +47,14 @@ public class CompoundGenerator {
                 continue;
             }
             List<CompoundDO> compoundDOS = new ArrayList<>();
-            spectrumDOS.removeIf(spectrumDO -> spectrumDO.getInchI().isEmpty() || spectrumDO.getInchI() == null);
+            spectrumDOS.removeIf(spectrumDO -> spectrumDO.getInChI().isEmpty() || spectrumDO.getInChI() == null);
 
-            Map<String, List<SpectrumDO>> dataMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getInchI));
+            Map<String, List<SpectrumDO>> dataMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getInChI));
             for (String inchi : dataMap.keySet()) {
                 CompoundDO compoundDO = new CompoundDO();
                 List<SpectrumDO> currentSpectrumDOS = dataMap.get(inchi);
 
                 //计算化合物加和物
-                //TODO 需要解析简易形式的加和物
                 HashSet<Adduct> adducts = new HashSet<>();
                 HashSet<String> synonyms = new HashSet<>();
 //                for (SpectrumDO spectrumDO : currentSpectrumDOS) {

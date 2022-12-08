@@ -115,7 +115,7 @@ public class SpectrumDO {
 
     String smiles;
 
-    String inchI;
+    String inChI;
 
     String inchiAUX;
 
