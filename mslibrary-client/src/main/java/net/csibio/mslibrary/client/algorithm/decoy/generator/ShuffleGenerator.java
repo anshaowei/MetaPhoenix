@@ -31,8 +31,12 @@ public class ShuffleGenerator extends BaseGenerator {
 
     public static final String NAME = "shuffle";
 
-    @Autowired
+    final
     LibraryTsvParser libraryTsvParser;
+
+    public ShuffleGenerator(LibraryTsvParser libraryTsvParser) {
+        this.libraryTsvParser = libraryTsvParser;
+    }
 
     @Override
     public void generate(PeptideDO peptideDO) {

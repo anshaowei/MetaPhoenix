@@ -18,6 +18,12 @@ import net.csibio.mslibrary.client.parser.massbank.MspMassBankParser;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
+import org.openscience.cdk.exception.CDKException;
+import org.openscience.cdk.exception.InvalidSmilesException;
+import org.openscience.cdk.interfaces.IAtom;
+import org.openscience.cdk.interfaces.IAtomContainer;
+import org.openscience.cdk.silent.SilentChemObjectBuilder;
+import org.openscience.cdk.smiles.SmilesParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -58,7 +64,7 @@ public class TestController {
     public void importLibrary() {
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
 //        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-        mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.msp");
+        mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
     }
 
     @RequestMapping("/clean")
@@ -74,7 +80,34 @@ public class TestController {
         log.info("remove " + (count - spectrumDOS.size()) + " spectra without smiles");
         spectrumService.insert(spectrumDOS, libraryDO.getId());
 
-        //2. 只有结构式和precursor mass满足两者相差10ppm的谱图会被保留
+        //查看谱图根据smiles分类后的分布情况
+        HashMap<String, List<SpectrumDO>> smilesMap = new HashMap<>();
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            if (smilesMap.containsKey(spectrumDO.getSmiles())) {
+                smilesMap.get(spectrumDO.getSmiles()).add(spectrumDO);
+            } else {
+                List<SpectrumDO> list = new ArrayList<>();
+                list.add(spectrumDO);
+                smilesMap.put(spectrumDO.getSmiles(), list);
+            }
+        }
+        int maxSmiles = Integer.MIN_VALUE;
+        int minSmiles = Integer.MAX_VALUE;
+        int average = 0;
+        for (String smiles : smilesMap.keySet()) {
+            List<SpectrumDO> list = smilesMap.get(smiles);
+            average += list.size();
+            if (list.size() > maxSmiles) {
+                maxSmiles = list.size();
+            }
+            if (list.size() < minSmiles) {
+                minSmiles = list.size();
+            }
+        }
+        average = average / smilesMap.keySet().size();
+        log.info("maxSmiles: " + maxSmiles);
+        log.info("minSmiles: " + minSmiles);
+        log.info("average: " + average);
 
     }
 
@@ -146,6 +179,20 @@ public class TestController {
         }
         log.info("total spectrum: {}, right: {}", targetSpectrumDOList.size(), right);
         int a = 0;
+    }
+
+    @RequestMapping("inchi")
+    public void inchi() throws CDKException {
+        try {
+            SmilesParser sp = new SmilesParser(SilentChemObjectBuilder.getInstance());
+            IAtomContainer m = sp.parseSmiles("c1ccccc1");
+            for (IAtom atom : m.atoms()) {
+                atom.setImplicitHydrogenCount(null);
+                int a = 0;
+            }
+        } catch (InvalidSmilesException e) {
+            System.err.println(e.getMessage());
+        }
     }
 
 }
