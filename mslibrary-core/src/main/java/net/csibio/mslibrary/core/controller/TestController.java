@@ -2,6 +2,7 @@ package net.csibio.mslibrary.core.controller;
 
 
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
@@ -19,7 +20,6 @@ import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import org.openscience.cdk.exception.CDKException;
-import org.openscience.cdk.exception.InvalidSmilesException;
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
@@ -59,6 +59,8 @@ public class TestController {
     Similarity similarity;
     @Autowired
     MspGNPSParser mspGNPSParser;
+    @Autowired
+    SpectrumGenerator spectrumGenerator;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
@@ -71,43 +73,44 @@ public class TestController {
     public void clean() {
         //数据库清理
         LibraryDO libraryDO = libraryService.getById("GNPS");
-        //1. 只有存在smiles的谱图会被保留
+        //1. 只有存在smiles和precursorMz的谱图会被保留
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryDO.getId());
         int count = spectrumDOS.size();
         //remove spectrum without smiles
-        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getSmiles().equals("NA"));
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getSmiles().equals("NA")
+                || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0);
         spectrumService.remove(new SpectrumQuery(), libraryDO.getId());
-        log.info("remove " + (count - spectrumDOS.size()) + " spectra without smiles");
+        log.info("remove " + (count - spectrumDOS.size()) + " spectra without smiles or have null precursorMz");
         spectrumService.insert(spectrumDOS, libraryDO.getId());
 
         //查看谱图根据smiles分类后的分布情况
-        HashMap<String, List<SpectrumDO>> smilesMap = new HashMap<>();
-        for (SpectrumDO spectrumDO : spectrumDOS) {
-            if (smilesMap.containsKey(spectrumDO.getSmiles())) {
-                smilesMap.get(spectrumDO.getSmiles()).add(spectrumDO);
-            } else {
-                List<SpectrumDO> list = new ArrayList<>();
-                list.add(spectrumDO);
-                smilesMap.put(spectrumDO.getSmiles(), list);
-            }
-        }
-        int maxSmiles = Integer.MIN_VALUE;
-        int minSmiles = Integer.MAX_VALUE;
-        int average = 0;
-        for (String smiles : smilesMap.keySet()) {
-            List<SpectrumDO> list = smilesMap.get(smiles);
-            average += list.size();
-            if (list.size() > maxSmiles) {
-                maxSmiles = list.size();
-            }
-            if (list.size() < minSmiles) {
-                minSmiles = list.size();
-            }
-        }
-        average = average / smilesMap.keySet().size();
-        log.info("maxSmiles: " + maxSmiles);
-        log.info("minSmiles: " + minSmiles);
-        log.info("average: " + average);
+//        HashMap<String, List<SpectrumDO>> smilesMap = new HashMap<>();
+//        for (SpectrumDO spectrumDO : spectrumDOS) {
+//            if (smilesMap.containsKey(spectrumDO.getSmiles())) {
+//                smilesMap.get(spectrumDO.getSmiles()).add(spectrumDO);
+//            } else {
+//                List<SpectrumDO> list = new ArrayList<>();
+//                list.add(spectrumDO);
+//                smilesMap.put(spectrumDO.getSmiles(), list);
+//            }
+//        }
+//        int maxSmiles = Integer.MIN_VALUE;
+//        int minSmiles = Integer.MAX_VALUE;
+//        int average = 0;
+//        for (String smiles : smilesMap.keySet()) {
+//            List<SpectrumDO> list = smilesMap.get(smiles);
+//            average += list.size();
+//            if (list.size() > maxSmiles) {
+//                maxSmiles = list.size();
+//            }
+//            if (list.size() < minSmiles) {
+//                minSmiles = list.size();
+//            }
+//        }
+//        average = average / smilesMap.keySet().size();
+//        log.info("maxSmiles: " + maxSmiles);
+//        log.info("minSmiles: " + minSmiles);
+//        log.info("average: " + average);
 
     }
 
@@ -183,16 +186,18 @@ public class TestController {
 
     @RequestMapping("inchi")
     public void inchi() throws CDKException {
-        try {
-            SmilesParser sp = new SmilesParser(SilentChemObjectBuilder.getInstance());
-            IAtomContainer m = sp.parseSmiles("c1ccccc1");
-            for (IAtom atom : m.atoms()) {
-                atom.setImplicitHydrogenCount(null);
-                int a = 0;
-            }
-        } catch (InvalidSmilesException e) {
-            System.err.println(e.getMessage());
+        SmilesParser sp = new SmilesParser(SilentChemObjectBuilder.getInstance());
+        IAtomContainer m = sp.parseSmiles("c1ccccc1");
+        for (IAtom atom : m.atoms()) {
+            atom.setImplicitHydrogenCount(null);
+            int a = 0;
         }
+
+    }
+
+    @RequestMapping("decoy")
+    public void decoy() {
+        spectrumGenerator.spectrumBasedGenerate("MassBank");
     }
 
 }

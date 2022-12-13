@@ -135,9 +135,7 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
     }
 
     public List<SpectrumDO> getAllByLibraryId(String libraryId) {
-        SpectrumQuery query = new SpectrumQuery();
-        query.setLibraryId(libraryId);
-        return mongoTemplate.find(buildQueryWithoutPage(query), SpectrumDO.class, getCollectionName(libraryId));
+        return mongoTemplate.find(buildQueryWithoutPage(new SpectrumQuery()), SpectrumDO.class, getCollectionName(libraryId));
     }
 
     public List<SpectrumDO> getByIds(List<String> spectraIds, String libraryId) {
