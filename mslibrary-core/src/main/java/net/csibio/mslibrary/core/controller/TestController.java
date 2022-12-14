@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
+import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
@@ -19,12 +20,14 @@ import net.csibio.mslibrary.client.parser.massbank.MspMassBankParser;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
+import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.smiles.SmilesParser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -61,24 +64,38 @@ public class TestController {
     MspGNPSParser mspGNPSParser;
     @Autowired
     SpectrumGenerator spectrumGenerator;
+    @Autowired
+    MongoTemplate mongoTemplate;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
-//        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
         mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
     }
 
     @RequestMapping("/clean")
     public void clean() {
-        String libraryId = "GNPS";
+        String libraryId = "MassBank";
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
         spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getSmiles().equals("NA")
                 || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || spectrumDO.getMzs() == null || spectrumDO.getInts() == null);
+        spectrumDOS.removeIf(spectrumDO -> Math.abs(SpectrumUtil.findNearestMz(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) - spectrumDO.getPrecursorMz()) > spectrumDO.getPrecursorMz() * 10 * Constants.PPM);
         spectrumService.remove(new SpectrumQuery(), libraryId);
-        log.info("remove " + (count - spectrumDOS.size()) + " spectra without smiles or have null precursorMz");
         spectrumService.insert(spectrumDOS, libraryId);
+        log.info("remove " + (count - spectrumDOS.size()) + " spectra");
+    }
+
+    @RequestMapping("/clear")
+    public void clear() {
+        //delete all the database
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        for (LibraryDO libraryDO : libraryDOS) {
+            spectrumService.remove(new SpectrumQuery(), libraryDO.getId());
+            mongoTemplate.dropCollection("spectrum-" + libraryDO.getId());
+        }
+        libraryService.removeAll();
     }
 
     @RequestMapping("/remove")
@@ -164,7 +181,7 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-        spectrumGenerator.spectrumBasedGenerate("MassBank");
+        spectrumGenerator.naive("MassBank");
     }
 
     @RequestMapping("statistics")
