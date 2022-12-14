@@ -71,47 +71,14 @@ public class TestController {
 
     @RequestMapping("/clean")
     public void clean() {
-        //数据库清理
-        LibraryDO libraryDO = libraryService.getById("GNPS");
-        //1. 只有存在smiles和precursorMz的谱图会被保留
-        List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryDO.getId());
+        String libraryId = "GNPS";
+        List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
-        //remove spectrum without smiles
         spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getSmiles().equals("NA")
-                || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0);
-        spectrumService.remove(new SpectrumQuery(), libraryDO.getId());
+                || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || spectrumDO.getMzs() == null || spectrumDO.getInts() == null);
+        spectrumService.remove(new SpectrumQuery(), libraryId);
         log.info("remove " + (count - spectrumDOS.size()) + " spectra without smiles or have null precursorMz");
-        spectrumService.insert(spectrumDOS, libraryDO.getId());
-
-        //查看谱图根据smiles分类后的分布情况
-//        HashMap<String, List<SpectrumDO>> smilesMap = new HashMap<>();
-//        for (SpectrumDO spectrumDO : spectrumDOS) {
-//            if (smilesMap.containsKey(spectrumDO.getSmiles())) {
-//                smilesMap.get(spectrumDO.getSmiles()).add(spectrumDO);
-//            } else {
-//                List<SpectrumDO> list = new ArrayList<>();
-//                list.add(spectrumDO);
-//                smilesMap.put(spectrumDO.getSmiles(), list);
-//            }
-//        }
-//        int maxSmiles = Integer.MIN_VALUE;
-//        int minSmiles = Integer.MAX_VALUE;
-//        int average = 0;
-//        for (String smiles : smilesMap.keySet()) {
-//            List<SpectrumDO> list = smilesMap.get(smiles);
-//            average += list.size();
-//            if (list.size() > maxSmiles) {
-//                maxSmiles = list.size();
-//            }
-//            if (list.size() < minSmiles) {
-//                minSmiles = list.size();
-//            }
-//        }
-//        average = average / smilesMap.keySet().size();
-//        log.info("maxSmiles: " + maxSmiles);
-//        log.info("minSmiles: " + minSmiles);
-//        log.info("average: " + average);
-
+        spectrumService.insert(spectrumDOS, libraryId);
     }
 
     @RequestMapping("/remove")
@@ -198,6 +165,41 @@ public class TestController {
     @RequestMapping("decoy")
     public void decoy() {
         spectrumGenerator.spectrumBasedGenerate("MassBank");
+    }
+
+    @RequestMapping("statistics")
+    public void statistics() {
+        String libraryId = "MassBank";
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+
+        //查看谱图根据smiles分类后的分布情况
+        HashMap<String, List<SpectrumDO>> smilesMap = new HashMap<>();
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            if (smilesMap.containsKey(spectrumDO.getSmiles())) {
+                smilesMap.get(spectrumDO.getSmiles()).add(spectrumDO);
+            } else {
+                List<SpectrumDO> list = new ArrayList<>();
+                list.add(spectrumDO);
+                smilesMap.put(spectrumDO.getSmiles(), list);
+            }
+        }
+        int maxSmiles = Integer.MIN_VALUE;
+        int minSmiles = Integer.MAX_VALUE;
+        int average = 0;
+        for (String smiles : smilesMap.keySet()) {
+            List<SpectrumDO> list = smilesMap.get(smiles);
+            average += list.size();
+            if (list.size() > maxSmiles) {
+                maxSmiles = list.size();
+            }
+            if (list.size() < minSmiles) {
+                minSmiles = list.size();
+            }
+        }
+        average = average / smilesMap.keySet().size();
+        log.info("maxSmiles: " + maxSmiles);
+        log.info("minSmiles: " + minSmiles);
+        log.info("average: " + average);
     }
 
 }
