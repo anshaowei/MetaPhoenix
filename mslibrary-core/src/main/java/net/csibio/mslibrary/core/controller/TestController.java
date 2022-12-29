@@ -2,6 +2,7 @@ package net.csibio.mslibrary.core.controller;
 
 
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.algorithm.compound.Generator;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
@@ -12,7 +13,6 @@ import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
-import net.csibio.mslibrary.client.parser.gnps.CompoundGenerator;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.gnps.MspGNPSParser;
 import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
@@ -43,9 +43,6 @@ public class TestController {
     @Autowired
     GnpsParser gnpsParser;
     @Autowired
-    CompoundGenerator compoundGenerator;
-
-    @Autowired
     CompoundService compoundService;
     @Autowired
     LibraryService libraryService;
@@ -66,6 +63,8 @@ public class TestController {
     SpectrumGenerator spectrumGenerator;
     @Autowired
     MongoTemplate mongoTemplate;
+    @Autowired
+    Generator generator;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
@@ -80,7 +79,7 @@ public class TestController {
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
         spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getSmiles().equals("NA")
-                || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || spectrumDO.getMzs() == null || spectrumDO.getInts() == null);
+                || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || spectrumDO.getMzs() == null || spectrumDO.getInts() == null || spectrumDO.getMzs().length == 1 || spectrumDO.getInts().length == 1);
         spectrumDOS.removeIf(spectrumDO -> Math.abs(SpectrumUtil.findNearestMz(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) - spectrumDO.getPrecursorMz()) > spectrumDO.getPrecursorMz() * 10 * Constants.PPM);
         spectrumService.remove(new SpectrumQuery(), libraryId);
         spectrumService.insert(spectrumDOS, libraryId);
@@ -182,6 +181,11 @@ public class TestController {
     @RequestMapping("decoy")
     public void decoy() {
         spectrumGenerator.naive("MassBank");
+    }
+
+    @RequestMapping("generate")
+    public void generate() {
+        generator.generateBySmiles("MassBank");
     }
 
     @RequestMapping("statistics")
