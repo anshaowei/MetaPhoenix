@@ -29,4 +29,23 @@ public class ArrayUtil {
         }
         return array;
     }
+
+    public static int binarySearch(double[] mzs, double mz){
+        if (mzs.length > 0) {
+            int low = 0;
+            int high = mzs.length - 1;
+            while (low <= high) {
+                int mid = (low + high) >>> 1;
+                int c = Double.compare(mzs[mid], mz);
+                if (c < 0)
+                    low = mid + 1;
+                else if (c > 0)
+                    high = mid - 1;
+                else
+                    return mid; // key found
+            }
+            return -(low + 1);
+        }
+        return -1;
+    }
 }

@@ -3,7 +3,6 @@ package net.csibio.mslibrary.client.algorithm.compound;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.CompoundDO;
-import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;

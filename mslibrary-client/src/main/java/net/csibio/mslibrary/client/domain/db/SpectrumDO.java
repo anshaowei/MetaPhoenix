@@ -4,8 +4,8 @@ import lombok.Data;
 import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.domain.bean.spectrum.AnnotationHistory;
 import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
+import net.csibio.mslibrary.client.utils.ArrayUtil;
 import net.csibio.mslibrary.client.utils.CompressUtil;
-import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -195,7 +195,7 @@ public class SpectrumDO {
 
     public List<IonPeak> getIonPeaksWithoutPrecursor() {
         List<IonPeak> ionPeaks = new ArrayList<>();
-        int index = SpectrumUtil.findNearestIndex(getMzs(), getPrecursorMz());
+        int index = ArrayUtil.binarySearch(getMzs(), getPrecursorMz());
         for (int i = 0; i < getMzs().length; i++) {
             if (i == index) {
                 continue;

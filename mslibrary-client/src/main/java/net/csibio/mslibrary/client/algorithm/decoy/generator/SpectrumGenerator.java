@@ -5,7 +5,7 @@ import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
-import net.csibio.mslibrary.client.utils.SpectrumUtil;
+import net.csibio.mslibrary.client.utils.ArrayUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +36,7 @@ public class SpectrumGenerator {
         //针对每一张谱图生成decoy谱图
         for (SpectrumDO spectrumDO : spectrumDOS) {
             //提取谱图中precursorMz的peak
-            int precursorIndex = SpectrumUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
+            int precursorIndex = ArrayUtil.binarySearch(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
             IonPeak precursorIonPeak = new IonPeak(spectrumDO.getMzs()[precursorIndex], spectrumDO.getInts()[precursorIndex]);
 
             //从剩余谱图的所有ionPeak中随机挑选若干，使得target和decoy谱图的ionPeak数量相同，且谱图熵相同
@@ -77,6 +77,30 @@ public class SpectrumGenerator {
     }
 
     public void spectrumBased(String libraryId) {
+        log.info("开始执行SpectrumBased方法生成伪肽段");
+        long start = System.currentTimeMillis();
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            SpectrumDO decoySpectrum = new SpectrumDO();
+            decoySpectrum.setPrecursorMz(spectrumDO.getPrecursorMz());
+            List<IonPeak> ionPeaks = new ArrayList<>();
+
+            //1.将precursor所代表的ionPeak加入到伪谱图中
+            int precursorIndex = ArrayUtil.binarySearch(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
+            IonPeak precursorIonPeak = new IonPeak(spectrumDO.getMzs()[precursorIndex], spectrumDO.getInts()[precursorIndex]);
+            ionPeaks.add(precursorIonPeak);
+
+            //2.找到所有包含precursor的谱图
+            List<SpectrumDO> candidates = new ArrayList<>();
+            for (SpectrumDO candidate : spectrumDOS) {
+                if (candidate.equals(spectrumDO)) {
+                    continue;
+                }
+                double[] mzs = candidate.getMzs();
+
+            }
+        }
 
     }
 
