@@ -3,6 +3,7 @@ package net.csibio.mslibrary.client.algorithm.decoy.generator;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
+import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -25,13 +26,21 @@ public class SpectrumGenerator {
 
     public void naive(String libraryId) {
         log.info("开始执行naive方法生成伪肽段");
+        LibraryDO decoyLibraryDO = new LibraryDO();
+        decoyLibraryDO.setName(libraryId + "-decoy");
+        if (libraryService.insert(decoyLibraryDO).isFailed()) {
+            log.error("创建decoy库失败");
+            return;
+        } else {
+            log.info("创建{}库成功", decoyLibraryDO.getName());
+        }
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
 
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
         List<IonPeak> allIonPeaks = new ArrayList<>();
         for (SpectrumDO spectrumDO : spectrumDOS) {
-            allIonPeaks.addAll(getIonPeaksWithoutPrecursor(spectrumDO));
+            allIonPeaks.addAll(getLimitedIonPeaks(spectrumDO, spectrumDO.getMzs().length, spectrumDO.getPrecursorMz(), spectrumDO.getPrecursorMz()));
         }
 
         //针对每一张谱图生成decoy谱图
@@ -75,11 +84,21 @@ public class SpectrumGenerator {
         }
         long end = System.currentTimeMillis();
         log.info("naive方法生成伪肽段完成，耗时{}ms", end - start);
+        spectrumService.insert(decoySpectrumDOS, decoyLibraryDO.getId());
     }
 
     public void spectrumBased(String libraryId) {
 
         log.info("开始执行SpectrumBased方法生成伪肽段");
+        LibraryDO decoyLibraryDO = new LibraryDO();
+        decoyLibraryDO.setName(libraryId + "-decoy");
+        if (libraryService.insert(decoyLibraryDO).isFailed()) {
+            log.error("创建decoy库失败");
+            return;
+        } else {
+            log.info("创建{}库成功", decoyLibraryDO.getName());
+        }
+
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -94,7 +113,7 @@ public class SpectrumGenerator {
             decoyIonPeaks.add(precursorIonPeak);
             double lastAddedMz = spectrumDO.getPrecursorMz();
 
-            //2. 迭代性地向空的伪谱图中迭代加入若干个信号点
+            //2. 迭代性地向空的伪谱图中迭代加入若干个信号点，此步骤有可能会导致伪谱图中的信号点数量小于target谱图
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
                 //2.1 找到包含上一个添加的mz的所有谱图
                 List<SpectrumDO> candidateSpectra = findCandidateSpectra(spectrumDOS, lastAddedMz);
@@ -102,19 +121,18 @@ public class SpectrumGenerator {
                 //2.2 生成候选ionPeak集合，每张谱图选择5个信号，谱图不足5个信号则全选
                 List<IonPeak> candidateIonPeaks = new ArrayList<>();
                 for (SpectrumDO candidateSpectrum : candidateSpectra) {
-                    candidateIonPeaks.addAll(getLimitedIonPeaks(candidateSpectrum, 5));
+                    candidateIonPeaks.addAll(getLimitedIonPeaks(candidateSpectrum, 5, spectrumDO.getPrecursorMz(), lastAddedMz));
                 }
 
-                //2.3 从候选ionPeak集合中排除上一个已经添加的mz
-                double finalLastAddedMz = lastAddedMz;
-                candidateIonPeaks.removeIf(ionPeak -> Math.abs(ionPeak.getMz() - finalLastAddedMz) < 5 * Constants.PPM * finalLastAddedMz);
-
-                //2.4 从候选ionPeak集合中随机选择一个加入到伪谱图中
+                //2.3 从候选ionPeak集合中随机选择一个加入到伪谱图中
+                if (candidateIonPeaks.size() == 0) {
+                    continue;
+                }
                 int randomIndex = new Random().nextInt(candidateIonPeaks.size());
                 IonPeak randomIonPeak = candidateIonPeaks.get(randomIndex);
                 decoyIonPeaks.add(randomIonPeak);
 
-                //2.5 重新设置最后添加的mz
+                //2.4 重新设置最后添加的mz
                 lastAddedMz = randomIonPeak.getMz();
             }
 
@@ -137,9 +155,12 @@ public class SpectrumGenerator {
             decoySpectrum.setMzs(mzs);
             decoySpectrum.setInts(intensities);
             decoySpectrum.setPrecursorMz(spectrumDO.getPrecursorMz());
+            decoySpectrumDOS.add(decoySpectrum);
         }
 
-        int a = 9;
+        log.info("SpectrumBased方法生成伪肽段完成，耗时{}ms", System.currentTimeMillis() - start);
+        spectrumService.insert(decoySpectrumDOS, decoyLibraryDO.getId());
+        log.info("伪肽段库{}已经生成", decoyLibraryDO.getName());
 
     }
 
@@ -164,60 +185,45 @@ public class SpectrumGenerator {
         return candidates;
     }
 
-    private List<IonPeak> getIonPeaksWithoutPrecursor(SpectrumDO spectrumDO) {
-        List<IonPeak> ionPeaks = new ArrayList<>();
-        int index = ArrayUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
-        for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-            if (i == index) {
-                continue;
-            }
-            IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
-            ionPeaks.add(ionPeak);
-        }
-        return ionPeaks;
-    }
-
     /**
-     * 提取一个谱图中的ionPeak
-     *
-     * @param spectrumDO
-     * @return
-     */
-    private List<IonPeak> getIonPeaks(SpectrumDO spectrumDO) {
-        List<IonPeak> ionPeaks = new ArrayList<>();
-        for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-            IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
-            ionPeaks.add(ionPeak);
-        }
-        return ionPeaks;
-    }
-
-    /**
-     * 根据限制数量提取一个谱图中的ionPeak
+     * 根据限制数量提取一个谱图中的ionPeak，不选择大于precursorMz或已经添加过mz的ionPeak
      *
      * @param spectrumDO
      * @param limitCount
      * @return
      */
-    private List<IonPeak> getLimitedIonPeaks(SpectrumDO spectrumDO, int limitCount) {
-        if (limitCount > spectrumDO.getMzs().length) {
-            return getIonPeaks(spectrumDO);
+    private List<IonPeak> getLimitedIonPeaks(SpectrumDO spectrumDO, int limitCount, double precursorMz, double lastAddedMz) {
+
+        //找到所有小于precursorMz的ionPeak
+        List<IonPeak> ionPeaks = new ArrayList<>();
+        for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+            if (spectrumDO.getMzs()[i] > precursorMz) {
+                break;
+            }
+            IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
+            ionPeaks.add(ionPeak);
+        }
+
+        //排除已经添加过的mz
+        ionPeaks.removeIf(ionPeak -> Math.abs(ionPeak.getMz() - lastAddedMz) < 5 * Constants.PPM * lastAddedMz);
+
+        //随机选择limitCount个ionPeak
+        if (limitCount >= ionPeaks.size()) {
+            return ionPeaks;
         } else {
-            List<IonPeak> ionPeaks = new ArrayList<>();
-            //generate limitCount random numbers less than spectrumDO.getMzs().length
+            List<IonPeak> randomIonPeaks = new ArrayList<>();
             List<Integer> randomIndexes = new ArrayList<>();
             for (int i = 0; i < limitCount; i++) {
-                int randomIndex = (int) (Math.random() * spectrumDO.getMzs().length);
+                int randomIndex = (int) (Math.random() * ionPeaks.size());
                 while (randomIndexes.contains(randomIndex)) {
-                    randomIndex = (int) (Math.random() * spectrumDO.getMzs().length);
+                    randomIndex = (int) (Math.random() * ionPeaks.size());
                 }
                 randomIndexes.add(randomIndex);
             }
-            for (int i = 0; i < limitCount; i++) {
-                IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[randomIndexes.get(i)], spectrumDO.getInts()[randomIndexes.get(i)]);
-                ionPeaks.add(ionPeak);
+            for (int randomIndex : randomIndexes) {
+                randomIonPeaks.add(ionPeaks.get(randomIndex));
             }
-            return ionPeaks;
+            return randomIonPeaks;
         }
     }
 
