@@ -3,15 +3,12 @@ package net.csibio.mslibrary.client.domain.db;
 import lombok.Data;
 import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.domain.bean.spectrum.AnnotationHistory;
-import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
-import net.csibio.mslibrary.client.utils.ArrayUtil;
 import net.csibio.mslibrary.client.utils.CompressUtil;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -182,28 +179,6 @@ public class SpectrumDO {
 
     public Spectrum getSpectrum() {
         return new Spectrum(getMzs(), getInts());
-    }
-
-    public List<IonPeak> getIonPeaks() {
-        List<IonPeak> ionPeaks = new ArrayList<>();
-        for (int i = 0; i < getMzs().length; i++) {
-            IonPeak ionPeak = new IonPeak(getMzs()[i], getInts()[i]);
-            ionPeaks.add(ionPeak);
-        }
-        return ionPeaks;
-    }
-
-    public List<IonPeak> getIonPeaksWithoutPrecursor() {
-        List<IonPeak> ionPeaks = new ArrayList<>();
-        int index = ArrayUtil.binarySearch(getMzs(), getPrecursorMz());
-        for (int i = 0; i < getMzs().length; i++) {
-            if (i == index) {
-                continue;
-            }
-            IonPeak ionPeak = new IonPeak(getMzs()[i], getInts()[i]);
-            ionPeaks.add(ionPeak);
-        }
-        return ionPeaks;
     }
 
 }

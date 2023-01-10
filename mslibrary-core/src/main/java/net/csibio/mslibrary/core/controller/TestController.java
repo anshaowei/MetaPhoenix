@@ -20,12 +20,8 @@ import net.csibio.mslibrary.client.parser.massbank.MspMassBankParser;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
-import net.csibio.mslibrary.client.utils.SpectrumUtil;
+import net.csibio.mslibrary.client.utils.ArrayUtil;
 import org.openscience.cdk.exception.CDKException;
-import org.openscience.cdk.interfaces.IAtom;
-import org.openscience.cdk.interfaces.IAtomContainer;
-import org.openscience.cdk.silent.SilentChemObjectBuilder;
-import org.openscience.cdk.smiles.SmilesParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -80,7 +76,7 @@ public class TestController {
         int count = spectrumDOS.size();
         spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getSmiles().equals("NA")
                 || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || spectrumDO.getMzs() == null || spectrumDO.getInts() == null || spectrumDO.getMzs().length == 1 || spectrumDO.getInts().length == 1);
-        spectrumDOS.removeIf(spectrumDO -> Math.abs(SpectrumUtil.findNearestMz(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) - spectrumDO.getPrecursorMz()) > spectrumDO.getPrecursorMz() * 10 * Constants.PPM);
+        spectrumDOS.removeIf(spectrumDO -> ArrayUtil.findNearestDiff(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) > spectrumDO.getPrecursorMz() * 10 * Constants.PPM);
         spectrumService.remove(new SpectrumQuery(), libraryId);
         spectrumService.insert(spectrumDOS, libraryId);
         log.info("remove " + (count - spectrumDOS.size()) + " spectra");
@@ -169,18 +165,18 @@ public class TestController {
 
     @RequestMapping("inchi")
     public void inchi() throws CDKException {
-        SmilesParser sp = new SmilesParser(SilentChemObjectBuilder.getInstance());
-        IAtomContainer m = sp.parseSmiles("c1ccccc1");
-        for (IAtom atom : m.atoms()) {
-            atom.setImplicitHydrogenCount(null);
-            int a = 0;
-        }
+//        SmilesParser sp = new SmilesParser(SilentChemObjectBuilder.getInstance());
+//        IAtomContainer m = sp.parseSmiles("c1ccccc1");
+//        for (IAtom atom : m.atoms()) {
+//            atom.setImplicitHydrogenCount(null);
+//            int a = 0;
+//        }
 
     }
 
     @RequestMapping("decoy")
     public void decoy() {
-        spectrumGenerator.naive("MassBank");
+        spectrumGenerator.spectrumBased("MassBank");
     }
 
     @RequestMapping("generate")

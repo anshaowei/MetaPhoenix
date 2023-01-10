@@ -30,22 +30,20 @@ public class ArrayUtil {
         return array;
     }
 
-    public static int binarySearch(double[] mzs, double mz){
-        if (mzs.length > 0) {
-            int low = 0;
-            int high = mzs.length - 1;
-            while (low <= high) {
-                int mid = (low + high) >>> 1;
-                int c = Double.compare(mzs[mid], mz);
-                if (c < 0)
-                    low = mid + 1;
-                else if (c > 0)
-                    high = mid - 1;
-                else
-                    return mid; // key found
+    public static int findNearestIndex(double[] mzs, double mz) {
+        int index = 0;
+        double min = Double.MAX_VALUE;
+        for (int i = 0; i < mzs.length; i++) {
+            double diff = Math.abs(mzs[i] - mz);
+            if (diff < min) {
+                min = diff;
+                index = i;
             }
-            return -(low + 1);
         }
-        return -1;
+        return index;
+    }
+
+    public static double findNearestDiff(double[] mzs, double mz) {
+        return Math.abs(mzs[findNearestIndex(mzs, mz)] - mz);
     }
 }

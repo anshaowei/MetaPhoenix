@@ -88,8 +88,4 @@ public class SpectrumUtil {
         return spectrum1;
     }
 
-    public static double findNearestMz(double[] mzs, double mz) {
-        return mzs[ArrayUtil.binarySearch(mzs, mz)];
-    }
-
 }
