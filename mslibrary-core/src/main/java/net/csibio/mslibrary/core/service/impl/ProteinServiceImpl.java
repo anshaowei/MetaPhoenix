@@ -86,7 +86,7 @@ public class ProteinServiceImpl implements ProteinService {
         });
 
         insert(proteins, libraryId);
-        library.setCompoundCount(proteins.size());
+        library.setCount(proteins.size());
         libraryService.update(library);
     }
 }

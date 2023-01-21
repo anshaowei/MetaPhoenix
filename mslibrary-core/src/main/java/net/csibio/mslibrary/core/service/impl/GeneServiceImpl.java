@@ -85,7 +85,7 @@ public class GeneServiceImpl implements GeneService {
         });
         remove(new GeneQuery(), libraryId);
         insert(genes, libraryId);
-        library.setCompoundCount(genes.size());
+        library.setCount(genes.size());
         libraryService.update(library);
     }
 }
