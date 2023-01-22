@@ -49,6 +49,9 @@ public class SpectrumController {
             query.setLibraryId(query.getLibraryId());
         }
         Result<List<SpectrumDO>> res = spectrumService.getList(query, query.getLibraryId());
+        if (res.isSuccess()){
+            res.getData().forEach(SpectrumDO::decode);
+        }
         return res;
     }
 

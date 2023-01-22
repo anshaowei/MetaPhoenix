@@ -165,6 +165,18 @@ public class SpectrumDO {
         this.byteMzs = CompressUtil.encode(mzs);
     }
 
+    public void decode(){
+        this.ints = CompressUtil.decode(byteInts);
+        this.mzs = CompressUtil.decode(byteMzs);
+        this.byteInts = null;
+        this.byteMzs = null;
+    }
+
+    public void encode(){
+        this.byteMzs = CompressUtil.encode(mzs);
+        this.byteInts = CompressUtil.encode(ints);
+    }
+
     public double[] getInts() {
         if (ints == null && byteInts != null) {
             ints = CompressUtil.decode(byteInts);
