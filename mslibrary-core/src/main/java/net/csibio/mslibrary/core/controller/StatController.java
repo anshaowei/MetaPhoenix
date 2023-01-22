@@ -7,6 +7,7 @@ import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.StatDO;
 import net.csibio.mslibrary.client.domain.query.StatQuery;
 import net.csibio.mslibrary.client.service.StatService;
+import net.csibio.mslibrary.client.utils.DateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -43,6 +44,9 @@ public class StatController {
         query.setDim(StatDim.Day.getDim());
         query.setType(StatType.Global_Total.getName());
         StatDO stat = statService.getOne(query, StatDO.class);
+        if (stat == null) {
+            stat = statService.globalStat(StatDim.Day, DateUtil.getTodayDate());
+        }
         return Result.OK(stat);
     }
 }

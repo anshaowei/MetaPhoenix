@@ -76,7 +76,7 @@ public class StatServiceImpl implements StatService {
     }
 
     @Override
-    public void globalStat(StatDim dim, Date date) {
+    public StatDO globalStat(StatDim dim, Date date) {
         StatDO stat = getByUniqueKey(dim.getDim(), StatType.Global_Total.getName(), date);
         if (stat != null) {
             remove(stat.getId());
@@ -113,5 +113,6 @@ public class StatServiceImpl implements StatService {
 
         stat.setStatMap(statMap);
         statDAO.insert(stat);
+        return stat;
     }
 }

@@ -21,5 +21,5 @@ public interface StatService extends BaseService<StatDO, StatQuery> {
      */
     StatDO getByUniqueKey(String dim, String type, String date) throws XException;
 
-    void globalStat(StatDim dim, Date date) throws ParseException;
+    StatDO globalStat(StatDim dim, Date date) throws ParseException;
 }
