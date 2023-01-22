@@ -118,5 +118,4 @@ public class AsyncController {
         gnpsParser.parseJSON(gnps);
         return Result.OK();
     }
-
 }
