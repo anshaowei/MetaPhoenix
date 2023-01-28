@@ -21,15 +21,23 @@ import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.client.utils.ArrayUtil;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openscience.cdk.exception.CDKException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("test")
@@ -217,6 +225,21 @@ public class TestController {
         log.info("maxSmiles: " + maxSmiles);
         log.info("minSmiles: " + minSmiles);
         log.info("average: " + average);
+    }
+
+    @RequestMapping("dataImport")
+    public void dataImport() throws Exception {
+        FileInputStream in = new FileInputStream(new File("/Users/anshaowei/Downloads/ST001794/ST001794.xlsx"));
+        Workbook workbook = null;
+        workbook = new XSSFWorkbook(in);
+        Sheet sheet = workbook.getSheetAt(4);
+        for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
+            Row row = sheet.getRow(i);
+            for (int index = 0; index < row.getPhysicalNumberOfCells(); index++) {
+                Cell cell = row.getCell(index);
+
+            }
+        }
     }
 
 }

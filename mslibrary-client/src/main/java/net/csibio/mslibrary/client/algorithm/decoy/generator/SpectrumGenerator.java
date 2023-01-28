@@ -164,7 +164,7 @@ public class SpectrumGenerator {
 
     }
 
-    public void fragmentationTree(String libraryId) {
+    public void entropyBased(String libraryId) {
 
     }
 
