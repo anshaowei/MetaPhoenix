@@ -33,11 +33,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("test")
@@ -229,17 +227,41 @@ public class TestController {
 
     @RequestMapping("dataImport")
     public void dataImport() throws Exception {
-        FileInputStream in = new FileInputStream(new File("/Users/anshaowei/Downloads/ST001794/ST001794.xlsx"));
-        Workbook workbook = null;
-        workbook = new XSSFWorkbook(in);
+        File file = new File("/Users/anshaowei/Downloads/ST001794/ST001794.xlsx");
+        Workbook workbook = new XSSFWorkbook(file);
         Sheet sheet = workbook.getSheetAt(4);
-        for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
+        List<SpectrumDO> spectrumDOS = new ArrayList<>();
+        for (int i = 1; i < sheet.getLastRowNum(); i++) {
+            if (i == 1 || i == 831 || i == 54) {
+                continue;
+            }
             Row row = sheet.getRow(i);
-            for (int index = 0; index < row.getPhysicalNumberOfCells(); index++) {
-                Cell cell = row.getCell(index);
-
+            if (row.getCell(1).getStringCellValue().contains("lvl 1")) {
+                SpectrumDO spectrumDO = new SpectrumDO();
+                spectrumDO.setLibraryId("ST001794");
+                for (Cell cell : row) {
+                    switch (cell.getColumnIndex()) {
+                        case 0 -> spectrumDO.setCompoundName(cell.getStringCellValue());
+                        case 3 -> spectrumDO.setPrecursorMz(cell.getNumericCellValue());
+                        case 10 -> spectrumDO.setSmiles(cell.getStringCellValue());
+                        case 12 -> {
+                            String values = cell.getStringCellValue();
+                            String[] valueArray = values.split(" ");
+                            double[] mzArray = new double[valueArray.length];
+                            double[] intensityArray = new double[valueArray.length];
+                            for (int j = 0; j < valueArray.length; j++) {
+                                String[] mzAndIntensity = valueArray[j].split(":");
+                                mzArray[j] = Double.parseDouble(mzAndIntensity[0]);
+                                intensityArray[j] = Double.parseDouble(mzAndIntensity[1]);
+                            }
+                            spectrumDO.setMzs(mzArray);
+                            spectrumDO.setInts(intensityArray);
+                        }
+                    }
+                }
+                spectrumDOS.add(spectrumDO);
             }
         }
+        spectrumService.insert(spectrumDOS, "ST001794");
     }
-
 }
