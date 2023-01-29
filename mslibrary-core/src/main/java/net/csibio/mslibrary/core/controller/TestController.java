@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -77,12 +78,12 @@ public class TestController {
 
     @RequestMapping("/clean")
     public void clean() {
-        String libraryId = "MassBank";
+        String libraryId = "GNPS";
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
         spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getSmiles().equals("NA")
-                || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || spectrumDO.getMzs() == null || spectrumDO.getInts() == null || spectrumDO.getMzs().length == 1 || spectrumDO.getInts().length == 1);
-        spectrumDOS.removeIf(spectrumDO -> ArrayUtil.findNearestDiff(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) > spectrumDO.getPrecursorMz() * 10 * Constants.PPM);
+                || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || spectrumDO.getMzs() == null || spectrumDO.getInts() == null || spectrumDO.getMzs().length == 0 || spectrumDO.getInts().length == 0 ||
+                ArrayUtil.findNearestDiff(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) > spectrumDO.getPrecursorMz() * 10 * Constants.PPM);
         spectrumService.remove(new SpectrumQuery(), libraryId);
         spectrumService.insert(spectrumDOS, libraryId);
         log.info("remove " + (count - spectrumDOS.size()) + " spectra");
@@ -263,5 +264,38 @@ public class TestController {
             }
         }
         spectrumService.insert(spectrumDOS, "ST001794");
+    }
+
+    @RequestMapping("compare")
+    public void compare() {
+        long start = System.currentTimeMillis();
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
+        int right = 0;
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            Double precursorMz = spectrumDO.getPrecursorMz();
+            List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(precursorMz, "GNPS");
+            librarySpectra.addAll(spectrumService.getByPrecursorMz(precursorMz, "MassBank"));
+            List<LibraryHit> libraryHits = new ArrayList<>();
+            for (SpectrumDO librarySpectrum : librarySpectra) {
+                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum());
+                LibraryHit libraryHit = new LibraryHit();
+                libraryHit.setSpectrumId(librarySpectrum.getId());
+                libraryHit.setSmiles(librarySpectrum.getSmiles());
+                libraryHit.setMatchScore(score);
+                libraryHits.add(libraryHit);
+            }
+            libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
+            if (libraryHits.size() > 5) {
+                libraryHits = libraryHits.subList(0, 5);
+            }
+            for (LibraryHit libraryHit : libraryHits) {
+                if (libraryHit.getSmiles().equals(spectrumDO.getSmiles())) {
+                    right++;
+                    break;
+                }
+            }
+        }
+        long end = System.currentTimeMillis();
+        log.info("total spectrum: {}, right: {}, time: {}", spectrumDOS.size(), right, end - start);
     }
 }

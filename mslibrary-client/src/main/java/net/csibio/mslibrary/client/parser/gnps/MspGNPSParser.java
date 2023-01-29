@@ -33,7 +33,7 @@ public class MspGNPSParser {
 
         //read file use buffer
         File file = new File(filePath);
-        FileInputStream fis = null;
+        FileInputStream fis;
         try {
             //fast read of spectra information
             fis = new FileInputStream(file);
