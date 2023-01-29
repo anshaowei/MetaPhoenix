@@ -158,7 +158,7 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
 
     public List<SpectrumDO> getByPrecursorMz(Double precursorMz, String libraryId) {
         Query query = new Query();
-        query.addCriteria(Criteria.where("precursorMz").gte(precursorMz - 0.01).lte(precursorMz + 0.01));
+        query.addCriteria(Criteria.where("precursorMz").gte(precursorMz - 1).lte(precursorMz + 1));
         return mongoTemplate.find(query, SpectrumDO.class, getCollectionName(libraryId));
     }
 
