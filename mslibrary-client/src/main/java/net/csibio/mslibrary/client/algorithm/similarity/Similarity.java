@@ -73,7 +73,7 @@ public class Similarity {
         SpectrumUtil.normalize(spectrumA);
         SpectrumUtil.normalize(spectrumB);
 
-        Spectrum mixSpectrum = SpectrumUtil.mix(spectrumA, spectrumB);
+        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, 0.5, 0.5);
 
         double entropyA = entropy.getEntropy(spectrumA);
         double entropyB = entropy.getEntropy(spectrumB);
