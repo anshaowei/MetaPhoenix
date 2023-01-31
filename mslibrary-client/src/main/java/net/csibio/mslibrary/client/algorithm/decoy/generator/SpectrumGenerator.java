@@ -26,14 +26,6 @@ public class SpectrumGenerator {
 
     public void naive(String libraryId) {
         log.info("开始执行naive方法生成伪肽段");
-        LibraryDO decoyLibraryDO = new LibraryDO();
-        decoyLibraryDO.setName(libraryId + "-decoy");
-        if (libraryService.insert(decoyLibraryDO).isFailed()) {
-            log.error("创建decoy库失败");
-            return;
-        } else {
-            log.info("创建{}库成功", decoyLibraryDO.getName());
-        }
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
 
@@ -49,7 +41,7 @@ public class SpectrumGenerator {
             int precursorIndex = ArrayUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
             IonPeak precursorIonPeak = new IonPeak(spectrumDO.getMzs()[precursorIndex], spectrumDO.getInts()[precursorIndex]);
 
-            //从剩余谱图的所有ionPeak中随机挑选若干，使得target和decoy谱图的ionPeak数量相同，且谱图熵相同
+            //从剩余谱图的所有ionPeak中随机挑选若干，使得target和decoy谱图的ionPeak数量相同
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
                 int randomIndex = new Random().nextInt(allIonPeaks.size());
@@ -84,7 +76,7 @@ public class SpectrumGenerator {
         }
         long end = System.currentTimeMillis();
         log.info("naive方法生成伪肽段完成，耗时{}ms", end - start);
-        spectrumService.insert(decoySpectrumDOS, decoyLibraryDO.getId());
+        spectrumService.insert(decoySpectrumDOS, libraryId + "-decoy");
     }
 
     public void spectrumBased(String libraryId) {
@@ -161,10 +153,6 @@ public class SpectrumGenerator {
         log.info("SpectrumBased方法生成伪肽段完成，耗时{}ms", System.currentTimeMillis() - start);
         spectrumService.insert(decoySpectrumDOS, decoyLibraryDO.getId());
         log.info("伪肽段库{}已经生成", decoyLibraryDO.getName());
-
-    }
-
-    public void entropyBased(String libraryId) {
 
     }
 
