@@ -25,7 +25,7 @@ public class SpectrumGenerator {
     SpectrumService spectrumService;
 
     public void naive(String libraryId) {
-        log.info("开始执行naive方法生成伪肽段");
+        log.info("开始执行naive方法生成伪谱图");
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -73,6 +73,62 @@ public class SpectrumGenerator {
         }
         long end = System.currentTimeMillis();
         log.info("naive方法生成伪肽段完成，耗时{}ms", end - start);
+        spectrumService.insert(decoySpectrumDOS, libraryId + "-decoy");
+    }
+
+    public void entropyBased(String libraryId) {
+        log.info("开始执行entropy方法生成伪谱图");
+        long start = System.currentTimeMillis();
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
+        List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
+        HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            ionPeaksWithoutPrecursor.addAll(separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap));
+        }
+
+        //针对每一张谱图生成decoy谱图
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            //1. 将precursor的peak插入到谱图中
+            List<IonPeak> decoyIonPeaks = new ArrayList<>();
+            IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
+            decoyIonPeaks.add(precursorIonPeak);
+
+            //2. 从剩余谱图的所有ionPeak中随机挑选若干，使得target和decoy谱图的ionPeak数量相同
+            for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
+                int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
+                IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
+                if (decoyIonPeaks.contains(ionPeak)) {
+                    i--;
+                    continue;
+                }
+                decoyIonPeaks.add(ionPeaksWithoutPrecursor.get(randomIndex));
+            }
+
+            //3. 将decoyIonPeaks生成谱图
+            decoyIonPeaks.sort((o1, o2) -> {
+                if (o1.getMz() > o2.getMz()) {
+                    return 1;
+                } else if (o1.getMz() < o2.getMz()) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            });
+            double[] mzs = new double[decoyIonPeaks.size()];
+            double[] intensities = new double[decoyIonPeaks.size()];
+            for (int i = 0; i < decoyIonPeaks.size(); i++) {
+                mzs[i] = decoyIonPeaks.get(i).getMz();
+                intensities[i] = decoyIonPeaks.get(i).getIntensity();
+            }
+            SpectrumDO decoySpectrumDO = new SpectrumDO();
+            decoySpectrumDO.setMzs(mzs);
+            decoySpectrumDO.setInts(intensities);
+            decoySpectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz());
+            decoySpectrumDOS.add(decoySpectrumDO);
+        }
+        long end = System.currentTimeMillis();
+        log.info("entropy方法生成伪肽段完成，耗时{}ms", end - start);
         spectrumService.insert(decoySpectrumDOS, libraryId + "-decoy");
     }
 
