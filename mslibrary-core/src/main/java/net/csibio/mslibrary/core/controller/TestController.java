@@ -80,7 +80,7 @@ public class TestController {
     @RequestMapping("/clean")
     public void clean() {
         log.info("开始执行谱图清洗");
-        String libraryId = "MassBank";
+        String libraryId = "GNPS";
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
         spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A")
@@ -187,7 +187,7 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-        spectrumGenerator.naive("GNPS");
+        spectrumGenerator.naive("MassBank");
     }
 
     @RequestMapping("generate")
@@ -311,9 +311,75 @@ public class TestController {
 
     @RequestMapping("fdr")
     public void fdr() {
-        String libraryId = "GNPS";
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        List<SpectrumDO> decoySpectrumDOS = spectrumService.getAllByLibraryId(libraryId + "-decoy");
+//        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("MassBank");
+        spectrumDOS = spectrumDOS.subList(0, 2000);
+        List<LibraryHit> libraryHits = new ArrayList<>();
+        String libraryId = "MassBank";
+        String decoyLibraryId = libraryId + "-decoy";
+        int incorrect = 0;
+        int correct = 0;
+
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), libraryId);
+            List<SpectrumDO> decoyLibrarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), decoyLibraryId);
+            if (librarySpectra.size() == 0 || decoyLibrarySpectra.size() == 0) {
+                continue;
+            }
+            correct++;
+
+            //Library打分
+            double maxScore = Double.MIN_VALUE;
+            int index = 0;
+            for (int i = 0; i < librarySpectra.size(); i++) {
+//                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), librarySpectra.get(i).getSpectrum());
+                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectra.get(i).getSpectrum(), 0.01);
+                if (score > maxScore) {
+                    maxScore = score;
+                    index = i;
+                }
+                incorrect++;
+            }
+            LibraryHit libraryHit = new LibraryHit();
+            libraryHit.setSpectrumId(librarySpectra.get(index).getId());
+            libraryHit.setLibraryName(libraryId);
+            libraryHit.setSmiles(librarySpectra.get(index).getSmiles());
+            libraryHit.setMatchScore(maxScore);
+            libraryHits.add(libraryHit);
+
+            //decoy打分
+            maxScore = Double.MIN_VALUE;
+            index = 0;
+            for (int i = 0; i < decoyLibrarySpectra.size(); i++) {
+//                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), decoyLibrarySpectra.get(i).getSpectrum());
+                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), decoyLibrarySpectra.get(i).getSpectrum(), 0.01);
+                if (score > maxScore) {
+                    maxScore = score;
+                    index = i;
+                }
+            }
+            LibraryHit decoyLibraryHit = new LibraryHit();
+            decoyLibraryHit.setSpectrumId(decoyLibrarySpectra.get(index).getId());
+            decoyLibraryHit.setLibraryName(decoyLibraryId);
+            decoyLibraryHit.setSmiles(decoyLibrarySpectra.get(index).getSmiles());
+            decoyLibraryHit.setMatchScore(maxScore);
+            libraryHits.add(decoyLibraryHit);
+        }
+        incorrect = incorrect - correct;
+
+        //找到满足FDR条件的分数阈值
+        double threshold = 0.0;
+        for (int i = 0; i < 100; i++) {
+            threshold = i * 0.01;
+            double finalThreshold = threshold;
+            List<LibraryHit> positiveHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && libraryHit.getLibraryName().equals(libraryId)).toList();
+            List<LibraryHit> negativeHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && libraryHit.getLibraryName().equals(decoyLibraryId)).toList();
+            double fdr = (double) negativeHits.size() / positiveHits.size() * incorrect / (correct + incorrect);
+            if (fdr < 0.05) {
+                break;
+            }
+        }
+        log.info("threshold: " + threshold);
     }
 
 }

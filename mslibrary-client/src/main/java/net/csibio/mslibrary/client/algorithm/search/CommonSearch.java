@@ -32,6 +32,11 @@ public class CommonSearch {
     @Autowired
     SpectrumScorer spectrumScorer;
 
+    /**
+     * mgf格式文件检索
+     * @param filePath
+     * @param identificationParams
+     */
     public void identify(String filePath, IdentificationParams identificationParams) {
         //1.文件解析
         List<MgfMsSpectrum> mgfMsSpectrumList = new ArrayList<>();
