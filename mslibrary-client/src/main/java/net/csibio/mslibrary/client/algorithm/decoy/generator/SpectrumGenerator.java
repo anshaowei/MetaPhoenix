@@ -81,15 +81,6 @@ public class SpectrumGenerator {
     public void spectrumBased(String libraryId) {
 
         log.info("开始执行SpectrumBased方法生成伪肽段");
-        LibraryDO decoyLibraryDO = new LibraryDO();
-        decoyLibraryDO.setName(libraryId + "-decoy");
-        if (libraryService.insert(decoyLibraryDO).isFailed()) {
-            log.error("创建decoy库失败");
-            return;
-        } else {
-            log.info("创建{}库成功", decoyLibraryDO.getName());
-        }
-
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -150,8 +141,8 @@ public class SpectrumGenerator {
         }
 
         log.info("SpectrumBased方法生成伪肽段完成，耗时{}ms", System.currentTimeMillis() - start);
-        spectrumService.insert(decoySpectrumDOS, decoyLibraryDO.getId());
-        log.info("伪肽段库{}已经生成", decoyLibraryDO.getName());
+        spectrumService.insert(decoySpectrumDOS, libraryId + "-decoy");
+        log.info("伪肽段库{}已经生成", libraryId + "-decoy");
 
     }
 
