@@ -6,6 +6,7 @@ import net.csibio.mslibrary.client.algorithm.compound.Generator;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
+import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
@@ -72,19 +73,19 @@ public class TestController {
     public void importLibrary() {
         log.info("开始执行谱图导入");
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
-        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MoNA-export-LC-MS-MS_Spectra.msp");
+        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
 //        mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
     }
 
     @RequestMapping("/clean")
     public void clean() {
         log.info("开始执行谱图清洗");
-        String libraryId = "GNPS";
+        String libraryId = "MassBank";
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
-        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getSmiles().equals("NA")
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A")
                 || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || spectrumDO.getMzs() == null || spectrumDO.getInts() == null || spectrumDO.getMzs().length == 0 || spectrumDO.getInts().length == 0 ||
-                ArrayUtil.findNearestDiff(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) > 2);
+                ArrayUtil.findNearestDiff(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) > 10 * Constants.PPM * spectrumDO.getPrecursorMz() || spectrumDO.getMzs().length == 1 || spectrumDO.getInts().length == 1);
         spectrumService.remove(new SpectrumQuery(), libraryId);
         spectrumService.insert(spectrumDOS, libraryId);
         log.info("remove " + (count - spectrumDOS.size()) + " spectra");
@@ -186,7 +187,7 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-        spectrumGenerator.spectrumBased("MassBank");
+        spectrumGenerator.naive("GNPS");
     }
 
     @RequestMapping("generate")
@@ -284,8 +285,8 @@ public class TestController {
                 if (librarySpectrum.getSmiles().equals(spectrumDO.getSmiles())) {
                     exist++;
                 }
-                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), 0.01);
-//                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum());
+//                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), 0.01);
+                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum());
                 LibraryHit libraryHit = new LibraryHit();
                 libraryHit.setSpectrumId(librarySpectrum.getId());
                 libraryHit.setSmiles(librarySpectrum.getSmiles());
@@ -307,4 +308,12 @@ public class TestController {
         log.info("exist: " + exist);
         log.info("total: " + spectrumDOS.size());
     }
+
+    @RequestMapping("fdr")
+    public void fdr() {
+        String libraryId = "GNPS";
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        List<SpectrumDO> decoySpectrumDOS = spectrumService.getAllByLibraryId(libraryId + "-decoy");
+    }
+
 }

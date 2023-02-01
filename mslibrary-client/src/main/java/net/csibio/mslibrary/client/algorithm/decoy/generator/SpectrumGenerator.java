@@ -28,7 +28,6 @@ public class SpectrumGenerator {
         log.info("开始执行naive方法生成伪肽段");
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
         List<IonPeak> allIonPeaks = new ArrayList<>();
         for (SpectrumDO spectrumDO : spectrumDOS) {
