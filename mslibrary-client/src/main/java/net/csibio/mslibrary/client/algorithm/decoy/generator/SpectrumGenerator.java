@@ -45,7 +45,9 @@ public class SpectrumGenerator {
             //2. 从剩余谱图的所有ionPeak中随机挑选若干，使得target和decoy谱图的ionPeak数量相同
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
                 int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
-                decoyIonPeaks.add(ionPeaksWithoutPrecursor.get(randomIndex));
+                IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
+                ionPeak.setIntensity(ionPeak.getIntensity() * precursorIonPeak.getIntensity());
+                decoyIonPeaks.add(ionPeak);
                 ionPeaksWithoutPrecursor.remove(randomIndex);
             }
 
@@ -73,11 +75,11 @@ public class SpectrumGenerator {
         }
         long end = System.currentTimeMillis();
         log.info("naive方法生成伪肽段完成，耗时{}ms", end - start);
-        spectrumService.insert(decoySpectrumDOS, libraryId + "-decoy");
+        spectrumService.insert(decoySpectrumDOS, libraryId + "-naive");
     }
 
-    public void entropyBased(String libraryId) {
-        log.info("开始执行entropy方法生成伪谱图");
+    public void optNaive(String libraryId) {
+        log.info("开始执行optNaive方法生成伪谱图");
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -96,13 +98,25 @@ public class SpectrumGenerator {
 
             //2. 从剩余谱图的所有ionPeak中随机挑选若干，使得target和decoy谱图的ionPeak数量相同
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
+                //对每张谱图，不要小于precursorMz的或者与已加入的谱图重复的
                 int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
                 IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
-                if (decoyIonPeaks.contains(ionPeak)) {
+                if (ionPeak.getMz() >= precursorIonPeak.getMz()) {
                     i--;
                     continue;
                 }
-                decoyIonPeaks.add(ionPeaksWithoutPrecursor.get(randomIndex));
+                boolean repeat = false;
+                for (IonPeak decoyIonPeak : decoyIonPeaks) {
+                    if (Math.abs(ionPeak.getMz() - decoyIonPeak.getMz()) < 0.01) {
+                        i--;
+                        repeat = true;
+                        break;
+                    }
+                }
+                if (repeat)
+                    continue;
+                ionPeak.setIntensity(ionPeak.getIntensity() * precursorIonPeak.getIntensity());
+                decoyIonPeaks.add(ionPeak);
             }
 
             //3. 将decoyIonPeaks生成谱图
@@ -128,8 +142,8 @@ public class SpectrumGenerator {
             decoySpectrumDOS.add(decoySpectrumDO);
         }
         long end = System.currentTimeMillis();
-        log.info("entropy方法生成伪肽段完成，耗时{}ms", end - start);
-        spectrumService.insert(decoySpectrumDOS, libraryId + "-decoy");
+        log.info("naive方法生成伪肽段完成，耗时{}ms", end - start);
+        spectrumService.insert(decoySpectrumDOS, libraryId + "-optNaive");
     }
 
     public void spectrumBased(String libraryId) {
@@ -195,7 +209,7 @@ public class SpectrumGenerator {
         }
 
         log.info("SpectrumBased方法生成伪肽段完成，耗时{}ms", System.currentTimeMillis() - start);
-        spectrumService.insert(decoySpectrumDOS, libraryId + "-decoy");
+        spectrumService.insert(decoySpectrumDOS, libraryId + "-spectrumBased");
         log.info("伪谱图库{}已经生成", libraryId + "-decoy");
 
     }
@@ -263,6 +277,7 @@ public class SpectrumGenerator {
         List<IonPeak> ionPeaks = new ArrayList<>();
         double diff = Double.MAX_VALUE;
         int index = 0;
+        double precursorIntensity = 0;
         for (int i = 0; i < spectrumDO.getMzs().length; i++) {
             if (Math.abs(spectrumDO.getMzs()[i] - spectrumDO.getPrecursorMz()) < diff) {
                 diff = Math.abs(spectrumDO.getMzs()[i] - spectrumDO.getPrecursorMz());
@@ -271,7 +286,12 @@ public class SpectrumGenerator {
             IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
             ionPeaks.add(ionPeak);
         }
+        precursorIntensity = spectrumDO.getInts()[index];
         ionPeaks.remove(index);
+        //对precursorIonPeak以外的ionPeak统一除以谱图中precursorIonPeak的intensity
+        for (IonPeak ionPeak : ionPeaks) {
+            ionPeak.setIntensity(ionPeak.getIntensity() / precursorIntensity);
+        }
         precursorIonPeakMap.put(spectrumDO.getId(), new IonPeak(spectrumDO.getMzs()[index], spectrumDO.getInts()[index]));
         return ionPeaks;
     }
