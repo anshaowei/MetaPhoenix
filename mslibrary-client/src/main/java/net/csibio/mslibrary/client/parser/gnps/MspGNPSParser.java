@@ -168,7 +168,7 @@ public class MspGNPSParser {
                         else if (lowerLine.startsWith("comment")) {
                             String[] items2 = line.split(" ");
                             if (items2.length > 1) {
-                                spectrumDO.setComments(items2[1]);
+                                spectrumDO.setComment(items2[1]);
                             }
                         }
                         //num peaks

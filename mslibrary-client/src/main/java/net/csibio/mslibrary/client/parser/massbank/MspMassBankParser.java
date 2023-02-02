@@ -201,7 +201,7 @@ public class MspMassBankParser {
                         if (lowerLine.startsWith("comments")) {
                             String[] commentsItems = line.split(" ");
                             if (commentsItems.length > 1) {
-                                spectrumDO.setComments(commentsItems[1]);
+                                spectrumDO.setComment(commentsItems[1]);
                             }
                         }
                         //splash

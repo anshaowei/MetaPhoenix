@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.core.controller;
 
 
+import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.algorithm.compound.Generator;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
@@ -13,6 +14,7 @@ import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
+import net.csibio.mslibrary.client.export.Reporter;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.gnps.MspGNPSParser;
 import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
@@ -68,6 +70,8 @@ public class TestController {
     MongoTemplate mongoTemplate;
     @Autowired
     Generator generator;
+    @Autowired
+    Reporter reporter;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
@@ -187,7 +191,7 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-        spectrumGenerator.naive("MassBank");
+        spectrumGenerator.spectrumBased("GNPS");
     }
 
     @RequestMapping("generate")
@@ -312,8 +316,8 @@ public class TestController {
     @RequestMapping("fdr")
     public void fdr() {
 //        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("MassBank");
-        spectrumDOS = spectrumDOS.subList(0, 2000);
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("GNPS");
+        spectrumDOS = spectrumDOS.subList(0, 100);
         List<LibraryHit> libraryHits = new ArrayList<>();
         String libraryId = "MassBank";
         String decoyLibraryId = libraryId + "-decoy";
@@ -369,17 +373,25 @@ public class TestController {
 
         //找到满足FDR条件的分数阈值
         double threshold = 0.0;
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i <= 100; i++) {
             threshold = i * 0.01;
             double finalThreshold = threshold;
             List<LibraryHit> positiveHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && libraryHit.getLibraryName().equals(libraryId)).toList();
             List<LibraryHit> negativeHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && libraryHit.getLibraryName().equals(decoyLibraryId)).toList();
             double fdr = (double) negativeHits.size() / positiveHits.size() * incorrect / (correct + incorrect);
             if (fdr < 0.05) {
+                log.info("threshold: " + threshold);
+                log.info("positive: " + positiveHits.size());
+                log.info("negative: " + negativeHits.size());
                 break;
             }
         }
-        log.info("threshold: " + threshold);
+        log.info("finish, threshold: " + threshold);
+    }
+
+    @RequestMapping("report")
+    public void report() {
+        String fileName = "/Users/anshaowei/Downloads/test.xlsx";
     }
 
 }

@@ -67,7 +67,7 @@ public class SpectrumDO {
 
     Double exactMass;
 
-    String comments;
+    String comment;
 
     byte[] byteMzs;
     byte[] byteInts;

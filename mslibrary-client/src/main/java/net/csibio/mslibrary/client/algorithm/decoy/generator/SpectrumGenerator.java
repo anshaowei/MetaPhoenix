@@ -196,7 +196,7 @@ public class SpectrumGenerator {
 
         log.info("SpectrumBased方法生成伪肽段完成，耗时{}ms", System.currentTimeMillis() - start);
         spectrumService.insert(decoySpectrumDOS, libraryId + "-decoy");
-        log.info("伪肽段库{}已经生成", libraryId + "-decoy");
+        log.info("伪谱图库{}已经生成", libraryId + "-decoy");
 
     }
 
