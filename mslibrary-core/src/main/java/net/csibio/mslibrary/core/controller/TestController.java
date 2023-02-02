@@ -2,7 +2,6 @@ package net.csibio.mslibrary.core.controller;
 
 
 import lombok.extern.slf4j.Slf4j;
-import net.csibio.mslibrary.client.algorithm.compound.Generator;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
@@ -27,9 +26,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.openscience.cdk.exception.CDKException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -50,7 +47,6 @@ public class TestController {
     CompoundService compoundService;
     @Autowired
     LibraryService libraryService;
-
     @Autowired
     SpectrumService spectrumService;
     @Autowired
@@ -65,10 +61,6 @@ public class TestController {
     MspGNPSParser mspGNPSParser;
     @Autowired
     SpectrumGenerator spectrumGenerator;
-    @Autowired
-    MongoTemplate mongoTemplate;
-    @Autowired
-    Generator generator;
     @Autowired
     Reporter reporter;
 
@@ -92,25 +84,6 @@ public class TestController {
         spectrumService.remove(new SpectrumQuery(), libraryId);
         spectrumService.insert(spectrumDOS, libraryId);
         log.info("remove " + (count - spectrumDOS.size()) + " spectra");
-    }
-
-    @RequestMapping("/clear")
-    public void clear() {
-        log.info("开始进行谱图清空");
-        //delete all the database
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        for (LibraryDO libraryDO : libraryDOS) {
-            spectrumService.remove(new SpectrumQuery(), libraryDO.getId());
-            mongoTemplate.dropCollection("spectrum-" + libraryDO.getId());
-        }
-        libraryService.removeAll();
-    }
-
-    @RequestMapping("/remove")
-    public void remove() {
-//        compoundService.removeByLibraryId("GNPS");
-//        spectrumService.removeByLibraryId("GNPS");
-//        libraryService.removeByLibraryId("GNPS");
     }
 
     @RequestMapping("/identify")
@@ -177,25 +150,9 @@ public class TestController {
         int a = 0;
     }
 
-    @RequestMapping("inchi")
-    public void inchi() throws CDKException {
-//        SmilesParser sp = new SmilesParser(SilentChemObjectBuilder.getInstance());
-//        IAtomContainer m = sp.parseSmiles("c1ccccc1");
-//        for (IAtom atom : m.atoms()) {
-//            atom.setImplicitHydrogenCount(null);
-//            int a = 0;
-//        }
-
-    }
-
     @RequestMapping("decoy")
     public void decoy() {
         spectrumGenerator.spectrumBased("GNPS");
-    }
-
-    @RequestMapping("generate")
-    public void generate() {
-        generator.generateBySmiles("MassBank");
     }
 
     @RequestMapping("statistics")
@@ -364,6 +321,7 @@ public class TestController {
             LibraryHit decoyLibraryHit = new LibraryHit();
             decoyLibraryHit.setSpectrumId(decoyLibrarySpectra.get(index).getId());
             decoyLibraryHit.setLibraryName(decoyLibraryId);
+            libraryHit.setDecoy(true);
             decoyLibraryHit.setSmiles(decoyLibrarySpectra.get(index).getSmiles());
             decoyLibraryHit.setMatchScore(maxScore);
             libraryHits.add(decoyLibraryHit);
@@ -375,8 +333,8 @@ public class TestController {
         for (int i = 0; i <= 100; i++) {
             threshold = i * 0.01;
             double finalThreshold = threshold;
-            List<LibraryHit> positiveHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && libraryHit.getLibraryName().equals(libraryId)).toList();
-            List<LibraryHit> negativeHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && libraryHit.getLibraryName().equals(decoyLibraryId)).toList();
+            List<LibraryHit> positiveHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && !libraryHit.isDecoy()).toList();
+            List<LibraryHit> negativeHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && libraryHit.isDecoy()).toList();
             double fdr = (double) negativeHits.size() / positiveHits.size() * incorrect / (correct + incorrect);
             if (fdr < 0.05) {
                 log.info("threshold: " + threshold);

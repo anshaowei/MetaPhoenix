@@ -13,6 +13,8 @@ public class LibraryHit {
 
     String libraryName;
 
+    boolean decoy = false;
+
     String precursorAdduct;
 
     Double precursorMz;
