@@ -75,15 +75,41 @@ public class TestController {
     @RequestMapping("/clean")
     public void clean() {
         log.info("开始执行谱图清洗");
-        String libraryId = "GNPS";
+        String libraryId = "MassBank";
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
-        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A")
-                || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || spectrumDO.getMzs() == null || spectrumDO.getInts() == null || spectrumDO.getMzs().length == 0 || spectrumDO.getInts().length == 0 ||
-                ArrayUtil.findNearestDiff(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) > 10 * Constants.PPM * spectrumDO.getPrecursorMz() || spectrumDO.getMzs().length == 1 || spectrumDO.getInts().length == 1);
+        //1. 去除部分字段空缺的数据
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getMzs() == null || spectrumDO.getInts() == null);
+        log.info("去除{}条字段空缺的数据，剩余{}条", count - spectrumDOS.size(), spectrumDOS.size());
+        count = spectrumDOS.size();
+        //2. 去除precursorMz字段存在问题或在谱图中不存在的数据
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || ArrayUtil.findNearestDiff(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) > 10 * Constants.PPM * spectrumDO.getPrecursorMz());
+        log.info("去除{}条precursorMz字段存在问题或在谱图中不存在的数据，剩余{}条", count - spectrumDOS.size(), spectrumDOS.size());
+        count = spectrumDOS.size();
+        //3. 去除谱图中的强度为0的数据点
+        int dataPoint = 0;
+        int totalDataPoint = 0;
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            List<Double> mzs = new ArrayList<>();
+            List<Double> ints = new ArrayList<>();
+            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                if (spectrumDO.getInts()[i] != 0) {
+                    mzs.add(spectrumDO.getMzs()[i]);
+                    ints.add(spectrumDO.getInts()[i]);
+                }
+            }
+            dataPoint += spectrumDO.getMzs().length - mzs.size();
+            totalDataPoint += spectrumDO.getMzs().length;
+            spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
+            spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
+        }
+        log.info("去除{}条谱图中的强度为0的数据点，总数据点{}", dataPoint, totalDataPoint);
+        //4. 去除谱图仅有一个信号或没有信号的数据
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs().length == 0 || spectrumDO.getMzs().length == 1);
+        log.info("去除{}条谱图仅有一个信号或没有信号的数据，剩余{}条", count - spectrumDOS.size(), spectrumDOS.size());
         spectrumService.remove(new SpectrumQuery(), libraryId);
         spectrumService.insert(spectrumDOS, libraryId);
-        log.info("remove " + (count - spectrumDOS.size()) + " spectra");
+        log.info("谱图清洗完成");
     }
 
     @RequestMapping("/identify")
@@ -152,7 +178,7 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-        spectrumGenerator.spectrumBased("GNPS");
+        spectrumGenerator.optNaive("MassBank");
     }
 
     @RequestMapping("statistics")
