@@ -1,7 +1,6 @@
 package net.csibio.mslibrary.core.controller;
 
 
-import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.algorithm.compound.Generator;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
@@ -391,7 +390,9 @@ public class TestController {
 
     @RequestMapping("report")
     public void report() {
-        String fileName = "/Users/anshaowei/Downloads/test.xlsx";
+        String fileName = "/Users/anshaowei/Downloads/test.msp";
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
+        reporter.toMsp(fileName, spectrumDOS);
     }
 
 }
