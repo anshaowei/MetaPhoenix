@@ -1,31 +1,43 @@
-package net.csibio.mslibrary.client.export;
+package net.csibio.mslibrary.core.export;
 
 import com.alibaba.excel.EasyExcel;
+import io.github.msdk.datamodel.MsSpectrum;
+import io.github.msdk.datamodel.MsSpectrumType;
+import io.github.msdk.io.mgf.MgfFileExportMethod;
+import io.github.msdk.io.mgf.MgfMsSpectrum;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
+import net.csibio.mslibrary.core.config.VMProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component("reporter")
 @Slf4j
 public class Reporter {
 
-    public Result toExcel(String outputName, List<LibraryHit> libraryHits) {
-        EasyExcel.write(outputName, LibraryHit.class).sheet("result").doWrite(libraryHits);
+    @Autowired
+    VMProperties vmProperties;
+
+    public Result toExcel(String fileName, List<LibraryHit> libraryHits) {
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        EasyExcel.write(outputFileName, LibraryHit.class).sheet("result").doWrite(libraryHits);
         return null;
     }
 
-    public Result toMsp(String outputName, List<SpectrumDO> spectrumDOS) {
-
+    public Result toMsp(String fileName, List<SpectrumDO> spectrumDOS) {
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".msp";
         FileWriter fileWriter = null;
         try {
-            fileWriter = new FileWriter(outputName);
+            fileWriter = new FileWriter(outputFileName);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
             for (SpectrumDO spectrumDO : spectrumDOS) {
                 if (spectrumDO.getCompoundName() != null) {
@@ -103,7 +115,30 @@ public class Reporter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        log.info("export msp file success : " + outputName);
+        log.info("export msp file success : " + outputFileName);
+        return new Result(true);
+    }
+
+    public Result toMgf(String fileName, List<SpectrumDO> spectrumDOS) {
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".mgf";
+        List<MsSpectrum> msSpectra = new ArrayList<>();
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            //convert spectrumDO.getInts() to float[]
+            float[] ints = new float[spectrumDO.getInts().length];
+            for (int i = 0; i < spectrumDO.getInts().length; i++) {
+                ints[i] = (float) spectrumDO.getInts()[i];
+            }
+            MgfMsSpectrum mgfMsSpectrum = new MgfMsSpectrum(spectrumDO.getMzs(), ints, spectrumDO.getMzs().length, MsSpectrumType.CENTROIDED);
+            mgfMsSpectrum.setMsLevel(2);
+            mgfMsSpectrum.setPrecursor(spectrumDO.getPrecursorMz(), 1);
+            msSpectra.add(mgfMsSpectrum);
+        }
+        MgfFileExportMethod mgfFileExportMethod = new MgfFileExportMethod(msSpectra, new File(outputFileName));
+        try {
+            mgfFileExportMethod.execute();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         return new Result(true);
     }
 }

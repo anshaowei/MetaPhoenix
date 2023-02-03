@@ -18,7 +18,6 @@
         <version>1.0.0</version>
     </parent>
 
-    <groupId>net.csibio</groupId>
     <artifactId>mslibrary-core</artifactId>
     <version>1.0.0</version>
 </project>

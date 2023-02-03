@@ -12,7 +12,6 @@ import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
-import net.csibio.mslibrary.client.export.Reporter;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.gnps.MspGNPSParser;
 import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
@@ -21,6 +20,7 @@ import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.client.utils.ArrayUtil;
+import net.csibio.mslibrary.core.export.Reporter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -75,7 +75,7 @@ public class TestController {
     @RequestMapping("/clean")
     public void clean() {
         log.info("开始执行谱图清洗");
-        String libraryId = "MassBank";
+        String libraryId = "GNPS";
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
         //1. 去除部分字段空缺的数据
@@ -178,7 +178,7 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-        spectrumGenerator.optNaive("MassBank");
+        spectrumGenerator.naive("MassBank");
     }
 
     @RequestMapping("statistics")
@@ -299,10 +299,10 @@ public class TestController {
     public void fdr() {
 //        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("GNPS");
-        spectrumDOS = spectrumDOS.subList(0, 100);
+        spectrumDOS = spectrumDOS.subList(0, 1000);
         List<LibraryHit> libraryHits = new ArrayList<>();
         String libraryId = "MassBank";
-        String decoyLibraryId = libraryId + "-decoy";
+        String decoyLibraryId = libraryId + "-naive";
         int incorrect = 0;
         int correct = 0;
 
@@ -374,9 +374,9 @@ public class TestController {
 
     @RequestMapping("report")
     public void report() {
-        String fileName = "/Users/anshaowei/Downloads/test.msp";
+        String fileName = "test";
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
-        reporter.toMsp(fileName, spectrumDOS);
+        reporter.toMgf(fileName, spectrumDOS);
     }
 
 }

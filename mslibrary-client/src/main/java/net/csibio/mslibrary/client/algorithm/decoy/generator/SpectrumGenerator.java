@@ -142,7 +142,7 @@ public class SpectrumGenerator {
             decoySpectrumDOS.add(decoySpectrumDO);
         }
         long end = System.currentTimeMillis();
-        log.info("naive方法生成伪肽段完成，耗时{}ms", end - start);
+        log.info("optNaive方法生成伪肽段完成，耗时{}ms", end - start);
         spectrumService.insert(decoySpectrumDOS, libraryId + "-optNaive");
     }
 
