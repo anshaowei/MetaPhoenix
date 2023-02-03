@@ -1,11 +1,11 @@
 package net.csibio.mslibrary.core.controller;
 
 
+import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
-import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
@@ -19,7 +19,6 @@ import net.csibio.mslibrary.client.parser.massbank.MspMassBankParser;
 import net.csibio.mslibrary.client.service.CompoundService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
-import net.csibio.mslibrary.client.utils.ArrayUtil;
 import net.csibio.mslibrary.core.export.Reporter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -70,46 +69,6 @@ public class TestController {
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
         mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
 //        mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
-    }
-
-    @RequestMapping("/clean")
-    public void clean() {
-        log.info("开始执行谱图清洗");
-        String libraryId = "GNPS";
-        List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
-        int count = spectrumDOS.size();
-        //1. 去除部分字段空缺的数据
-        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getSmiles().equals("N/A") || spectrumDO.getMzs() == null || spectrumDO.getInts() == null);
-        log.info("去除{}条字段空缺的数据，剩余{}条", count - spectrumDOS.size(), spectrumDOS.size());
-        count = spectrumDOS.size();
-        //2. 去除precursorMz字段存在问题或在谱图中不存在的数据
-        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || ArrayUtil.findNearestDiff(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) > 10 * Constants.PPM * spectrumDO.getPrecursorMz());
-        log.info("去除{}条precursorMz字段存在问题或在谱图中不存在的数据，剩余{}条", count - spectrumDOS.size(), spectrumDOS.size());
-        count = spectrumDOS.size();
-        //3. 去除谱图中的强度为0的数据点
-        int dataPoint = 0;
-        int totalDataPoint = 0;
-        for (SpectrumDO spectrumDO : spectrumDOS) {
-            List<Double> mzs = new ArrayList<>();
-            List<Double> ints = new ArrayList<>();
-            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                if (spectrumDO.getInts()[i] != 0) {
-                    mzs.add(spectrumDO.getMzs()[i]);
-                    ints.add(spectrumDO.getInts()[i]);
-                }
-            }
-            dataPoint += spectrumDO.getMzs().length - mzs.size();
-            totalDataPoint += spectrumDO.getMzs().length;
-            spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
-            spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
-        }
-        log.info("去除{}条谱图中的强度为0的数据点，总数据点{}", dataPoint, totalDataPoint);
-        //4. 去除谱图仅有一个信号或没有信号的数据
-        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs().length == 0 || spectrumDO.getMzs().length == 1);
-        log.info("去除{}条谱图仅有一个信号或没有信号的数据，剩余{}条", count - spectrumDOS.size(), spectrumDOS.size());
-        spectrumService.remove(new SpectrumQuery(), libraryId);
-        spectrumService.insert(spectrumDOS, libraryId);
-        log.info("谱图清洗完成");
     }
 
     @RequestMapping("/identify")
@@ -178,7 +137,7 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-        spectrumGenerator.naive("MassBank");
+        spectrumGenerator.optNaive("GNPS");
     }
 
     @RequestMapping("statistics")
@@ -299,10 +258,10 @@ public class TestController {
     public void fdr() {
 //        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("GNPS");
-        spectrumDOS = spectrumDOS.subList(0, 1000);
+        spectrumDOS = spectrumDOS.subList(0, 10000);
         List<LibraryHit> libraryHits = new ArrayList<>();
         String libraryId = "MassBank";
-        String decoyLibraryId = libraryId + "-naive";
+        String decoyLibraryId = libraryId + "-optNaive";
         int incorrect = 0;
         int correct = 0;
 
@@ -356,19 +315,31 @@ public class TestController {
 
         //找到满足FDR条件的分数阈值
         double threshold = 0.0;
+        List<List<Double>> scores = new ArrayList<>();
         for (int i = 0; i <= 100; i++) {
             threshold = i * 0.01;
             double finalThreshold = threshold;
             List<LibraryHit> positiveHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && !libraryHit.isDecoy()).toList();
             List<LibraryHit> negativeHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && libraryHit.isDecoy()).toList();
-            double fdr = (double) negativeHits.size() / positiveHits.size() * incorrect / (correct + incorrect);
-            if (fdr < 0.05) {
-                log.info("threshold: " + threshold);
-                log.info("positive: " + positiveHits.size());
-                log.info("negative: " + negativeHits.size());
-                break;
+            if (correct + incorrect == 0 || positiveHits.size() == 0) {
+                continue;
             }
+            double fdr = (double) negativeHits.size() / positiveHits.size() * incorrect / (correct + incorrect);
+            List<Double> score = new ArrayList<>();
+            score.add(threshold);
+            score.add(positiveHits.size() + 0.0);
+            score.add(negativeHits.size() + 0.0);
+            score.add(fdr + 0.0);
+            scores.add(score);
+//            if (fdr < 0.05) {
+//                log.info("threshold: " + threshold);
+//                log.info("positive: " + positiveHits.size());
+//                log.info("negative: " + negativeHits.size());
+//                break;
+//            }
         }
+        EasyExcel.write("/Users/anshaowei/Downloads/test.xlsx").sheet("sheet1").doWrite(scores);
+
         log.info("finish, threshold: " + threshold);
     }
 
