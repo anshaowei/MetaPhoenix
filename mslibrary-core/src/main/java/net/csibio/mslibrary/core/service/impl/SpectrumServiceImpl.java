@@ -2,6 +2,7 @@ package net.csibio.mslibrary.core.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
+import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -81,8 +82,14 @@ public class SpectrumServiceImpl implements SpectrumService {
     }
 
     @Override
-    public List<SpectrumDO> getByPrecursorMz(Double precursorMz, String libraryId) {
-        return spectrumDAO.getByPrecursorMz(precursorMz, libraryId);
+    public List<SpectrumDO> getByPrecursorMz(Double precursorMz, Double mzTolerance, String libraryId) {
+        return spectrumDAO.getByPrecursorMz(precursorMz, mzTolerance, libraryId);
+    }
+
+    @Override
+    public List<SpectrumDO> getByPPM(Double precursorMz, Double ppm, String libraryId) {
+        Double mzTolerance = precursorMz * ppm * Constants.PPM;
+        return spectrumDAO.getByPrecursorMz(precursorMz, mzTolerance, libraryId);
     }
 
     /**

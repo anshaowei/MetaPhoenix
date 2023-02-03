@@ -156,10 +156,11 @@ public class SpectrumDAO extends BaseMultiDAO<SpectrumDO, SpectrumQuery> {
         return result.getDeletedCount();
     }
 
-    public List<SpectrumDO> getByPrecursorMz(Double precursorMz, String libraryId) {
-        Query query = new Query();
-        query.addCriteria(Criteria.where("precursorMz").gte(precursorMz - 0.01).lte(precursorMz + 0.01));
-        return mongoTemplate.find(query, SpectrumDO.class, getCollectionName(libraryId));
+    public List<SpectrumDO> getByPrecursorMz(Double precursorMz, Double mzTolerance, String libraryId) {
+        SpectrumQuery query = new SpectrumQuery();
+        query.setPrecursorMz(precursorMz);
+        query.setMzTolerance(mzTolerance);
+        return mongoTemplate.find(buildQueryWithoutPage(query), SpectrumDO.class, getCollectionName(libraryId));
     }
 
 }

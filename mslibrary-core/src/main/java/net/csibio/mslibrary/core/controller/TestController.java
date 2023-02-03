@@ -12,6 +12,7 @@ import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
+import net.csibio.mslibrary.client.filter.NoiseFilter;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.gnps.MspGNPSParser;
 import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
@@ -62,6 +63,8 @@ public class TestController {
     SpectrumGenerator spectrumGenerator;
     @Autowired
     Reporter reporter;
+    @Autowired
+    NoiseFilter noiseFilter;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
@@ -69,6 +72,11 @@ public class TestController {
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
         mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
 //        mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+    }
+
+    @RequestMapping("/clean")
+    public void clean() {
+        noiseFilter.filter("MassBank");
     }
 
     @RequestMapping("/identify")
@@ -91,9 +99,7 @@ public class TestController {
 
     @RequestMapping("/recall")
     public void recall() {
-        SpectrumQuery spectrumQuery = new SpectrumQuery();
-        spectrumQuery.setPrecursorAdduct("[M-H]-");
-        List<SpectrumDO> targetSpectrumDOList = spectrumService.getAll(spectrumQuery, "MassBank");
+        List<SpectrumDO> targetSpectrumDOList = spectrumService.getAllByLibraryId("MassBank");
         HashMap<SpectrumDO, List<LibraryHit>> result = new HashMap<>();
         Integer right = 0;
         for (SpectrumDO spectrumDO : targetSpectrumDOList) {
@@ -102,7 +108,7 @@ public class TestController {
             SpectrumQuery targetSpectrumQuery = new SpectrumQuery();
             targetSpectrumQuery.setPrecursorMz(precursorMz);
             targetSpectrumQuery.setMzTolerance(0.001);
-            List<SpectrumDO> libSpectrumDOList = spectrumService.getAll(targetSpectrumQuery, "MassBank");
+            List<SpectrumDO> libSpectrumDOList = spectrumService.getAll(targetSpectrumQuery, "GNPS");
             for (SpectrumDO libSpectrumDO : libSpectrumDOList) {
                 LibraryHit libraryHit = new LibraryHit();
                 libraryHit.setMatchScore(similarity.getDotProduct(spectrumDO.getSpectrum(), libSpectrumDO.getSpectrum(), 0.001));
@@ -138,6 +144,7 @@ public class TestController {
     @RequestMapping("decoy")
     public void decoy() {
         spectrumGenerator.optNaive("GNPS");
+        spectrumGenerator.naive("GNPS");
     }
 
     @RequestMapping("statistics")
@@ -221,9 +228,11 @@ public class TestController {
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
         int right = 0;
         int exist = 0;
+        Double mzTolerance = 0.01;
+
         for (SpectrumDO spectrumDO : spectrumDOS) {
             Double precursorMz = spectrumDO.getPrecursorMz();
-            List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(precursorMz, "GNPS");
+            List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(precursorMz, mzTolerance, "GNPS");
 //            librarySpectra.addAll(spectrumService.getByPrecursorMz(precursorMz, "MassBank"));
             List<LibraryHit> libraryHits = new ArrayList<>();
             for (SpectrumDO librarySpectrum : librarySpectra) {
@@ -262,12 +271,13 @@ public class TestController {
         List<LibraryHit> libraryHits = new ArrayList<>();
         String libraryId = "MassBank";
         String decoyLibraryId = libraryId + "-optNaive";
+        Double mzTolerance = 0.001;
         int incorrect = 0;
         int correct = 0;
 
         for (SpectrumDO spectrumDO : spectrumDOS) {
-            List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), libraryId);
-            List<SpectrumDO> decoyLibrarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), decoyLibraryId);
+            List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, libraryId);
+            List<SpectrumDO> decoyLibrarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, decoyLibraryId);
             if (librarySpectra.size() == 0 || decoyLibrarySpectra.size() == 0) {
                 continue;
             }
