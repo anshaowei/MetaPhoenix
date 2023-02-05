@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -144,7 +145,7 @@ public class TestController {
     @RequestMapping("decoy")
     public void decoy() {
         spectrumGenerator.optNaive("GNPS");
-        spectrumGenerator.naive("GNPS");
+        spectrumGenerator.optNaive("MassBank");
     }
 
     @RequestMapping("statistics")
@@ -225,7 +226,7 @@ public class TestController {
     @RequestMapping("compare")
     public void compare() {
         long start = System.currentTimeMillis();
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("MassBank");
         int right = 0;
         int exist = 0;
         Double mzTolerance = 0.01;
@@ -233,7 +234,6 @@ public class TestController {
         for (SpectrumDO spectrumDO : spectrumDOS) {
             Double precursorMz = spectrumDO.getPrecursorMz();
             List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(precursorMz, mzTolerance, "GNPS");
-//            librarySpectra.addAll(spectrumService.getByPrecursorMz(precursorMz, "MassBank"));
             List<LibraryHit> libraryHits = new ArrayList<>();
             for (SpectrumDO librarySpectrum : librarySpectra) {
                 if (librarySpectrum.getSmiles().equals(spectrumDO.getSmiles())) {
@@ -247,14 +247,22 @@ public class TestController {
                 libraryHit.setMatchScore(score);
                 libraryHits.add(libraryHit);
             }
-            //filter by score >0.7
-            libraryHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > 0.5).collect(Collectors.toList());
-            for (LibraryHit libraryHit : libraryHits) {
+            //Select the best hit
+            if(libraryHits.size() > 0) {
+                libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
+                LibraryHit libraryHit = libraryHits.get(0);
                 if (libraryHit.getSmiles().equals(spectrumDO.getSmiles())) {
                     right++;
-                    break;
                 }
             }
+            log.info("right: " + right);
+//            libraryHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > 0.5).collect(Collectors.toList());
+//            for (LibraryHit libraryHit : libraryHits) {
+//                if (libraryHit.getSmiles().equals(spectrumDO.getSmiles())) {
+//                    right++;
+//                    break;
+//                }
+//            }
         }
         long end = System.currentTimeMillis();
         log.info("time: " + (end - start));
