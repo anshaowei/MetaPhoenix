@@ -20,7 +20,7 @@ public class NoiseFilter {
     SpectrumService spectrumService;
 
     public void filter(String libraryId) {
-        log.info("start noise filter");
+        log.info("start noise filter on library: {}", libraryId);
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
 
@@ -67,12 +67,14 @@ public class NoiseFilter {
         log.info("remove {} spectra with <5 peaks with relative intensity above 2%, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 
-        //5. remove spectra with ion count > 300
+        //TODO 5. remove spectra with ion count > 300
+        //TODO 6. remove spectra without smiles
         spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs().length > 300);
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals(""));
         log.info("remove {} spectra with ion count > 300, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
 
         spectrumService.remove(new SpectrumQuery(), libraryId);
         spectrumService.insert(spectrumDOS, libraryId);
-        log.info("finish noise filter");
+        log.info("finish noise filter on library: {}", libraryId);
     }
 }
