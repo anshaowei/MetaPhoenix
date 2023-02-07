@@ -25,7 +25,7 @@ public class SpectrumGenerator {
     SpectrumService spectrumService;
 
     public void naive(String libraryId) {
-        log.info("Start to generate decoy spectra by naive method");
+        log.info("Start to generate decoy spectra by naive method on library: {}", libraryId);
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -74,12 +74,12 @@ public class SpectrumGenerator {
             decoySpectrumDOS.add(decoySpectrumDO);
         }
         long end = System.currentTimeMillis();
-        log.info("Finished generating decoy spectra by naive method, cost {}ms", end - start);
+        log.info("Finished generating decoy spectra on {} by naive method, cost {}ms", libraryId, end - start);
         spectrumService.insert(decoySpectrumDOS, libraryId + "-naive");
     }
 
     public void optNaive(String libraryId) {
-        log.info("Start to generate decoy spectra by optNaive method");
+        log.info("Start to generate decoy spectra by optNaive method on library: {}", libraryId);
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -142,12 +142,12 @@ public class SpectrumGenerator {
             decoySpectrumDOS.add(decoySpectrumDO);
         }
         long end = System.currentTimeMillis();
-        log.info("Finished generating decoy spectra by optNaive method, cost {}ms", end - start);
+        log.info("Finished generating decoy spectra on {} by optNaive method, cost {}ms", libraryId, end - start);
         spectrumService.insert(decoySpectrumDOS, libraryId + "-optNaive");
     }
 
     public void spectrumBased(String libraryId) {
-        log.info("Start to generate decoy spectra by spectrumBased method");
+        log.info("Start to generate decoy spectra by spectrumBased method on library: {}", libraryId);
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -206,10 +206,9 @@ public class SpectrumGenerator {
             decoySpectrum.setPrecursorMz(spectrumDO.getPrecursorMz());
             decoySpectrumDOS.add(decoySpectrum);
         }
-
-        log.info("Finished generating decoy spectra by spectrumBased method, cost {}ms", System.currentTimeMillis() - start);
+        long end = System.currentTimeMillis();
+        log.info("Finished generating decoy spectra on {} by spectrumBased method, cost {}ms", libraryId, end - start);
         spectrumService.insert(decoySpectrumDOS, libraryId + "-spectrumBased");
-
     }
 
     /**
