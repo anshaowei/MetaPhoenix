@@ -25,7 +25,7 @@ public class SpectrumGenerator {
     SpectrumService spectrumService;
 
     public void naive(String libraryId) {
-        log.info("开始执行naive方法生成伪谱图");
+        log.info("Start to generate decoy spectra by naive method");
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -74,12 +74,12 @@ public class SpectrumGenerator {
             decoySpectrumDOS.add(decoySpectrumDO);
         }
         long end = System.currentTimeMillis();
-        log.info("naive方法生成伪肽段完成，耗时{}ms", end - start);
+        log.info("Finished generating decoy spectra by naive method, cost {}ms", end - start);
         spectrumService.insert(decoySpectrumDOS, libraryId + "-naive");
     }
 
     public void optNaive(String libraryId) {
-        log.info("开始执行optNaive方法生成伪谱图");
+        log.info("Start to generate decoy spectra by optNaive method");
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -142,13 +142,12 @@ public class SpectrumGenerator {
             decoySpectrumDOS.add(decoySpectrumDO);
         }
         long end = System.currentTimeMillis();
-        log.info("optNaive方法生成伪肽段完成，耗时{}ms", end - start);
+        log.info("Finished generating decoy spectra by optNaive method, cost {}ms", end - start);
         spectrumService.insert(decoySpectrumDOS, libraryId + "-optNaive");
     }
 
     public void spectrumBased(String libraryId) {
-
-        log.info("开始执行SpectrumBased方法生成伪肽段");
+        log.info("Start to generate decoy spectra by spectrumBased method");
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -208,9 +207,8 @@ public class SpectrumGenerator {
             decoySpectrumDOS.add(decoySpectrum);
         }
 
-        log.info("SpectrumBased方法生成伪肽段完成，耗时{}ms", System.currentTimeMillis() - start);
+        log.info("Finished generating decoy spectra by spectrumBased method, cost {}ms", System.currentTimeMillis() - start);
         spectrumService.insert(decoySpectrumDOS, libraryId + "-spectrumBased");
-        log.info("伪谱图库{}已经生成", libraryId + "-decoy");
 
     }
 
