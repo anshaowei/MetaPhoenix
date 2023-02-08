@@ -24,6 +24,14 @@ public class SpectrumGenerator {
     @Autowired
     SpectrumService spectrumService;
 
+    /**
+     * generate decoy spectra by
+     * 1. add precursor ion peak
+     * 2. randomly add ion peaks from other spectra
+     * 3. stop until the number of peaks in decoy is the same as the original spectrum
+     *
+     * @param libraryId
+     */
     public void naive(String libraryId) {
         log.info("Start to generate decoy spectra by naive method on library: {}", libraryId);
         long start = System.currentTimeMillis();
@@ -146,6 +154,15 @@ public class SpectrumGenerator {
         spectrumService.insert(decoySpectrumDOS, libraryId + "-optNaive");
     }
 
+    /**
+     * generate decoy spectra by spectrumBased method
+     * 1. add precursor ion peak to decoy spectrum
+     * 2. find set of peaks of all spectra containing the added peak
+     * 3. randomly select a peak from the set and add it to the decoy spectrum
+     * 4. repeat step 3 until the number of peaks in the decoy spectrum is the same as the number of peaks in the target spectrum
+     *
+     * @param libraryId
+     */
     public void spectrumBased(String libraryId) {
         log.info("Start to generate decoy spectra by spectrumBased method on library: {}", libraryId);
         long start = System.currentTimeMillis();

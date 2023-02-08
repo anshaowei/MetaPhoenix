@@ -67,11 +67,17 @@ public class NoiseFilter {
         log.info("remove {} spectra with <5 peaks with relative intensity above 2%, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 
-        //TODO 5. remove spectra with ion count > 300
-        //TODO 6. remove spectra without smiles
-        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs().length > 300);
-        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals(""));
-        log.info("remove {} spectra with ion count > 300, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
+        //5. remove spectra with ion count > 300
+//        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs().length > 300);
+//        log.info("remove {} spectra with ion count > 300, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
+
+        //6. normalize all the spectra making the highest intensity 100
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            double maxIntensity = StatUtils.max(spectrumDO.getInts());
+            for (int i = 0; i < spectrumDO.getInts().length; i++) {
+                spectrumDO.getInts()[i] = spectrumDO.getInts()[i] / maxIntensity * 100;
+            }
+        }
 
         spectrumService.remove(new SpectrumQuery(), libraryId);
         spectrumService.insert(spectrumDOS, libraryId);

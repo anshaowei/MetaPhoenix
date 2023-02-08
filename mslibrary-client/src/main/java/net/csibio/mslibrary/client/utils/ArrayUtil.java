@@ -31,16 +31,24 @@ public class ArrayUtil {
     }
 
     public static int findNearestIndex(double[] mzs, double mz) {
-        int index = 0;
-        double min = Double.MAX_VALUE;
-        for (int i = 0; i < mzs.length; i++) {
-            double diff = Math.abs(mzs[i] - mz);
-            if (diff < min) {
-                min = diff;
-                index = i;
+        int left = 0, right = 0;
+        for (right = mzs.length - 1; left != right; ) {
+            int midIndex = (right + left) / 2;
+            int mid = (right - left);
+            double midValue = mzs[midIndex];
+            if (mz == midValue) {
+                return midIndex;
+            }
+            if (mz > midValue) {
+                left = midIndex;
+            } else {
+                right = midIndex;
+            }
+            if (mid <= 2) {
+                break;
             }
         }
-        return index;
+        return ((mzs[right] - mzs[left]) / 2 > mz ? right : left);
     }
 
     public static double findNearestDiff(double[] mzs, double mz) {
