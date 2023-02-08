@@ -48,7 +48,7 @@ public class ArrayUtil {
                 break;
             }
         }
-        return (Math.abs(mzs[right] - mz) > Math.abs(mzs[left] - mz) ? right : left);
+        return (Math.abs(mzs[right] - mz) > Math.abs(mzs[left] - mz) ? left : right);
     }
 
     public static double findNearestDiff(double[] mzs, double mz) {

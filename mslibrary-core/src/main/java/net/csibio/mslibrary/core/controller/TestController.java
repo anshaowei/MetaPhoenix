@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -67,14 +68,14 @@ public class TestController {
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
-        log.info("开始执行谱图导入");
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
-        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-//        mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+//        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+        mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
     }
 
     @RequestMapping("/clean")
     public void clean() {
+        noiseFilter.filter("GNPS");
         noiseFilter.filter("MassBank");
     }
 
@@ -142,10 +143,10 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-//        spectrumGenerator.naive("GNPS");
+        spectrumGenerator.naive("GNPS");
 //        spectrumGenerator.naive("MassBank");
 //        spectrumGenerator.spectrumBased("GNPS");
-        spectrumGenerator.spectrumBased("MassBank");
+//        spectrumGenerator.spectrumBased("MassBank");
     }
 
     @RequestMapping("dataImport")
@@ -188,8 +189,8 @@ public class TestController {
         spectrumService.insert(spectrumDOS, "ST001794");
     }
 
-    @RequestMapping("compare")
-    public void compare() {
+    @RequestMapping("scoreGraph")
+    public void scoreGraph() {
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("MassBank");
         Double mzTolerance = 0.01;
@@ -197,58 +198,42 @@ public class TestController {
         List<LibraryHit> falseHits = new ArrayList<>();
 
         for (SpectrumDO spectrumDO : spectrumDOS) {
-            Double precursorMz = spectrumDO.getPrecursorMz();
-            List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(precursorMz, mzTolerance, "GNPS-naive");
+            List<LibraryHit> libraryHits = new ArrayList<>();
+            List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS");
             for (SpectrumDO librarySpectrum : librarySpectra) {
-                if (librarySpectrum.getSmiles().equals(spectrumDO.getSmiles()) && Math.abs(librarySpectrum.getPrecursorMz() - spectrumDO.getPrecursorMz()) < 0.1) {
-                    double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), 0.01);
-//                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum());
-                    LibraryHit libraryHit = new LibraryHit();
-                    libraryHit.setSpectrumId(librarySpectrum.getId());
-                    libraryHit.setSmiles(librarySpectrum.getSmiles());
-                    libraryHit.setMatchScore(score);
-                    trueHits.add(libraryHit);
-                } else {
-                    double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), 0.01);
-//                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum());
-                    LibraryHit libraryHit = new LibraryHit();
-                    libraryHit.setSpectrumId(librarySpectrum.getId());
-                    libraryHit.setSmiles(librarySpectrum.getSmiles());
-                    libraryHit.setMatchScore(score);
-                    falseHits.add(libraryHit);
-                }
+                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), mzTolerance);
+                LibraryHit libraryHit = new LibraryHit();
+                libraryHit.setSpectrumId(librarySpectrum.getId());
+                libraryHit.setSmiles(librarySpectrum.getSmiles());
+                libraryHit.setMatchScore(score);
+                libraryHits.add(libraryHit);
             }
-
-            // 测定伪谱图的经验贝叶斯分布
-//            for(SpectrumDO librarySpectrum : librarySpectra) {
-//                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), 0.01);
-//                LibraryHit libraryHit = new LibraryHit();
-//                libraryHit.setSpectrumId(librarySpectrum.getId());
-//                libraryHit.setSmiles(librarySpectrum.getSmiles());
-//                libraryHit.setMatchScore(score);
-//                falseHits.add(libraryHit);
-//            }
-//        }
-
-            double threshold = 0.0;
-            List<List<Double>> scores = new ArrayList<>();
-            for (int i = 0; i <= 100; i++) {
-                threshold = i * 0.01;
-                double minValue = threshold;
-                double maxValue = threshold + 0.01;
-                List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue && libraryHit.getMatchScore() <= maxValue).toList();
-                List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue && libraryHit.getMatchScore() <= maxValue).toList();
-
-                List<Double> score = new ArrayList<>();
-                score.add(threshold);
-                score.add(positiveHits.size() + 0.0);
-                score.add(negativeHits.size() + 0.0);
-                scores.add(score);
+            if (!libraryHits.isEmpty()) {
+                libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
+                trueHits.add(libraryHits.get(0));
+                libraryHits.remove(libraryHits.get(0));
+                falseHits.addAll(libraryHits);
             }
-            EasyExcel.write("/Users/anshaowei/Downloads/compare.xlsx").sheet("sheet1").doWrite(scores);
-            long end = System.currentTimeMillis();
-            log.info("time: " + (end - start));
         }
+
+        double threshold = 0.0;
+        List<List<Double>> scores = new ArrayList<>();
+        for (int i = 0; i <= 100; i++) {
+            threshold = i * 0.01;
+            double minValue = threshold;
+            double maxValue = threshold + 0.01;
+            List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue && libraryHit.getMatchScore() <= maxValue).toList();
+            List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue && libraryHit.getMatchScore() <= maxValue).toList();
+
+            List<Double> score = new ArrayList<>();
+            score.add(threshold);
+            score.add(positiveHits.size() + 0.0);
+            score.add(negativeHits.size() + 0.0);
+            scores.add(score);
+        }
+        EasyExcel.write("/Users/anshaowei/Downloads/scoreGraph.xlsx").sheet("sheet1").doWrite(scores);
+        long end = System.currentTimeMillis();
+        log.info("time: " + (end - start));
     }
 
     @RequestMapping("fdr")
