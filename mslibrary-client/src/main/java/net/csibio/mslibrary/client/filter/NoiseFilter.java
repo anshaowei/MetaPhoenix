@@ -24,9 +24,9 @@ public class NoiseFilter {
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
 
-        //1. remove spectra without neither smiles nor inchi
-        spectrumDOS.removeIf(spectrumDO -> (spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("")) && (spectrumDO.getInChI() == null || spectrumDO.getInChI().equals("")));
-        log.info("remove {} spectra without neither smiles nor inchi, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
+        //1. remove spectra with empty key information
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getMzs() == null || spectrumDO.getInts() == null || spectrumDO.getMzs().length == 0 || spectrumDO.getInts().length == 0);
+        log.info("remove {} spectra with empty key information, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 
         //2. remove low resolution data (the precursorMz is not in the spectrum or the difference between the precursorMz and the nearest m/z is larger than 10ppm)

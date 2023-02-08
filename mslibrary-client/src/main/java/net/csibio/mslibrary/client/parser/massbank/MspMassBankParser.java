@@ -133,7 +133,7 @@ public class MspMassBankParser {
                                 try {
                                     precursorMz = Double.parseDouble(precursorMzItems[1]);
                                 } catch (Exception e) {
-                                    log.error("Parse precursorMz failed, precursorMz: {}", precursorMzItems[1]);
+//                                    log.error("Parse precursorMz failed, precursorMz: {}", precursorMzItems[1]);
                                 }
                                 spectrumDO.setPrecursorMz(precursorMz);
                             }
@@ -172,7 +172,7 @@ public class MspMassBankParser {
                                 try {
                                     collisionEnergy = Double.valueOf(collisionEnergyItems[1]);
                                 } catch (Exception e) {
-                                    log.error("Parse collision energy failed, value: {}", collisionEnergyItems[1]);
+//                                    log.error("Parse collision energy failed, value: {}", collisionEnergyItems[1]);
                                 }
                                 spectrumDO.setCollisionEnergy(collisionEnergy);
                             }
