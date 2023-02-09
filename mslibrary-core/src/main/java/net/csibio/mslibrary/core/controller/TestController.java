@@ -31,10 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 @RestController
 @RequestMapping("test")
@@ -143,9 +140,9 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-//        spectrumGenerator.naive("MassBank");
-//        spectrumGenerator.naive("GNPS");
-        spectrumGenerator.spectrumBased("GNPS");
+        spectrumGenerator.optNaive("MassBank");
+        spectrumGenerator.optNaive("GNPS");
+//        spectrumGenerator.spectrumBased("GNPS");
 //        spectrumGenerator.spectrumBased("MassBank");
     }
 
@@ -194,15 +191,16 @@ public class TestController {
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("MassBank");
         Double mzTolerance = 0.01;
-        List<LibraryHit> trueHits = new ArrayList<>();
-        List<LibraryHit> falseHits = new ArrayList<>();
+        List<LibraryHit> trueHits = Collections.synchronizedList(new ArrayList<>());
+        List<LibraryHit> falseHits = Collections.synchronizedList(new ArrayList<>());
 
-        for (SpectrumDO spectrumDO : spectrumDOS) {
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
             List<LibraryHit> libraryHits = new ArrayList<>();
             List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS");
-            List<SpectrumDO> decoySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS-naive");
+            List<SpectrumDO> decoySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS-spectrumBased");
             for (SpectrumDO librarySpectrum : librarySpectra) {
-                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), mzTolerance);
+//                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), mzTolerance);
+                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), mzTolerance);
                 LibraryHit libraryHit = new LibraryHit();
                 libraryHit.setSpectrumId(librarySpectrum.getId());
                 libraryHit.setSmiles(librarySpectrum.getSmiles());
@@ -215,7 +213,8 @@ public class TestController {
             }
             libraryHits = new ArrayList<>();
             for (SpectrumDO decoySpectrum : decoySpectra) {
-                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), decoySpectrum.getSpectrum(), mzTolerance);
+//                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), decoySpectrum.getSpectrum(), mzTolerance);
+                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), decoySpectrum.getSpectrum(), mzTolerance);
                 LibraryHit libraryHit = new LibraryHit();
                 libraryHit.setSpectrumId(decoySpectrum.getId());
                 libraryHit.setSmiles(decoySpectrum.getSmiles());
@@ -227,7 +226,7 @@ public class TestController {
                 libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
                 falseHits.add(libraryHits.get(0));
             }
-        }
+        });
 
         double threshold = 0.0;
         List<List<Double>> scores = new ArrayList<>();
@@ -238,12 +237,10 @@ public class TestController {
         for (int i = 20; i > 0; i--) {
             fdrs.add(i * 0.05);
         }
-        HashMap<Double, Double> scoreToPValue = new HashMap<>();
         int count = 0;
         for (int i = 0; i < 10000; i++) {
             threshold = i * 0.001;
-            double minValue = threshold;
-            double maxValue = threshold + 0.01;
+            final double minValue = threshold;
             List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue).toList();
             List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue).toList();
             double pValue = (double) negativeHits.size() / positiveHits.size();

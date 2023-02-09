@@ -76,6 +76,7 @@ public class SpectrumGenerator {
 
     public void optNaive(String libraryId) {
         log.info("Start to generate decoy spectra by optNaive method on library: {}", libraryId);
+        double mzTolerance = 0.01;
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
@@ -103,7 +104,7 @@ public class SpectrumGenerator {
                 }
                 boolean repeat = false;
                 for (IonPeak decoyIonPeak : decoyIonPeaks) {
-                    if (Math.abs(ionPeak.getMz() - decoyIonPeak.getMz()) < 0.01) {
+                    if (Math.abs(ionPeak.getMz() - decoyIonPeak.getMz()) < mzTolerance) {
                         i--;
                         repeat = true;
                         break;

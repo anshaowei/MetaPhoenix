@@ -81,7 +81,7 @@ public class Similarity {
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
 
-    public double getEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2) {
+    public double getEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
         Spectrum spectrumA = SpectrumUtil.clone(spectrum1);
         Spectrum spectrumB = SpectrumUtil.clone(spectrum2);
         SpectrumUtil.normalize(spectrumA);
@@ -105,7 +105,7 @@ public class Similarity {
         }
 
         //根据权重混合两张谱图
-        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, weightA, weightB, 0.01);
+        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, weightA, weightB, mzTolerance);
         double entropyMix = entropy.getEntropy(mixSpectrum);
 
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
