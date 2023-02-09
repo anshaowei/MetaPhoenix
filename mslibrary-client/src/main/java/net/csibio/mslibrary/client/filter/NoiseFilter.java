@@ -34,16 +34,17 @@ public class NoiseFilter {
         log.info("remove {} spectra with low resolution, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 
-        //3. remove data points with intensity 0
+        //3. remove noise data points (intensity < 0.01 * basePeakIntensity) and normalize intensity
         int dataPoint = 0;
         int totalDataPoint = 0;
         for (SpectrumDO spectrumDO : spectrumDOS) {
+            double basePeakIntensity = StatUtils.max(spectrumDO.getInts());
             List<Double> mzs = new ArrayList<>();
             List<Double> ints = new ArrayList<>();
             for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                if (spectrumDO.getInts()[i] != 0) {
+                if (spectrumDO.getInts()[i] >= 0.01 * basePeakIntensity) {
                     mzs.add(spectrumDO.getMzs()[i]);
-                    ints.add(spectrumDO.getInts()[i]);
+                    ints.add(spectrumDO.getInts()[i] / basePeakIntensity * 100);
                 }
             }
             dataPoint += spectrumDO.getMzs().length - mzs.size();
@@ -51,7 +52,7 @@ public class NoiseFilter {
             spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
             spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
         }
-        log.info("remove {} data points with intensity 0, total data points {}", dataPoint, totalDataPoint);
+        log.info("remove {} noise data points, {} spectra left, {}% data points removed", dataPoint, spectrumDOS.size(), dataPoint * 100.0 / totalDataPoint);
 
         //4. remove spectra with <5 peaks with relative intensity above 2%
         spectrumDOS.removeIf(spectrumDO -> {
@@ -68,16 +69,8 @@ public class NoiseFilter {
         count = spectrumDOS.size();
 
         //5. remove spectra with ion count > 300
-//        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs().length > 300);
-//        log.info("remove {} spectra with ion count > 300, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
-
-        //6. normalize all the spectra making the highest intensity 100
-        for (SpectrumDO spectrumDO : spectrumDOS) {
-            double maxIntensity = StatUtils.max(spectrumDO.getInts());
-            for (int i = 0; i < spectrumDO.getInts().length; i++) {
-                spectrumDO.getInts()[i] = spectrumDO.getInts()[i] / maxIntensity * 100;
-            }
-        }
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs().length > 300);
+        log.info("remove {} spectra with ion count > 300, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
 
         spectrumService.remove(new SpectrumQuery(), libraryId);
         spectrumService.insert(spectrumDOS, libraryId);
