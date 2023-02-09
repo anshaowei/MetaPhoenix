@@ -82,18 +82,22 @@ public class SpectrumGenerator {
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
         List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
         HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
+        HashMap<String, List<IonPeak>> ionPeakMap = new HashMap<>();
         for (SpectrumDO spectrumDO : spectrumDOS) {
-            ionPeaksWithoutPrecursor.addAll(separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap));
+            List<IonPeak> otherIonPeaks = separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap);
+            ionPeaksWithoutPrecursor.addAll(otherIonPeaks);
+            ionPeakMap.put(spectrumDO.getId(), otherIonPeaks);
         }
 
         //针对每一张谱图生成decoy谱图
         for (SpectrumDO spectrumDO : spectrumDOS) {
             //1. 将precursor的peak插入到谱图中
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
+            List<IonPeak> ionPeaks = ionPeakMap.get(spectrumDO.getId());
             IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
             decoyIonPeaks.add(precursorIonPeak);
 
-            //2. 从剩余谱图的所有ionPeak中随机挑选若干，使得target和decoy谱图的ionPeak数量相同
+            //2. 从剩余谱图的所有ionPeak中随机挑选若干，使得target和decoy谱图的ionPeak数量相同，且decoy的信号值为随机的打乱后的原谱图信号值（保证熵相同）
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
                 //对每张谱图，不要小于precursorMz的或者与已加入的谱图重复的
                 int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
@@ -112,6 +116,11 @@ public class SpectrumGenerator {
                 }
                 if (repeat)
                     continue;
+                //到此处的时候ionPeak的mz的随机选取已经完成，下一步进行ionPeak的强度改变
+                int random = new Random().nextInt(ionPeaks.size());
+                IonPeak randomIonPeak = ionPeaks.get(random);
+                ionPeak.setIntensity(randomIonPeak.getIntensity());
+                ionPeaks.remove(random);
                 decoyIonPeaks.add(ionPeak);
             }
 
