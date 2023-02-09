@@ -10,10 +10,7 @@ import net.csibio.mslibrary.client.utils.ArrayUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Component("spectrumGenerator")
 @Slf4j
@@ -54,21 +51,12 @@ public class SpectrumGenerator {
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
                 int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
                 IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
-                ionPeak.setIntensity(ionPeak.getIntensity() * precursorIonPeak.getIntensity());
                 decoyIonPeaks.add(ionPeak);
                 ionPeaksWithoutPrecursor.remove(randomIndex);
             }
 
             //3. 将decoyIonPeaks生成谱图
-            decoyIonPeaks.sort((o1, o2) -> {
-                if (o1.getMz() > o2.getMz()) {
-                    return 1;
-                } else if (o1.getMz() < o2.getMz()) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            });
+            decoyIonPeaks.sort(Comparator.comparing(IonPeak::getMz));
             double[] mzs = new double[decoyIonPeaks.size()];
             double[] intensities = new double[decoyIonPeaks.size()];
             for (int i = 0; i < decoyIonPeaks.size(); i++) {
@@ -123,20 +111,11 @@ public class SpectrumGenerator {
                 }
                 if (repeat)
                     continue;
-                ionPeak.setIntensity(ionPeak.getIntensity() * precursorIonPeak.getIntensity());
                 decoyIonPeaks.add(ionPeak);
             }
 
             //3. 将decoyIonPeaks生成谱图
-            decoyIonPeaks.sort((o1, o2) -> {
-                if (o1.getMz() > o2.getMz()) {
-                    return 1;
-                } else if (o1.getMz() < o2.getMz()) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            });
+            decoyIonPeaks.sort(Comparator.comparing(IonPeak::getMz));
             double[] mzs = new double[decoyIonPeaks.size()];
             double[] intensities = new double[decoyIonPeaks.size()];
             for (int i = 0; i < decoyIonPeaks.size(); i++) {
@@ -167,9 +146,9 @@ public class SpectrumGenerator {
         log.info("Start to generate decoy spectra by spectrumBased method on library: {}", libraryId);
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
+        List<SpectrumDO> decoySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
 
-        for (SpectrumDO spectrumDO : spectrumDOS) {
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
             SpectrumDO decoySpectrum = new SpectrumDO();
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
 
@@ -203,15 +182,7 @@ public class SpectrumGenerator {
             }
 
             //3. 将伪谱图转换为SpectrumDO
-            decoyIonPeaks.sort((o1, o2) -> {
-                if (o1.getMz() > o2.getMz()) {
-                    return 1;
-                } else if (o1.getMz() < o2.getMz()) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            });
+            decoyIonPeaks.sort(Comparator.comparing(IonPeak::getMz));
             double[] mzs = new double[decoyIonPeaks.size()];
             double[] intensities = new double[decoyIonPeaks.size()];
             for (int i = 0; i < decoyIonPeaks.size(); i++) {
@@ -222,7 +193,7 @@ public class SpectrumGenerator {
             decoySpectrum.setInts(intensities);
             decoySpectrum.setPrecursorMz(spectrumDO.getPrecursorMz());
             decoySpectrumDOS.add(decoySpectrum);
-        }
+        });
         long end = System.currentTimeMillis();
         log.info("Finished generating decoy spectra on {} by spectrumBased method, cost {}ms", libraryId, end - start);
         spectrumService.insert(decoySpectrumDOS, libraryId + "-spectrumBased");
@@ -236,12 +207,12 @@ public class SpectrumGenerator {
      * @return
      */
     private List<SpectrumDO> findCandidateSpectra(List<SpectrumDO> spectrumDOS, double mz) {
-        List<SpectrumDO> candidates = new ArrayList<>();
-        for (SpectrumDO spectrumDO : spectrumDOS) {
-            if (ArrayUtil.findNearestDiff(spectrumDO.getMzs(), mz) < 5 * Constants.PPM * mz) {
+        List<SpectrumDO> candidates = Collections.synchronizedList(new ArrayList<>());
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            if (ArrayUtil.findNearestDiff(spectrumDO.getMzs(), mz) < 10 * Constants.PPM * mz) {
                 candidates.add(spectrumDO);
             }
-        }
+        });
         return candidates;
     }
 
@@ -291,7 +262,6 @@ public class SpectrumGenerator {
         List<IonPeak> ionPeaks = new ArrayList<>();
         double diff = Double.MAX_VALUE;
         int index = 0;
-        double precursorIntensity = 0;
         for (int i = 0; i < spectrumDO.getMzs().length; i++) {
             if (Math.abs(spectrumDO.getMzs()[i] - spectrumDO.getPrecursorMz()) < diff) {
                 diff = Math.abs(spectrumDO.getMzs()[i] - spectrumDO.getPrecursorMz());
@@ -300,12 +270,7 @@ public class SpectrumGenerator {
             IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
             ionPeaks.add(ionPeak);
         }
-        precursorIntensity = spectrumDO.getInts()[index];
         ionPeaks.remove(index);
-        //对precursorIonPeak以外的ionPeak统一除以谱图中precursorIonPeak的intensity
-        for (IonPeak ionPeak : ionPeaks) {
-            ionPeak.setIntensity(ionPeak.getIntensity() / precursorIntensity);
-        }
         precursorIonPeakMap.put(spectrumDO.getId(), new IonPeak(spectrumDO.getMzs()[index], spectrumDO.getInts()[index]));
         return ionPeaks;
     }
