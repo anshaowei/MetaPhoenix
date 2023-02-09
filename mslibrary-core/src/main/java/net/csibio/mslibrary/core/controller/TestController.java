@@ -69,7 +69,7 @@ public class TestController {
     @RequestMapping("/importLibrary")
     public void importLibrary() {
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
-//        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+        mspMassBankParser.parse("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
         mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
     }
 
@@ -143,9 +143,9 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-        spectrumGenerator.naive("GNPS");
 //        spectrumGenerator.naive("MassBank");
-//        spectrumGenerator.spectrumBased("GNPS");
+//        spectrumGenerator.naive("GNPS");
+        spectrumGenerator.spectrumBased("GNPS");
 //        spectrumGenerator.spectrumBased("MassBank");
     }
 
@@ -200,6 +200,7 @@ public class TestController {
         for (SpectrumDO spectrumDO : spectrumDOS) {
             List<LibraryHit> libraryHits = new ArrayList<>();
             List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS");
+            List<SpectrumDO> decoySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS-naive");
             for (SpectrumDO librarySpectrum : librarySpectra) {
                 double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), mzTolerance);
                 LibraryHit libraryHit = new LibraryHit();
@@ -208,27 +209,74 @@ public class TestController {
                 libraryHit.setMatchScore(score);
                 libraryHits.add(libraryHit);
             }
-            if (!libraryHits.isEmpty()) {
+            if (libraryHits.size() > 1) {
                 libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
                 trueHits.add(libraryHits.get(0));
-                libraryHits.remove(libraryHits.get(0));
-                falseHits.addAll(libraryHits);
+            }
+            libraryHits = new ArrayList<>();
+            for (SpectrumDO decoySpectrum : decoySpectra) {
+                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), decoySpectrum.getSpectrum(), mzTolerance);
+                LibraryHit libraryHit = new LibraryHit();
+                libraryHit.setSpectrumId(decoySpectrum.getId());
+                libraryHit.setSmiles(decoySpectrum.getSmiles());
+                libraryHit.setMatchScore(score);
+                libraryHit.setDecoy(true);
+                libraryHits.add(libraryHit);
+            }
+            if (libraryHits.size() > 1) {
+                libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
+                falseHits.add(libraryHits.get(0));
             }
         }
 
         double threshold = 0.0;
         List<List<Double>> scores = new ArrayList<>();
-        for (int i = 0; i <= 100; i++) {
-            threshold = i * 0.01;
+
+        //找到20个estimated p-value阈值下的分数值
+        List<Double> fdrs = new ArrayList<>();
+        List<Double> thresholds = new ArrayList<>();
+        for (int i = 20; i > 0; i--) {
+            fdrs.add(i * 0.05);
+        }
+        HashMap<Double, Double> scoreToPValue = new HashMap<>();
+        int count = 0;
+        for (int i = 0; i < 10000; i++) {
+            threshold = i * 0.001;
             double minValue = threshold;
             double maxValue = threshold + 0.01;
-            List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue && libraryHit.getMatchScore() <= maxValue).toList();
-            List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue && libraryHit.getMatchScore() <= maxValue).toList();
+            List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue).toList();
+            List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue).toList();
+            double pValue = (double) negativeHits.size() / positiveHits.size();
+            if (count < fdrs.size()) {
+                if (pValue < fdrs.get(count)) {
+                    thresholds.add(threshold);
+                    count++;
+                }
+            } else {
+                break;
+            }
+        }
 
+        //作图
+        for (int i = thresholds.size() - 1; i >= 0; i--) {
+            double minValue = thresholds.get(i);
+            double maxValue = 0.0;
+            if (i == thresholds.size() - 1) {
+                maxValue = 1.0;
+            } else {
+                maxValue = thresholds.get(i + 1);
+            }
+            final double finalMaxValue = maxValue;
+            List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue).toList();
+            List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue).toList();
+            double pValue = (double) negativeHits.size() / positiveHits.size();
+            positiveHits = positiveHits.stream().filter(libraryHit -> libraryHit.getMatchScore() <= finalMaxValue).toList();
+            negativeHits = negativeHits.stream().filter(libraryHit -> libraryHit.getMatchScore() <= finalMaxValue).toList();
             List<Double> score = new ArrayList<>();
-            score.add(threshold);
-            score.add(positiveHits.size() + 0.0);
-            score.add(negativeHits.size() + 0.0);
+            score.add(pValue);
+            score.add((double) positiveHits.size() / trueHits.size());
+            score.add((double) negativeHits.size() / falseHits.size());
+            score.add((double) (positiveHits.size() + negativeHits.size()) / (trueHits.size() + falseHits.size()));
             scores.add(score);
         }
         EasyExcel.write("/Users/anshaowei/Downloads/scoreGraph.xlsx").sheet("sheet1").doWrite(scores);
