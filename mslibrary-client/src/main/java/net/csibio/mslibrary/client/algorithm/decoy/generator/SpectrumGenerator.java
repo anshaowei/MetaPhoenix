@@ -143,6 +143,40 @@ public class SpectrumGenerator {
         spectrumService.insert(decoySpectrumDOS, libraryId + "-optNaive");
     }
 
+    public void XYMeta(String libraryId) {
+        log.info("Start to generate decoy spectra by XYMeta method on library: {}", libraryId);
+        long start = System.currentTimeMillis();
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        List<SpectrumDO> decoySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            SpectrumDO decoySpectrumDO = new SpectrumDO();
+            decoySpectrumDO.setMzs(spectrumDO.getMzs());
+            decoySpectrumDO.setInts(spectrumDO.getInts());
+            decoySpectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz());
+            decoySpectrumDOS.add(decoySpectrumDO);
+        });
+        long end = System.currentTimeMillis();
+        spectrumService.insert(decoySpectrumDOS, libraryId + "-XYMeta");
+        log.info("Finished generating decoy spectra on {} by XYMeta method, cost {}ms", libraryId, end - start);
+    }
+
+    public void fragmentationTree(String libraryId) {
+        log.info("Start to generate decoy spectra by fragmentationTree method on library: {}", libraryId);
+        long start = System.currentTimeMillis();
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        List<SpectrumDO> decoySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            SpectrumDO decoySpectrumDO = new SpectrumDO();
+            decoySpectrumDO.setMzs(spectrumDO.getMzs());
+            decoySpectrumDO.setInts(spectrumDO.getInts());
+            decoySpectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz());
+            decoySpectrumDOS.add(decoySpectrumDO);
+        });
+        long end = System.currentTimeMillis();
+        spectrumService.insert(decoySpectrumDOS, libraryId + "-fragmentationTree");
+        log.info("Finished generating decoy spectra on {} by fragmentationTree method, cost {}ms", libraryId, end - start);
+    }
+
     /**
      * generate decoy spectra by spectrumBased method
      * 1. add precursor ion peak to decoy spectrum
