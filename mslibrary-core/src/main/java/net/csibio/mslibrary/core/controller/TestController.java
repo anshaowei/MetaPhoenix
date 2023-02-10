@@ -184,6 +184,7 @@ public class TestController {
             }
         }
         spectrumService.insert(spectrumDOS, "ST001794");
+        log.info("import success");
     }
 
     @RequestMapping("scoreGraph")
@@ -197,7 +198,7 @@ public class TestController {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             List<LibraryHit> libraryHits = new ArrayList<>();
             List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS");
-            List<SpectrumDO> decoySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS-spectrumBased");
+            List<SpectrumDO> decoySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS-optNaive");
             for (SpectrumDO librarySpectrum : librarySpectra) {
 //                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), mzTolerance);
                 double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), mzTolerance);

@@ -1,10 +1,6 @@
 package net.csibio.mslibrary.core.export;
 
 import com.alibaba.excel.EasyExcel;
-import io.github.msdk.datamodel.MsSpectrum;
-import io.github.msdk.datamodel.MsSpectrumType;
-import io.github.msdk.io.mgf.MgfFileExportMethod;
-import io.github.msdk.io.mgf.MgfMsSpectrum;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
@@ -17,7 +13,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Component("reporter")
@@ -35,7 +30,7 @@ public class Reporter {
 
     public Result toMsp(String fileName, List<SpectrumDO> spectrumDOS) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".msp";
-        FileWriter fileWriter = null;
+        FileWriter fileWriter;
         try {
             fileWriter = new FileWriter(outputFileName);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
@@ -121,24 +116,45 @@ public class Reporter {
 
     public Result toMgf(String fileName, List<SpectrumDO> spectrumDOS) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".mgf";
-        List<MsSpectrum> msSpectra = new ArrayList<>();
-        for (SpectrumDO spectrumDO : spectrumDOS) {
-            //convert spectrumDO.getInts() to float[]
-            float[] ints = new float[spectrumDO.getInts().length];
-            for (int i = 0; i < spectrumDO.getInts().length; i++) {
-                ints[i] = (float) spectrumDO.getInts()[i];
-            }
-            MgfMsSpectrum mgfMsSpectrum = new MgfMsSpectrum(spectrumDO.getMzs(), ints, spectrumDO.getMzs().length, MsSpectrumType.CENTROIDED);
-            mgfMsSpectrum.setMsLevel(2);
-            mgfMsSpectrum.setPrecursor(spectrumDO.getPrecursorMz(), 1);
-            msSpectra.add(mgfMsSpectrum);
-        }
-        MgfFileExportMethod mgfFileExportMethod = new MgfFileExportMethod(msSpectra, new File(outputFileName));
+        FileWriter fileWriter;
         try {
-            mgfFileExportMethod.execute();
-        } catch (Exception e) {
+            fileWriter = new FileWriter(outputFileName);
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            for (SpectrumDO spectrumDO : spectrumDOS) {
+                bufferedWriter.write("BEGIN IONS");
+                bufferedWriter.newLine();
+                //FEATURE_ID
+                if (spectrumDO.getId() != null) {
+                    bufferedWriter.write("FEATURE_ID: " + spectrumDO.getId());
+                    bufferedWriter.newLine();
+                }
+                //PEPMASS
+                if (spectrumDO.getPrecursorMz() != null) {
+                    bufferedWriter.write("PEPMASS: " + spectrumDO.getPrecursorMz());
+                    bufferedWriter.newLine();
+                }
+                //CHARGE
+                bufferedWriter.write("CHARGE: " + "1");
+                bufferedWriter.newLine();
+                //MSLEVEL
+                bufferedWriter.write("MSLEVEL: " + "2");
+                bufferedWriter.newLine();
+                if (spectrumDO.getMzs() != null && spectrumDO.getInts() != null) {
+                    for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                        bufferedWriter.write(spectrumDO.getMzs()[i] + " " + spectrumDO.getInts()[i]);
+                        bufferedWriter.newLine();
+                    }
+                }
+                bufferedWriter.write("END IONS");
+                bufferedWriter.newLine();
+                bufferedWriter.newLine();
+            }
+            bufferedWriter.close();
+            fileWriter.close();
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        log.info("export msp file success : " + outputFileName);
         return new Result(true);
     }
 }
