@@ -40,14 +40,13 @@ public class SpectrumGenerator {
             ionPeaksWithoutPrecursor.addAll(separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap));
         }
 
-        //针对每一张谱图生成decoy谱图
         for (SpectrumDO spectrumDO : spectrumDOS) {
-            //1. 将precursor的peak插入到谱图中
+            //1. insert precursor ion peak
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
             IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
             decoyIonPeaks.add(precursorIonPeak);
 
-            //2. 从剩余谱图的所有ionPeak中随机挑选若干，使得target和decoy谱图的ionPeak数量相同
+            //2. randomly add ion peaks from other spectra
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
                 int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
                 IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
@@ -55,19 +54,8 @@ public class SpectrumGenerator {
                 ionPeaksWithoutPrecursor.remove(randomIndex);
             }
 
-            //3. 将decoyIonPeaks生成谱图
-            decoyIonPeaks.sort(Comparator.comparing(IonPeak::getMz));
-            double[] mzs = new double[decoyIonPeaks.size()];
-            double[] intensities = new double[decoyIonPeaks.size()];
-            for (int i = 0; i < decoyIonPeaks.size(); i++) {
-                mzs[i] = decoyIonPeaks.get(i).getMz();
-                intensities[i] = decoyIonPeaks.get(i).getIntensity();
-            }
-            SpectrumDO decoySpectrumDO = new SpectrumDO();
-            decoySpectrumDO.setMzs(mzs);
-            decoySpectrumDO.setInts(intensities);
-            decoySpectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz());
-            decoySpectrumDOS.add(decoySpectrumDO);
+            //3. convert to SpectrumDO
+            decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         }
         long end = System.currentTimeMillis();
         log.info("Finished generating decoy spectra on {} by naive method, cost {}ms", libraryId, end - start);
@@ -89,9 +77,8 @@ public class SpectrumGenerator {
             ionPeakMap.put(spectrumDO.getId(), otherIonPeaks);
         }
 
-        //针对每一张谱图生成decoy谱图
         for (SpectrumDO spectrumDO : spectrumDOS) {
-            //1. 将precursor的peak插入到谱图中
+            //1. insert precursor ion peak
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
             List<IonPeak> ionPeaks = ionPeakMap.get(spectrumDO.getId());
             IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
@@ -143,17 +130,69 @@ public class SpectrumGenerator {
         spectrumService.insert(decoySpectrumDOS, libraryId + "-optNaive");
     }
 
+    /**
+     * 1. For each target spectrum, build a signal warehouse S
+     * 2. S contains all ions which are smaller than the precursorMz from spectra with more than one
+     * 3. remove a certain proportion of the ions in the target spectrum
+     * 4. randomly select ions from S to fill the decoy spectrum making sure that it has the same ions as the target spectrum
+     * 5. finally, 30% of the ions in the decoy spectrum is randomly selected to shift +/- precursorMz/200,000
+     *
+     * @param libraryId
+     */
     public void XYMeta(String libraryId) {
+        Double mzTolerance = 0.01;
+        double removeProportion = 0.5;
         log.info("Start to generate decoy spectra by XYMeta method on library: {}", libraryId);
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
+
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
-            SpectrumDO decoySpectrumDO = new SpectrumDO();
-            decoySpectrumDO.setMzs(spectrumDO.getMzs());
-            decoySpectrumDO.setInts(spectrumDO.getInts());
-            decoySpectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz());
-            decoySpectrumDOS.add(decoySpectrumDO);
+            //1. find spectra contains the precursorMz
+            List<SpectrumDO> candidateSpectra = findCandidateSpectra(spectrumDOS, spectrumDO.getPrecursorMz());
+            //2. get all ions which are smaller than precursorMz
+            List<IonPeak> ionWarehouse = new ArrayList<>();
+            candidateSpectra.forEach(spectrum -> {
+                for (int i = 0; i < spectrum.getMzs().length; i++) {
+                    if (spectrum.getMzs()[i] < spectrumDO.getPrecursorMz()) {
+                        IonPeak ionPeak = new IonPeak(spectrum.getMzs()[i], spectrum.getInts()[i]);
+                        ionWarehouse.add(ionPeak);
+                    }
+                }
+            });
+            //3. remove a certain proportion of the ions in the target spectrum
+            List<IonPeak> targetIonPeaks = new ArrayList<>();
+            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
+                targetIonPeaks.add(ionPeak);
+            }
+            int removeNum = (int) (targetIonPeaks.size() * removeProportion);
+            for (int i = 0; i < removeNum; i++) {
+                targetIonPeaks.remove(new Random().nextInt(targetIonPeaks.size()));
+            }
+            //4. randomly select ions from S to fill the decoy spectrum
+            List<IonPeak> decoyIonPeaks = new ArrayList<>();
+            for (int i = 0; i < removeNum; i++) {
+                int random = new Random().nextInt(ionWarehouse.size());
+                IonPeak randomIonPeak = ionWarehouse.get(random);
+                decoyIonPeaks.add(randomIonPeak);
+                ionWarehouse.remove(random);
+            }
+            decoyIonPeaks.addAll(targetIonPeaks);
+            //5. 30% of the ions in the decoy spectrum is randomly selected to shift +/- precursorMz/200,000
+            int shiftNum = (int) (decoyIonPeaks.size() * 0.3);
+            for (int i = 0; i < shiftNum; i++) {
+                int random = new Random().nextInt(decoyIonPeaks.size());
+                IonPeak randomIonPeak = decoyIonPeaks.get(random);
+                double shift = new Random().nextDouble() * spectrumDO.getPrecursorMz() / 200000;
+                if (new Random().nextBoolean()) {
+                    randomIonPeak.setMz(randomIonPeak.getMz() + shift);
+                } else {
+                    randomIonPeak.setMz(randomIonPeak.getMz() - shift);
+                }
+            }
+            //6. convert to spectrumDO
+            decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         });
         long end = System.currentTimeMillis();
         spectrumService.insert(decoySpectrumDOS, libraryId + "-XYMeta");
@@ -226,17 +265,7 @@ public class SpectrumGenerator {
             }
 
             //3. 将伪谱图转换为SpectrumDO
-            decoyIonPeaks.sort(Comparator.comparing(IonPeak::getMz));
-            double[] mzs = new double[decoyIonPeaks.size()];
-            double[] intensities = new double[decoyIonPeaks.size()];
-            for (int i = 0; i < decoyIonPeaks.size(); i++) {
-                mzs[i] = decoyIonPeaks.get(i).getMz();
-                intensities[i] = decoyIonPeaks.get(i).getIntensity();
-            }
-            decoySpectrum.setMzs(mzs);
-            decoySpectrum.setInts(intensities);
-            decoySpectrum.setPrecursorMz(spectrumDO.getPrecursorMz());
-            decoySpectrumDOS.add(decoySpectrum);
+            decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         });
         long end = System.currentTimeMillis();
         log.info("Finished generating decoy spectra on {} by spectrumBased method, cost {}ms", libraryId, end - start);
@@ -244,7 +273,7 @@ public class SpectrumGenerator {
     }
 
     /**
-     * 找到一组谱图中包含给定mz的谱图
+     * find spectra containing the given mz
      *
      * @param spectrumDOS
      * @param mz
@@ -302,6 +331,13 @@ public class SpectrumGenerator {
         }
     }
 
+    /**
+     * Get ions from the spectrum and divide them into precursor ion and fragment ions
+     *
+     * @param spectrumDO
+     * @param precursorIonPeakMap
+     * @return
+     */
     private List<IonPeak> separatePrecursorIonPeak(SpectrumDO spectrumDO, HashMap<String, IonPeak> precursorIonPeakMap) {
         List<IonPeak> ionPeaks = new ArrayList<>();
         double diff = Double.MAX_VALUE;
@@ -317,6 +353,27 @@ public class SpectrumGenerator {
         ionPeaks.remove(index);
         precursorIonPeakMap.put(spectrumDO.getId(), new IonPeak(spectrumDO.getMzs()[index], spectrumDO.getInts()[index]));
         return ionPeaks;
+    }
+
+    /**
+     * Convert ionPeaks to SpectrumDO
+     *
+     * @param ionPeaks
+     * @param precursorMz
+     * @return
+     */
+    private SpectrumDO convertIonPeaksToSpectrum(List<IonPeak> ionPeaks, double precursorMz) {
+        SpectrumDO spectrumDO = new SpectrumDO();
+        double[] mzs = new double[ionPeaks.size()];
+        double[] intensities = new double[ionPeaks.size()];
+        for (int i = 0; i < ionPeaks.size(); i++) {
+            mzs[i] = ionPeaks.get(i).getMz();
+            intensities[i] = ionPeaks.get(i).getIntensity();
+        }
+        spectrumDO.setMzs(mzs);
+        spectrumDO.setInts(intensities);
+        spectrumDO.setPrecursorMz(precursorMz);
+        return spectrumDO;
     }
 
 }
