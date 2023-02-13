@@ -4,10 +4,10 @@ public enum StrategyType {
 
     //separated target-decoy search
     STDS("STDS"),
-    //concatenated target-decoy search
-    CTDS("CTDS"),
-    //target-decoy competition
-    TDC("TDC"),
+    //concatenated target-decoy competition
+    CTDC("CTDC"),
+    //target-only target-decoy competition
+    TTDC("TTDC"),
     //traditional strategy
     Common("Common"),
     //mix-max

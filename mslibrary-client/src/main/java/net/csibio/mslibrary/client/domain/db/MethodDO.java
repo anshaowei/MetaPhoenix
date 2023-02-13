@@ -27,6 +27,8 @@ public class MethodDO {
     //取前几个最高分的结果
     Integer topN;
 
+    Double threshold;
+
     //使用哪些谱图库进行检索
     List<String> libraryIds;
 
