@@ -1,17 +1,12 @@
 package net.csibio.mslibrary.client.algorithm.similarity;
 
 import net.csibio.aird.bean.common.Spectrum;
-import net.csibio.mslibrary.client.algorithm.entropy.Entropy;
 import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import org.apache.commons.math3.stat.StatUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component("similarity")
 public class Similarity {
-
-    @Autowired
-    Entropy entropy;
 
     public double getDotProduct(Spectrum runSpectrum, Spectrum libSpectrum, double mzTolerance) {
         int expIndex = 0;
@@ -66,17 +61,17 @@ public class Similarity {
         return dotProduct / Math.sqrt(libNorm) / Math.sqrt(expNorm) * expCounter / libCounter;
     }
 
-    public double getUnWeightedEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2) {
+    public double getUnWeightedEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
 
         Spectrum spectrumA = SpectrumUtil.clone(spectrum1);
         Spectrum spectrumB = SpectrumUtil.clone(spectrum2);
         SpectrumUtil.normalize(spectrumA);
         SpectrumUtil.normalize(spectrumB);
-        double entropyA = entropy.getEntropy(spectrumA);
-        double entropyB = entropy.getEntropy(spectrumB);
+        double entropyA = getEntropy(spectrumA);
+        double entropyB = getEntropy(spectrumB);
 
-        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, 0.5, 0.5, 0.01);
-        double entropyMix = entropy.getEntropy(mixSpectrum);
+        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, 0.5, 0.5, mzTolerance);
+        double entropyMix = getEntropy(mixSpectrum);
 
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
@@ -87,8 +82,8 @@ public class Similarity {
         SpectrumUtil.normalize(spectrumA);
         SpectrumUtil.normalize(spectrumB);
 
-        double entropyA = entropy.getEntropy(spectrumA);
-        double entropyB = entropy.getEntropy(spectrumB);
+        double entropyA = getEntropy(spectrumA);
+        double entropyB = getEntropy(spectrumB);
         double weightA;
         double weightB;
 
@@ -106,9 +101,23 @@ public class Similarity {
 
         //根据权重混合两张谱图
         Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, weightA, weightB, mzTolerance);
-        double entropyMix = entropy.getEntropy(mixSpectrum);
+        double entropyMix = getEntropy(mixSpectrum);
 
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
+    }
+
+    private double getEntropy(Spectrum spectrum) {
+        double[] intensityArray = spectrum.getInts();
+        double sum = 0;
+        for (double intensity : intensityArray) {
+            sum += intensity;
+        }
+        double entropy = 0;
+        for (double intensity : intensityArray) {
+            double p = intensity / sum;
+            entropy += p * Math.log(p);
+        }
+        return -entropy;
     }
 
 }

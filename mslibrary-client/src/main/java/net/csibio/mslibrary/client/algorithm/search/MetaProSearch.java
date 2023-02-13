@@ -47,11 +47,6 @@ public class MetaProSearch {
                 spectrumQuery.setMzTolerance(method.getMzTolerance());
                 spectrumQuery.setLibraryId(libraryId);
                 spectrumQuery.setMsLevel(MsLevel.MS2.getCode());
-                if (method.getStrategy().equals(1)) {
-                    //TODO 仪器平台配置暂时不支持能量匹配
-                    spectrumQuery.setInstrument(identificationForm.getInstrument());
-                    spectrumQuery.setIonSource(identificationForm.getIonSource());
-                }
                 spectrumDOS.addAll(spectrumService.getAll(spectrumQuery, libraryId));
             }
 

@@ -31,11 +31,14 @@ public class MethodDO {
     List<String> libraryIds;
 
     /**
-     * 谱图数据库匹配策略
-     * 策略1：只匹配满足给定仪器、激活器、能量、谱图类型、极性的谱图
-     * 策略2：主要参考匹配分数，对其他附加信息不设限
+     * @see net.csibio.mslibrary.client.constants.enums.StrategyType
      */
-    Integer strategy;
+    String strategy;
+
+    /**
+     * @see net.csibio.mslibrary.client.constants.enums.SimilarityType
+     */
+    String similarityType;
 
     Date createDate;
 
