@@ -7,7 +7,7 @@ import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.algorithm.score.SpectrumScorer;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
-import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
+import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.service.LibraryService;
@@ -34,10 +34,11 @@ public class CommonSearch {
 
     /**
      * mgf格式文件检索
+     *
      * @param filePath
-     * @param identificationParams
+     * @param method
      */
-    public void identify(String filePath, IdentificationParams identificationParams) {
+    public void identify(String filePath, MethodDO method) {
         //1.文件解析
         List<MgfMsSpectrum> mgfMsSpectrumList = new ArrayList<>();
         try {
@@ -57,10 +58,10 @@ public class CommonSearch {
                 precursorMz = mgfMsSpectrum.getPrecursorMass() / mgfMsSpectrum.getPrecursorCharge();
             }
             List<SpectrumDO> spectrumDOS = new ArrayList<>();
-            for (String libraryId : identificationParams.getLibraryIds()) {
+            for (String libraryId : method.getLibraryIds()) {
                 SpectrumQuery spectrumQuery = new SpectrumQuery();
                 spectrumQuery.setPrecursorMz(precursorMz);
-                spectrumQuery.setMzTolerance(identificationParams.getMzTolerance());
+                spectrumQuery.setMzTolerance(method.getMzTolerance());
                 spectrumQuery.setLibraryId(libraryId);
                 spectrumQuery.setMsLevel(MsLevel.MS2.getCode());
                 spectrumDOS.addAll(spectrumService.getAll(spectrumQuery, libraryId));
@@ -76,8 +77,8 @@ public class CommonSearch {
                 }
                 Spectrum ms2Spectrum = new Spectrum(mgfMsSpectrum.getMzValues(), intensityArray);
                 Spectrum libSpectrum = new Spectrum(spectrumDO.getMzs(), spectrumDO.getInts());
-                double ms2ForwardScore = spectrumScorer.ms2ForwardScore(ms2Spectrum, libSpectrum, identificationParams.getMzTolerance());
-                double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, identificationParams.getMzTolerance());
+                double ms2ForwardScore = spectrumScorer.ms2ForwardScore(ms2Spectrum, libSpectrum, method.getMzTolerance());
+                double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, method.getMzTolerance());
                 similarityScore += ms2ForwardScore + ms2ReverseScore;
 
                 //命中谱图结果填充
@@ -95,8 +96,8 @@ public class CommonSearch {
 
             //取打分排名前若干名的谱图
             libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
-            if (libraryHits.size() >= identificationParams.getTopN()) {
-                libraryHits = libraryHits.subList(0, identificationParams.getTopN());
+            if (libraryHits.size() >= method.getTopN()) {
+                libraryHits = libraryHits.subList(0, method.getTopN());
             }
 
             //3.输出标准结果

@@ -7,7 +7,7 @@ import net.csibio.mslibrary.client.algorithm.score.SpectrumScorer;
 import net.csibio.mslibrary.client.domain.bean.identification.Feature;
 import net.csibio.mslibrary.client.domain.bean.identification.IdentificationForm;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
-import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
+import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.service.CompoundService;
@@ -33,7 +33,7 @@ public class MetaProSearch {
     @Autowired
     SpectrumScorer spectrumScorer;
 
-    public IdentificationForm identifyFeatures(IdentificationForm identificationForm, IdentificationParams identificationParams) {
+    public IdentificationForm identifyFeatures(IdentificationForm identificationForm, MethodDO method) {
 
         List<Feature> features = identificationForm.getFeatures();
         //针对每个化合物库进行检索
@@ -41,13 +41,13 @@ public class MetaProSearch {
         features.parallelStream().forEach(feature -> {
             //策略1：严格匹配满足仪器设备平台配置的谱图
             List<SpectrumDO> spectrumDOS = new ArrayList<>();
-            for (String libraryId : identificationParams.getLibraryIds()) {
+            for (String libraryId : method.getLibraryIds()) {
                 SpectrumQuery spectrumQuery = new SpectrumQuery();
                 spectrumQuery.setPrecursorMz(feature.getMz());
-                spectrumQuery.setMzTolerance(identificationParams.getMzTolerance());
+                spectrumQuery.setMzTolerance(method.getMzTolerance());
                 spectrumQuery.setLibraryId(libraryId);
                 spectrumQuery.setMsLevel(MsLevel.MS2.getCode());
-                if (identificationParams.getStrategy().equals(1)) {
+                if (method.getStrategy().equals(1)) {
                     //TODO 仪器平台配置暂时不支持能量匹配
                     spectrumQuery.setInstrument(identificationForm.getInstrument());
                     spectrumQuery.setIonSource(identificationForm.getIonSource());
@@ -61,8 +61,8 @@ public class MetaProSearch {
                 Double similarityScore = 0.0;
                 Spectrum ms2Spectrum = feature.getMs2Spectrum();
                 Spectrum libSpectrum = new Spectrum(spectrumDO.getMzs(), spectrumDO.getInts());
-                double ms2ForwardScore = spectrumScorer.ms2ForwardScore(ms2Spectrum, libSpectrum, identificationParams.getMzTolerance());
-                double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, identificationParams.getMzTolerance());
+                double ms2ForwardScore = spectrumScorer.ms2ForwardScore(ms2Spectrum, libSpectrum, method.getMzTolerance());
+                double ms2ReverseScore = spectrumScorer.ms2ReverseScore(libSpectrum, ms2Spectrum, method.getMzTolerance());
                 similarityScore += ms2ForwardScore + ms2ReverseScore;
 
                 //命中谱图结果填充
@@ -80,8 +80,8 @@ public class MetaProSearch {
 
             //取打分排名前若干名的谱图
             libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
-            if (libraryHits.size() >= identificationParams.getTopN()) {
-                libraryHits = libraryHits.subList(0, identificationParams.getTopN());
+            if (libraryHits.size() >= method.getTopN()) {
+                libraryHits = libraryHits.subList(0, method.getTopN());
             }
 
             feature.setLibraryHits(libraryHits);

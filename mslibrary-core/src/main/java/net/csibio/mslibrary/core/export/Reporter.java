@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
+import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.core.config.VMProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,8 @@ public class Reporter {
 
     @Autowired
     VMProperties vmProperties;
+    @Autowired
+    SpectrumService spectrumService;
 
     public Result toExcel(String fileName, List<LibraryHit> libraryHits) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
@@ -28,7 +31,18 @@ public class Reporter {
         return null;
     }
 
-    public Result toMsp(String fileName, List<SpectrumDO> spectrumDOS) {
+    /**
+     * write result to msp file
+     *
+     * @param fileName
+     * @param libraryId
+     * @return
+     */
+    public Result toMsp(String fileName, String libraryId) {
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        if (spectrumDOS.size() == 0) {
+            return Result.Error("no spectra found in {}", libraryId);
+        }
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".msp";
         FileWriter fileWriter;
         try {
@@ -114,7 +128,19 @@ public class Reporter {
         return new Result(true);
     }
 
-    public Result toMgf(String fileName, List<SpectrumDO> spectrumDOS) {
+
+    /**
+     * write spectra into mgf file
+     *
+     * @param fileName
+     * @param libraryId
+     * @return
+     */
+    public Result toMgf(String fileName, String libraryId) {
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        if (spectrumDOS.size() == 0) {
+            return Result.Error("no spectra found in {}", libraryId);
+        }
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".mgf";
         FileWriter fileWriter;
         try {

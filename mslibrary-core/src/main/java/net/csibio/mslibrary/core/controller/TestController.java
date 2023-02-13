@@ -4,13 +4,9 @@ package net.csibio.mslibrary.core.controller;
 import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
-import net.csibio.mslibrary.client.algorithm.search.CommonSearch;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
-import net.csibio.mslibrary.client.domain.bean.params.IdentificationParams;
-import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
-import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.filter.NoiseFilter;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
@@ -48,8 +44,6 @@ public class TestController {
     @Autowired
     SpectrumService spectrumService;
     @Autowired
-    CommonSearch commonSearch;
-    @Autowired
     SpectrumParser spectrumParser;
     @Autowired
     MspMassBankParser mspMassBankParser;
@@ -75,24 +69,6 @@ public class TestController {
     public void clean() {
         noiseFilter.filter("GNPS");
         noiseFilter.filter("MassBank");
-    }
-
-    @RequestMapping("/identify")
-    public void identify() {
-        log.info("开始进行谱图鉴定");
-        String filePath = "/Users/anshaowei/Downloads/(Centroid)_Met_08_Sirius.mgf";
-        List<LibraryDO> libraryDOList = libraryService.getAll(new LibraryQuery());
-        IdentificationParams identificationParams = new IdentificationParams();
-        List<String> libraryIds = new ArrayList<>();
-        for (LibraryDO libraryDO : libraryDOList) {
-            libraryIds.add(libraryDO.getId());
-        }
-        identificationParams.setLibraryIds(libraryIds);
-        identificationParams.setMzTolerance(0.001);
-        identificationParams.setTopN(10);
-        identificationParams.setStrategy(1);
-        commonSearch.identify(filePath, identificationParams);
-        int a = 0;
     }
 
     @RequestMapping("/recall")
@@ -376,9 +352,7 @@ public class TestController {
 
     @RequestMapping("report")
     public void report() {
-        String fileName = "test";
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
-        reporter.toMgf(fileName, spectrumDOS);
+        reporter.toMgf("test", "ST001794");
     }
 
 }
