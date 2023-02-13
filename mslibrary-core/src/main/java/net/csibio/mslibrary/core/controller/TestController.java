@@ -141,8 +141,8 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-        spectrumGenerator.optNaive("MassBank");
-        spectrumGenerator.optNaive("GNPS");
+        spectrumGenerator.XYMeta("MassBank");
+//        spectrumGenerator.optNaive("GNPS");
 //        spectrumGenerator.spectrumBased("GNPS");
 //        spectrumGenerator.spectrumBased("MassBank");
     }
