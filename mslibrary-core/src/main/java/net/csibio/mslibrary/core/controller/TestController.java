@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @RequestMapping("test")
@@ -187,8 +188,12 @@ public class TestController {
         log.info("import success");
     }
 
-    @RequestMapping("scoreGraph")
-    public void scoreGraph() {
+    /**
+     * 此图为Estimated p-value to identification distribution
+     * 参考文献：2017, Scheubert et al. Figure 2
+     */
+    @RequestMapping("distribution")
+    public void distribution() {
         long start = System.currentTimeMillis();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("MassBank");
         Double mzTolerance = 0.01;
@@ -230,7 +235,7 @@ public class TestController {
         });
 
         double threshold = 0.0;
-        List<List<Double>> scores = new ArrayList<>();
+        List<List<Object>> scores = new ArrayList<>();
 
         //找到20个estimated p-value阈值下的分数值
         List<Double> fdrs = new ArrayList<>();
@@ -256,6 +261,7 @@ public class TestController {
         }
 
         //作图
+        scores.add(new ArrayList<>(Arrays.asList("Estimated-pValue", "true", "false", "true&false")));
         for (int i = thresholds.size() - 1; i >= 0; i--) {
             double minValue = thresholds.get(i);
             double maxValue = 0.0;
@@ -270,7 +276,7 @@ public class TestController {
             double pValue = (double) negativeHits.size() / positiveHits.size();
             positiveHits = positiveHits.stream().filter(libraryHit -> libraryHit.getMatchScore() <= finalMaxValue).toList();
             negativeHits = negativeHits.stream().filter(libraryHit -> libraryHit.getMatchScore() <= finalMaxValue).toList();
-            List<Double> score = new ArrayList<>();
+            List<Object> score = new ArrayList<>();
             score.add(pValue);
             score.add((double) positiveHits.size() / trueHits.size());
             score.add((double) negativeHits.size() / falseHits.size());
@@ -286,89 +292,86 @@ public class TestController {
     public void fdr() {
 //        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("ST001794");
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("MassBank");
-        List<LibraryHit> libraryHits = new ArrayList<>();
+        List<LibraryHit> libraryHits = Collections.synchronizedList(new ArrayList<>());
         String libraryId = "GNPS";
-        String decoyLibraryId = libraryId + "-optNaive";
+        String decoyLibraryId = libraryId + "-spectrumBased";
         Double mzTolerance = 0.001;
-        int incorrect = 0;
-        int correct = 0;
+        AtomicInteger incorrect = new AtomicInteger();
+        AtomicInteger correct = new AtomicInteger();
 
-        for (SpectrumDO spectrumDO : spectrumDOS) {
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
             List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, libraryId);
             List<SpectrumDO> decoyLibrarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, decoyLibraryId);
-            if (librarySpectra.size() == 0 || decoyLibrarySpectra.size() == 0) {
-                continue;
-            }
-            correct++;
-
-            //Library打分
-            double maxScore = Double.MIN_VALUE;
-            int index = 0;
-            for (int i = 0; i < librarySpectra.size(); i++) {
+            if (librarySpectra.size() != 0 || decoyLibrarySpectra.size() != 0) {
+                correct.getAndIncrement();
+                //Library打分
+                double maxScore = Double.MIN_VALUE;
+                int index = 0;
+                for (int i = 0; i < librarySpectra.size(); i++) {
 //                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), librarySpectra.get(i).getSpectrum());
-                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectra.get(i).getSpectrum(), 0.01);
-                if (score > maxScore) {
-                    maxScore = score;
-                    index = i;
+                    double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectra.get(i).getSpectrum(), 0.01);
+                    if (score > maxScore) {
+                        maxScore = score;
+                        index = i;
+                    }
+                    incorrect.getAndIncrement();
                 }
-                incorrect++;
-            }
-            LibraryHit libraryHit = new LibraryHit();
-            libraryHit.setSpectrumId(librarySpectra.get(index).getId());
-            libraryHit.setLibraryName(libraryId);
-            libraryHit.setSmiles(librarySpectra.get(index).getSmiles());
-            libraryHit.setMatchScore(maxScore);
-            libraryHits.add(libraryHit);
+                LibraryHit libraryHit = new LibraryHit();
+                libraryHit.setSpectrumId(librarySpectra.get(index).getId());
+                libraryHit.setLibraryName(libraryId);
+                libraryHit.setSmiles(librarySpectra.get(index).getSmiles());
+                libraryHit.setMatchScore(maxScore);
+                libraryHits.add(libraryHit);
 
-            //decoy打分
-            maxScore = Double.MIN_VALUE;
-            index = 0;
-            for (int i = 0; i < decoyLibrarySpectra.size(); i++) {
+                //decoy打分
+                maxScore = Double.MIN_VALUE;
+                index = 0;
+                for (int i = 0; i < decoyLibrarySpectra.size(); i++) {
 //                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), decoyLibrarySpectra.get(i).getSpectrum());
-                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), decoyLibrarySpectra.get(i).getSpectrum(), 0.01);
-                if (score > maxScore) {
-                    maxScore = score;
-                    index = i;
+                    double score = similarity.getDotProduct(spectrumDO.getSpectrum(), decoyLibrarySpectra.get(i).getSpectrum(), 0.01);
+                    if (score > maxScore) {
+                        maxScore = score;
+                        index = i;
+                    }
                 }
+                LibraryHit decoyLibraryHit = new LibraryHit();
+                decoyLibraryHit.setSpectrumId(decoyLibrarySpectra.get(index).getId());
+                decoyLibraryHit.setLibraryName(decoyLibraryId);
+                decoyLibraryHit.setDecoy(true);
+                decoyLibraryHit.setSmiles(decoyLibrarySpectra.get(index).getSmiles());
+                decoyLibraryHit.setMatchScore(maxScore);
+                libraryHits.add(decoyLibraryHit);
             }
-            LibraryHit decoyLibraryHit = new LibraryHit();
-            decoyLibraryHit.setSpectrumId(decoyLibrarySpectra.get(index).getId());
-            decoyLibraryHit.setLibraryName(decoyLibraryId);
-            decoyLibraryHit.setDecoy(true);
-            decoyLibraryHit.setSmiles(decoyLibrarySpectra.get(index).getSmiles());
-            decoyLibraryHit.setMatchScore(maxScore);
-            libraryHits.add(decoyLibraryHit);
-        }
-        incorrect = incorrect - correct;
+        });
+        incorrect.set(incorrect.get() - correct.get());
 
         //找到满足FDR条件的分数阈值
         double threshold = 0.0;
         List<List<Double>> scores = new ArrayList<>();
-        for (int i = 0; i <= 100; i++) {
+        for (int i = 0; i < 100; i++) {
             threshold = i * 0.01;
             double finalThreshold = threshold;
             List<LibraryHit> positiveHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && !libraryHit.isDecoy()).toList();
             List<LibraryHit> negativeHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && libraryHit.isDecoy()).toList();
-            if (correct + incorrect == 0 || positiveHits.size() == 0) {
+            if (correct.get() + incorrect.get() == 0 || positiveHits.size() == 0) {
                 continue;
             }
-            double fdr = (double) negativeHits.size() / positiveHits.size() * incorrect / (correct + incorrect);
+            double fdr = (double) negativeHits.size() / positiveHits.size() * incorrect.get() / (correct.get() + incorrect.get());
             List<Double> score = new ArrayList<>();
             score.add(threshold);
             score.add(positiveHits.size() + 0.0);
             score.add(negativeHits.size() + 0.0);
             score.add(fdr + 0.0);
             scores.add(score);
-//            if (fdr < 0.05) {
-//                log.info("threshold: " + threshold);
-//                log.info("positive: " + positiveHits.size());
-//                log.info("negative: " + negativeHits.size());
-//                break;
-//            }
         }
         EasyExcel.write("/Users/anshaowei/Downloads/test_opt.xlsx").sheet("sheet1").doWrite(scores);
 
         log.info("finish, threshold: " + threshold);
+    }
+
+    @RequestMapping("qqPlot")
+    public void qqPlot() {
+
     }
 
     @RequestMapping("report")
