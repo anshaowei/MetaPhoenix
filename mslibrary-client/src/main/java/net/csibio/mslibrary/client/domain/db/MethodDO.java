@@ -21,10 +21,11 @@ public class MethodDO {
     @Indexed(unique = true)
     String name;
 
-    //搜索谱图的mz精度
     Double mzTolerance;
 
-    //控制mzTolerance的单位为ppm还是Da
+    int ppm;
+
+    //switch for ppm or Da
     Boolean ppmForMzTolerance;
 
     //取前几个最高分的结果

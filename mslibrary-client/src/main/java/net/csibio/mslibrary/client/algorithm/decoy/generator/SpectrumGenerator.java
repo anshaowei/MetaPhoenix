@@ -6,7 +6,6 @@ import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
 import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
-import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.client.utils.ArrayUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +18,6 @@ import java.util.*;
 public class SpectrumGenerator {
 
     @Autowired
-    LibraryService libraryService;
-    @Autowired
     SpectrumService spectrumService;
 
     public void execute(String libraryId, MethodDO method) {
@@ -31,18 +28,18 @@ public class SpectrumGenerator {
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
         DecoyStrategy strategy = DecoyStrategy.valueOf(method.getDecoyStrategy());
-        Double mzTolerance = method.getMzTolerance();
 
         //process with different strategies
         switch (strategy) {
             case Naive -> naive(spectrumDOS, decoySpectrumDOS);
-            case XYMeta -> XYMeta(spectrumDOS, decoySpectrumDOS);
-            case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS);
+            case XYMeta -> XYMeta(spectrumDOS, decoySpectrumDOS, method);
+            case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
             case FragmentationTree -> fragmentationTree(spectrumDOS, decoySpectrumDOS);
             default -> log.error("Decoy procedure {} is not supported", method.getDecoyStrategy());
         }
 
         //insert decoy spectra into database
+        decoySpectrumDOS.parallelStream().forEach(spectrumDO -> spectrumDO.setLibraryId(libraryId + "_" + method.getDecoyStrategy()));
         spectrumService.insert(decoySpectrumDOS, libraryId + "_" + method.getDecoyStrategy());
         log.info("Decoy spectra generation finished, cost {} ms", System.currentTimeMillis() - start);
     }
@@ -140,11 +137,11 @@ public class SpectrumGenerator {
      * 4. randomly select ions from S to fill the decoy spectrum making sure that it has the same ions as the target spectrum
      * 5. finally, 30% of the ions in the decoy spectrum is randomly selected to shift +/- precursorMz/200,000
      */
-    private void XYMeta(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
+    private void XYMeta(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         double removeProportion = 0.5;
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //1. find spectra contains the precursorMz
-            List<SpectrumDO> candidateSpectra = findCandidateSpectra(spectrumDOS, spectrumDO.getPrecursorMz());
+            List<SpectrumDO> candidateSpectra = findSpectra(spectrumDOS, spectrumDO.getPrecursorMz(), methodDO);
             //if there is only one spectrum, then make the decoy same as the target spectrum
             if (candidateSpectra.size() == 1) {
                 List<IonPeak> decoyIonPeaks = new ArrayList<>();
@@ -218,7 +215,7 @@ public class SpectrumGenerator {
      * 3. randomly select a peak from the set and add it to the decoy spectrum
      * 4. repeat step 3 until the number of peaks in the decoy spectrum is the same as the number of peaks in the target spectrum
      */
-    public void spectrumBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
+    public void spectrumBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
             //1. 将precursor所代表的ionPeak加入到伪谱图中
@@ -230,12 +227,12 @@ public class SpectrumGenerator {
             //2. 迭代性地向空的伪谱图中迭代加入若干个信号点，此步骤有可能会导致伪谱图中的信号点数量小于target谱图
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
                 //2.1 找到包含上一个添加的mz的所有谱图
-                List<SpectrumDO> candidateSpectra = findCandidateSpectra(spectrumDOS, lastAddedMz);
+                List<SpectrumDO> candidateSpectra = findSpectra(spectrumDOS, lastAddedMz, methodDO);
 
                 //2.2 生成候选ionPeak集合，每张谱图选择5个信号，谱图不足5个信号则全选
                 List<IonPeak> candidateIonPeaks = new ArrayList<>();
                 for (SpectrumDO candidateSpectrum : candidateSpectra) {
-                    candidateIonPeaks.addAll(getLimitedIonPeaks(candidateSpectrum, 5, spectrumDO.getPrecursorMz(), lastAddedMz));
+                    candidateIonPeaks.addAll(getLimitedIonPeaks(candidateSpectrum, 5, spectrumDO.getPrecursorMz(), lastAddedMz, methodDO));
                 }
 
                 //2.3 从候选ionPeak集合中随机选择一个加入到伪谱图中
@@ -257,15 +254,12 @@ public class SpectrumGenerator {
 
     /**
      * find spectra containing the given mz
-     *
-     * @param spectrumDOS
-     * @param mz
-     * @return
      */
-    private List<SpectrumDO> findCandidateSpectra(List<SpectrumDO> spectrumDOS, double mz) {
+    private List<SpectrumDO> findSpectra(List<SpectrumDO> spectrumDOS, double mz, MethodDO methodDO) {
         List<SpectrumDO> candidates = Collections.synchronizedList(new ArrayList<>());
+        double mzTolerance = methodDO.getPpmForMzTolerance() ? mz * methodDO.getPpm() * Constants.PPM : methodDO.getMzTolerance();
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
-            if (ArrayUtil.findNearestDiff(spectrumDO.getMzs(), mz) < 10 * Constants.PPM * mz) {
+            if (ArrayUtil.findNearestDiff(spectrumDO.getMzs(), mz) < mzTolerance) {
                 candidates.add(spectrumDO);
             }
         });
@@ -279,7 +273,7 @@ public class SpectrumGenerator {
      * @param limitCount
      * @return
      */
-    private List<IonPeak> getLimitedIonPeaks(SpectrumDO spectrumDO, int limitCount, double precursorMz, double lastAddedMz) {
+    private List<IonPeak> getLimitedIonPeaks(SpectrumDO spectrumDO, int limitCount, double precursorMz, double lastAddedMz, MethodDO methodDO) {
 
         //找到所有小于precursorMz的ionPeak
         List<IonPeak> ionPeaks = new ArrayList<>();
@@ -292,7 +286,7 @@ public class SpectrumGenerator {
         }
 
         //排除已经添加过的mz
-        ionPeaks.removeIf(ionPeak -> Math.abs(ionPeak.getMz() - lastAddedMz) < 5 * Constants.PPM * lastAddedMz);
+        ionPeaks.removeIf(ionPeak -> Math.abs(ionPeak.getMz() - lastAddedMz) < (methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * lastAddedMz : methodDO.getMzTolerance()));
 
         //随机选择limitCount个ionPeak
         if (limitCount >= ionPeaks.size()) {
@@ -315,11 +309,7 @@ public class SpectrumGenerator {
     }
 
     /**
-     * Get ions from the spectrum and divide them into precursor ion and fragment ions
-     *
-     * @param spectrumDO
-     * @param precursorIonPeakMap
-     * @return
+     * separate precursor ion peak from ion peaks
      */
     private List<IonPeak> separatePrecursorIonPeak(SpectrumDO spectrumDO, HashMap<String, IonPeak> precursorIonPeakMap) {
         List<IonPeak> ionPeaks = new ArrayList<>();
@@ -340,10 +330,6 @@ public class SpectrumGenerator {
 
     /**
      * Convert ionPeaks to SpectrumDO
-     *
-     * @param ionPeaks
-     * @param precursorMz
-     * @return
      */
     private SpectrumDO convertIonPeaksToSpectrum(List<IonPeak> ionPeaks, double precursorMz) {
         SpectrumDO spectrumDO = new SpectrumDO();
