@@ -65,7 +65,7 @@ public class TestController {
         mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
     }
 
-    @RequestMapping("/clean")
+    @RequestMapping("/filter")
     public void clean() {
         noiseFilter.filter("GNPS");
         noiseFilter.filter("MassBank");
