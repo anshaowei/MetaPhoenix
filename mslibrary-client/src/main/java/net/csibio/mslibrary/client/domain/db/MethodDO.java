@@ -2,6 +2,7 @@ package net.csibio.mslibrary.client.domain.db;
 
 import lombok.Data;
 import net.csibio.mslibrary.client.constants.enums.DecoyProcedure;
+import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -35,14 +36,19 @@ public class MethodDO {
     List<String> libraryIds;
 
     /**
+     * @see DecoyStrategy
+     */
+    String decoyStrategy;
+
+    /**
      * @see DecoyProcedure
      */
-    String strategy;
+    String decoyProcedure;
 
     /**
      * @see SpectrumMatchMethod
      */
-    String similarityType;
+    String spectrumMatchMethod;
 
     Date createDate;
 

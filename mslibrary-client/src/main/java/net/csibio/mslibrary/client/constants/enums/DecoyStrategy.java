@@ -2,10 +2,10 @@ package net.csibio.mslibrary.client.constants.enums;
 
 public enum DecoyStrategy {
 
-    naive("naive"),
+    Naive("Naive"),
     XYMeta("XYMeta"),
-    fragmentationTree("fragmentationTree"),
-    spectrumBased("spectrumBased");
+    FragmentationTree("FragmentationTree"),
+    SpectrumBased("SpectrumBased");
 
     final String name;
 

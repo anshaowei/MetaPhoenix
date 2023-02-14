@@ -44,7 +44,7 @@ public class FDRControlled {
             List<LibraryHit> decoyHits = new ArrayList<>();
             List<LibraryHit> allHits = new ArrayList<>();
             for (SpectrumDO libSpectrum : allSpectrumDOS) {
-                SpectrumMatchMethod spectrumMatchMethod = SpectrumMatchMethod.valueOf(method.getSimilarityType());
+                SpectrumMatchMethod spectrumMatchMethod = SpectrumMatchMethod.valueOf(method.getSpectrumMatchMethod());
                 double score = switch (spectrumMatchMethod) {
                     case Entropy ->
                             similarity.getEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), method.getMzTolerance());
@@ -71,7 +71,7 @@ public class FDRControlled {
         });
 
         //process with different strategies
-        DecoyProcedure decoyProcedure = DecoyProcedure.valueOf(method.getStrategy());
+        DecoyProcedure decoyProcedure = DecoyProcedure.valueOf(method.getDecoyProcedure());
         switch (decoyProcedure) {
             case CTDC -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
                 List<LibraryHit> allHits = allHitsMap.get(spectrumId);

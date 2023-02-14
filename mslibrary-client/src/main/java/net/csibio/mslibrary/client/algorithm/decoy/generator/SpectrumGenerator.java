@@ -2,7 +2,9 @@ package net.csibio.mslibrary.client.algorithm.decoy.generator;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.constants.Constants;
+import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
+import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -21,26 +23,47 @@ public class SpectrumGenerator {
     @Autowired
     SpectrumService spectrumService;
 
+    public void execute(String libraryId, MethodDO method) {
+        long start = System.currentTimeMillis();
+        log.info("Start to generate decoy spectra on library: {} by {} method", libraryId, method.getDecoyStrategy());
+
+        //initialize
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        List<SpectrumDO> decoySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
+        DecoyStrategy strategy = DecoyStrategy.valueOf(method.getDecoyStrategy());
+        Double mzTolerance = method.getMzTolerance();
+
+        //process with different strategies
+        switch (strategy) {
+            case Naive -> naive(spectrumDOS, decoySpectrumDOS);
+            case XYMeta -> XYMeta(spectrumDOS, decoySpectrumDOS);
+            case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS);
+            case FragmentationTree -> fragmentationTree(spectrumDOS, decoySpectrumDOS);
+            default -> log.error("Decoy procedure {} is not supported", method.getDecoyStrategy());
+        }
+
+        //insert decoy spectra into database
+        spectrumService.insert(decoySpectrumDOS, libraryId + "_" + method.getDecoyStrategy());
+        log.info("Decoy spectra generation finished, cost {} ms", System.currentTimeMillis() - start);
+    }
+
     /**
      * generate decoy spectra by
      * 1. add precursor ion peak
      * 2. randomly add ion peaks from other spectra
      * 3. stop until the number of peaks in decoy is the same as the original spectrum
-     *
-     * @param libraryId
      */
-    public void naive(String libraryId) {
-        log.info("Start to generate decoy spectra by naive method on library: {}", libraryId);
-        long start = System.currentTimeMillis();
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
-        List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
+    private void naive(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
+        List<IonPeak> ionPeaksWithoutPrecursor = Collections.synchronizedList(new ArrayList<>());
         HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
-        for (SpectrumDO spectrumDO : spectrumDOS) {
-            ionPeaksWithoutPrecursor.addAll(separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap));
-        }
 
-        for (SpectrumDO spectrumDO : spectrumDOS) {
+        //Collect all ions except precursor ion
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            ionPeaksWithoutPrecursor.addAll(separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap));
+        });
+
+        //Generate decoy spectra
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //1. insert precursor ion peak
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
             IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
@@ -56,18 +79,13 @@ public class SpectrumGenerator {
 
             //3. convert to SpectrumDO
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
-        }
-        long end = System.currentTimeMillis();
-        log.info("Finished generating decoy spectra on {} by naive method, cost {}ms", libraryId, end - start);
-        spectrumService.insert(decoySpectrumDOS, libraryId + "-naive");
+        });
     }
 
-    public void optNaive(String libraryId) {
-        log.info("Start to generate decoy spectra by optNaive method on library: {}", libraryId);
-        double mzTolerance = 0.01;
-        long start = System.currentTimeMillis();
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
+    /**
+     * optimized naive method
+     */
+    private void optNaive(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, Double mzTolerance) {
         List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
         HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
         HashMap<String, List<IonPeak>> ionPeakMap = new HashMap<>();
@@ -76,7 +94,6 @@ public class SpectrumGenerator {
             ionPeaksWithoutPrecursor.addAll(otherIonPeaks);
             ionPeakMap.put(spectrumDO.getId(), otherIonPeaks);
         }
-
         for (SpectrumDO spectrumDO : spectrumDOS) {
             //1. insert precursor ion peak
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
@@ -114,9 +131,6 @@ public class SpectrumGenerator {
             //3. 将decoyIonPeaks生成谱图
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         }
-        long end = System.currentTimeMillis();
-        log.info("Finished generating decoy spectra on {} by optNaive method, cost {}ms", libraryId, end - start);
-        spectrumService.insert(decoySpectrumDOS, libraryId + "-optNaive");
     }
 
     /**
@@ -125,23 +139,16 @@ public class SpectrumGenerator {
      * 3. remove a certain proportion of the ions in the target spectrum
      * 4. randomly select ions from S to fill the decoy spectrum making sure that it has the same ions as the target spectrum
      * 5. finally, 30% of the ions in the decoy spectrum is randomly selected to shift +/- precursorMz/200,000
-     *
-     * @param libraryId
      */
-    public void XYMeta(String libraryId) {
+    private void XYMeta(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
         double removeProportion = 0.5;
-        log.info("Start to generate decoy spectra by XYMeta method on library: {}", libraryId);
-        long start = System.currentTimeMillis();
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        List<SpectrumDO> decoySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
-
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //1. find spectra contains the precursorMz
             List<SpectrumDO> candidateSpectra = findCandidateSpectra(spectrumDOS, spectrumDO.getPrecursorMz());
             //if there is only one spectrum, then make the decoy same as the target spectrum
             if (candidateSpectra.size() == 1) {
                 List<IonPeak> decoyIonPeaks = new ArrayList<>();
-                for(int i = 0; i < spectrumDO.getMzs().length; i++) {
+                for (int i = 0; i < spectrumDO.getMzs().length; i++) {
                     IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
                     decoyIonPeaks.add(ionPeak);
                 }
@@ -192,16 +199,9 @@ public class SpectrumGenerator {
             //6. convert to spectrumDO
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         });
-        long end = System.currentTimeMillis();
-        spectrumService.insert(decoySpectrumDOS, libraryId + "-XYMeta");
-        log.info("Finished generating decoy spectra on {} by XYMeta method, cost {}ms", libraryId, end - start);
     }
 
-    public void fragmentationTree(String libraryId) {
-        log.info("Start to generate decoy spectra by fragmentationTree method on library: {}", libraryId);
-        long start = System.currentTimeMillis();
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        List<SpectrumDO> decoySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
+    public void fragmentationTree(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             SpectrumDO decoySpectrumDO = new SpectrumDO();
             decoySpectrumDO.setMzs(spectrumDO.getMzs());
@@ -209,9 +209,6 @@ public class SpectrumGenerator {
             decoySpectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz());
             decoySpectrumDOS.add(decoySpectrumDO);
         });
-        long end = System.currentTimeMillis();
-        spectrumService.insert(decoySpectrumDOS, libraryId + "-fragmentationTree");
-        log.info("Finished generating decoy spectra on {} by fragmentationTree method, cost {}ms", libraryId, end - start);
     }
 
     /**
@@ -220,19 +217,10 @@ public class SpectrumGenerator {
      * 2. find set of peaks of all spectra containing the added peak
      * 3. randomly select a peak from the set and add it to the decoy spectrum
      * 4. repeat step 3 until the number of peaks in the decoy spectrum is the same as the number of peaks in the target spectrum
-     *
-     * @param libraryId
      */
-    public void spectrumBased(String libraryId) {
-        log.info("Start to generate decoy spectra by spectrumBased method on library: {}", libraryId);
-        long start = System.currentTimeMillis();
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        List<SpectrumDO> decoySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
-
+    public void spectrumBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
-            SpectrumDO decoySpectrum = new SpectrumDO();
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
-
             //1. 将precursor所代表的ionPeak加入到伪谱图中
             int precursorIndex = ArrayUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
             IonPeak precursorIonPeak = new IonPeak(spectrumDO.getMzs()[precursorIndex], spectrumDO.getInts()[precursorIndex]);
@@ -265,9 +253,6 @@ public class SpectrumGenerator {
             //3. 将伪谱图转换为SpectrumDO
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         });
-        long end = System.currentTimeMillis();
-        log.info("Finished generating decoy spectra on {} by spectrumBased method, cost {}ms", libraryId, end - start);
-        spectrumService.insert(decoySpectrumDOS, libraryId + "-spectrumBased");
     }
 
     /**
