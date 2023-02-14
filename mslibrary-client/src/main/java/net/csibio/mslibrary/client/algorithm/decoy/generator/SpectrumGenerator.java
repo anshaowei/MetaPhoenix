@@ -61,20 +61,18 @@ public class SpectrumGenerator {
 
         //Generate decoy spectra
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
-            //1. insert precursor ion peak
+            //insert precursor ion peak
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
             IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
             decoyIonPeaks.add(precursorIonPeak);
 
-            //2. randomly add ion peaks from other spectra
+            //randomly add ion peaks from other spectra
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
                 int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
                 IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
                 decoyIonPeaks.add(ionPeak);
                 ionPeaksWithoutPrecursor.remove(randomIndex);
             }
-
-            //3. convert to SpectrumDO
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         });
     }
@@ -82,7 +80,7 @@ public class SpectrumGenerator {
     /**
      * optimized naive method
      */
-    private void optNaive(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, Double mzTolerance) {
+    private void optNaive(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO method) {
         List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
         HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
         HashMap<String, List<IonPeak>> ionPeakMap = new HashMap<>();
@@ -109,7 +107,7 @@ public class SpectrumGenerator {
                 }
                 boolean repeat = false;
                 for (IonPeak decoyIonPeak : decoyIonPeaks) {
-                    if (Math.abs(ionPeak.getMz() - decoyIonPeak.getMz()) < mzTolerance) {
+                    if (Math.abs(ionPeak.getMz() - decoyIonPeak.getMz()) < (method.getPpmForMzTolerance() ? method.getPpm() * Constants.PPM * ionPeak.getMz() : method.getMzTolerance())) {
                         i--;
                         repeat = true;
                         break;
@@ -117,6 +115,7 @@ public class SpectrumGenerator {
                 }
                 if (repeat)
                     continue;
+
                 //到此处的时候ionPeak的mz的随机选取已经完成，下一步进行ionPeak的强度改变
                 int random = new Random().nextInt(ionPeaks.size());
                 IonPeak randomIonPeak = ionPeaks.get(random);
@@ -124,8 +123,6 @@ public class SpectrumGenerator {
                 ionPeaks.remove(random);
                 decoyIonPeaks.add(ionPeak);
             }
-
-            //3. 将decoyIonPeaks生成谱图
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         }
     }
@@ -193,7 +190,6 @@ public class SpectrumGenerator {
                     randomIonPeak.setMz(randomIonPeak.getMz() - shift);
                 }
             }
-            //6. convert to spectrumDO
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         });
     }
@@ -246,8 +242,6 @@ public class SpectrumGenerator {
                 //2.4 重新设置最后添加的mz
                 lastAddedMz = randomIonPeak.getMz();
             }
-
-            //3. 将伪谱图转换为SpectrumDO
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         });
     }
