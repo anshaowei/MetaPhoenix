@@ -2,8 +2,8 @@ package net.csibio.mslibrary.client.algorithm.search;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
-import net.csibio.mslibrary.client.constants.enums.SimilarityType;
-import net.csibio.mslibrary.client.constants.enums.StrategyType;
+import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
+import net.csibio.mslibrary.client.constants.enums.DecoyProcedure;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -44,8 +44,8 @@ public class FDRControlled {
             List<LibraryHit> decoyHits = new ArrayList<>();
             List<LibraryHit> allHits = new ArrayList<>();
             for (SpectrumDO libSpectrum : allSpectrumDOS) {
-                SimilarityType similarityType = SimilarityType.valueOf(method.getSimilarityType());
-                double score = switch (similarityType) {
+                SpectrumMatchMethod spectrumMatchMethod = SpectrumMatchMethod.valueOf(method.getSimilarityType());
+                double score = switch (spectrumMatchMethod) {
                     case Entropy ->
                             similarity.getEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), method.getMzTolerance());
                     case Cosine ->
@@ -71,8 +71,8 @@ public class FDRControlled {
         });
 
         //process with different strategies
-        StrategyType strategyType = StrategyType.valueOf(method.getStrategy());
-        switch (strategyType) {
+        DecoyProcedure decoyProcedure = DecoyProcedure.valueOf(method.getStrategy());
+        switch (decoyProcedure) {
             case CTDC -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
                 List<LibraryHit> allHits = allHitsMap.get(spectrumId);
                 if (allHits.size() > 0) {

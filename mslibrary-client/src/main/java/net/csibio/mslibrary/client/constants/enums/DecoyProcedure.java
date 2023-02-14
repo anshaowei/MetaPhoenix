@@ -1,6 +1,6 @@
 package net.csibio.mslibrary.client.constants.enums;
 
-public enum StrategyType {
+public enum DecoyProcedure {
 
     //separated target-decoy search
     STDS("STDS"),
@@ -15,7 +15,7 @@ public enum StrategyType {
 
     final String name;
 
-    StrategyType(String name) {
+    DecoyProcedure(String name) {
         this.name = name;
     }
 

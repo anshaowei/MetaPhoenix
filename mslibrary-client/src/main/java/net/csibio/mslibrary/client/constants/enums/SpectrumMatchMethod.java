@@ -1,6 +1,6 @@
 package net.csibio.mslibrary.client.constants.enums;
 
-public enum SimilarityType {
+public enum SpectrumMatchMethod {
 
     Cosine("Cosine"),
     Entropy("Entropy"),
@@ -8,7 +8,7 @@ public enum SimilarityType {
 
     final String name;
 
-    SimilarityType(String name) {
+    SpectrumMatchMethod(String name) {
         this.name = name;
     }
 
