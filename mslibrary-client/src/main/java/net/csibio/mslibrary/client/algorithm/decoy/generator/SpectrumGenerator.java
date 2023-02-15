@@ -32,7 +32,7 @@ public class SpectrumGenerator {
         //process with different strategies
         switch (strategy) {
             case Naive -> naive(spectrumDOS, decoySpectrumDOS);
-            case XYMeta -> XYMeta(spectrumDOS, decoySpectrumDOS, method);
+            case XYMeta -> xymeta(spectrumDOS, decoySpectrumDOS, method);
             case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
             case FragmentationTree -> fragmentationTree(spectrumDOS, decoySpectrumDOS);
             default -> log.error("Decoy procedure {} is not supported", method.getDecoyStrategy());
@@ -134,7 +134,7 @@ public class SpectrumGenerator {
      * 4. randomly select ions from S to fill the decoy spectrum making sure that it has the same ions as the target spectrum
      * 5. finally, 30% of the ions in the decoy spectrum is randomly selected to shift +/- precursorMz/200,000
      */
-    private void XYMeta(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
+    private void xymeta(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         double removeProportion = 0.5;
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
 
@@ -220,34 +220,52 @@ public class SpectrumGenerator {
      */
     public void spectrumBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            //1. add precursor ion peak to decoy spectrum
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
-            //1. 将precursor所代表的ionPeak加入到伪谱图中
             int precursorIndex = ArrayUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
             IonPeak precursorIonPeak = new IonPeak(spectrumDO.getMzs()[precursorIndex], spectrumDO.getInts()[precursorIndex]);
             decoyIonPeaks.add(precursorIonPeak);
             double lastAddedMz = spectrumDO.getPrecursorMz();
 
-            //2. 迭代性地向空的伪谱图中迭代加入若干个信号点，此步骤有可能会导致伪谱图中的信号点数量小于target谱图
+            //repeat the following steps until the number of peaks in the decoy spectrum mimics target spectrum
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
-                //2.1 找到包含上一个添加的mz的所有谱图
+                //2. find set of peaks of all spectra containing the added peak
                 Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * lastAddedMz : methodDO.getMzTolerance();
                 List<SpectrumDO> candidateSpectra = findSpectra(spectrumDOS, lastAddedMz, mzTolerance);
 
-                //2.2 生成候选ionPeak集合，每张谱图选择5个信号，谱图不足5个信号则全选
+                //3. draw 5 ions from each spectrum and add them to the candidate ion peak set
                 List<IonPeak> candidateIonPeaks = new ArrayList<>();
                 for (SpectrumDO candidateSpectrum : candidateSpectra) {
-                    candidateIonPeaks.addAll(getLimitedIonPeaks(candidateSpectrum, 5, spectrumDO.getPrecursorMz(), lastAddedMz, methodDO));
+                    int limitCount = 5;
+                    if (candidateSpectrum.getMzs().length <= limitCount) {
+                        for (int j = 0; j < candidateSpectrum.getMzs().length; j++) {
+                            IonPeak ionPeak = new IonPeak(candidateSpectrum.getMzs()[j], candidateSpectrum.getInts()[j]);
+                            candidateIonPeaks.add(ionPeak);
+                        }
+                    } else {
+                        for (int j = 0; j < limitCount; j++) {
+                            int randomIndex = new Random().nextInt(candidateSpectrum.getMzs().length);
+                            IonPeak ionPeak = new IonPeak(candidateSpectrum.getMzs()[randomIndex], candidateSpectrum.getInts()[randomIndex]);
+                            candidateIonPeaks.add(ionPeak);
+                        }
+                    }
                 }
 
-                //2.3 从候选ionPeak集合中随机选择一个加入到伪谱图中
+                //4. randomly select a peak from the set and add it to the decoy spectrum
                 if (candidateIonPeaks.size() == 0) {
                     continue;
                 }
                 int randomIndex = new Random().nextInt(candidateIonPeaks.size());
                 IonPeak randomIonPeak = candidateIonPeaks.get(randomIndex);
-                decoyIonPeaks.add(randomIonPeak);
 
-                //2.4 重新设置最后添加的mz
+                //5. if the ion mz is the same as the last added mz, skip this ion
+                if (randomIonPeak.getMz() == lastAddedMz) {
+                    i--;
+                    continue;
+                }
+
+                //6. record the last added peak
+                decoyIonPeaks.add(randomIonPeak);
                 lastAddedMz = randomIonPeak.getMz();
             }
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
@@ -265,48 +283,6 @@ public class SpectrumGenerator {
             }
         });
         return candidates;
-    }
-
-    /**
-     * 根据限制数量提取一个谱图中的ionPeak，不选择大于precursorMz或已经添加过mz的ionPeak
-     *
-     * @param spectrumDO
-     * @param limitCount
-     * @return
-     */
-    private List<IonPeak> getLimitedIonPeaks(SpectrumDO spectrumDO, int limitCount, double precursorMz, double lastAddedMz, MethodDO methodDO) {
-
-        //找到所有小于precursorMz的ionPeak
-        List<IonPeak> ionPeaks = new ArrayList<>();
-        for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-            if (spectrumDO.getMzs()[i] > precursorMz) {
-                break;
-            }
-            IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
-            ionPeaks.add(ionPeak);
-        }
-
-        //排除已经添加过的mz
-        ionPeaks.removeIf(ionPeak -> Math.abs(ionPeak.getMz() - lastAddedMz) < (methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * lastAddedMz : methodDO.getMzTolerance()));
-
-        //随机选择limitCount个ionPeak
-        if (limitCount >= ionPeaks.size()) {
-            return ionPeaks;
-        } else {
-            List<IonPeak> randomIonPeaks = new ArrayList<>();
-            List<Integer> randomIndexes = new ArrayList<>();
-            for (int i = 0; i < limitCount; i++) {
-                int randomIndex = (int) (Math.random() * ionPeaks.size());
-                while (randomIndexes.contains(randomIndex)) {
-                    randomIndex = (int) (Math.random() * ionPeaks.size());
-                }
-                randomIndexes.add(randomIndex);
-            }
-            for (int randomIndex : randomIndexes) {
-                randomIonPeaks.add(ionPeaks.get(randomIndex));
-            }
-            return randomIonPeaks;
-        }
     }
 
     /**

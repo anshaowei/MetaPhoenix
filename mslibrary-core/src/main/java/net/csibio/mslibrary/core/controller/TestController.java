@@ -124,12 +124,12 @@ public class TestController {
 //        spectrumGenerator.execute("GNPS", methodDO);
 //        spectrumGenerator.execute("MassBank", methodDO);
 
-        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
-        spectrumGenerator.execute("GNPS", methodDO);
-        spectrumGenerator.execute("MassBank", methodDO);
+//        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
+//        spectrumGenerator.execute("GNPS", methodDO);
+//        spectrumGenerator.execute("MassBank", methodDO);
 
         methodDO.setDecoyStrategy(DecoyStrategy.SpectrumBased.getName());
-        spectrumGenerator.execute("GNPS", methodDO);
+//        spectrumGenerator.execute("GNPS", methodDO);
         spectrumGenerator.execute("MassBank", methodDO);
     }
 
