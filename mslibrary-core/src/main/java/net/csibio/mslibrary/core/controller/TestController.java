@@ -120,9 +120,9 @@ public class TestController {
         methodDO.setPpmForMzTolerance(false);
         methodDO.setThreshold(0.0);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
-        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
-        spectrumGenerator.execute("GNPS", methodDO);
-        spectrumGenerator.execute("MassBank", methodDO);
+//        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
+//        spectrumGenerator.execute("GNPS", methodDO);
+//        spectrumGenerator.execute("MassBank", methodDO);
 
         methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
         spectrumGenerator.execute("GNPS", methodDO);
