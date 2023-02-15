@@ -23,6 +23,10 @@ public class MspGNPSParser {
     LibraryService libraryService;
 
     public Result parse(String filePath) {
+        //read file use buffer
+        File file = new File(filePath);
+        FileInputStream fis;
+
         //create library
         LibraryDO libraryDO = new LibraryDO();
         libraryDO.setName("GNPS");
@@ -31,9 +35,6 @@ public class MspGNPSParser {
             return Result.Error("Create library failed");
         }
 
-        //read file use buffer
-        File file = new File(filePath);
-        FileInputStream fis;
         try {
             //fast read of spectra information
             fis = new FileInputStream(file);

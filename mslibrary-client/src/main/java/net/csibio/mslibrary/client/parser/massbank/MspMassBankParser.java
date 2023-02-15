@@ -29,6 +29,11 @@ public class MspMassBankParser {
     LibraryService libraryService;
 
     public Result parse(String filePath) {
+
+        //read file use buffer
+        File file = new File(filePath);
+        FileInputStream fis = null;
+
         //create library
         LibraryDO libraryDO = new LibraryDO();
         libraryDO.setName("MassBank");
@@ -37,9 +42,6 @@ public class MspMassBankParser {
             return Result.Error("Create library failed");
         }
 
-        //read file use buffer
-        File file = new File(filePath);
-        FileInputStream fis = null;
         try {
             //fast read of spectra information
             fis = new FileInputStream(file);
