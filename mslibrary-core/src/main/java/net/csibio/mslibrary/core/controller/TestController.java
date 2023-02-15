@@ -69,68 +69,32 @@ public class TestController {
         noiseFilter.filter("MassBank");
     }
 
-    @RequestMapping("/recall")
-    public void recall() {
-        List<SpectrumDO> targetSpectrumDOList = spectrumService.getAllByLibraryId("MassBank");
-        HashMap<SpectrumDO, List<LibraryHit>> result = new HashMap<>();
-        Integer right = 0;
-        for (SpectrumDO spectrumDO : targetSpectrumDOList) {
-            Double precursorMz = spectrumDO.getPrecursorMz();
-            List<LibraryHit> libraryHits = new ArrayList<>();
-            SpectrumQuery targetSpectrumQuery = new SpectrumQuery();
-            targetSpectrumQuery.setPrecursorMz(precursorMz);
-            targetSpectrumQuery.setMzTolerance(0.001);
-            List<SpectrumDO> libSpectrumDOList = spectrumService.getAll(targetSpectrumQuery, "GNPS");
-            for (SpectrumDO libSpectrumDO : libSpectrumDOList) {
-                LibraryHit libraryHit = new LibraryHit();
-                libraryHit.setScore(similarity.getDotProduct(spectrumDO.getSpectrum(), libSpectrumDO.getSpectrum(), 0.001));
-                libraryHit.setSpectrumId(libSpectrumDO.getId());
-                libraryHit.setPrecursorMz(libSpectrumDO.getPrecursorMz());
-                libraryHit.setPrecursorAdduct(libSpectrumDO.getPrecursorAdduct());
-                libraryHits.add(libraryHit);
-            }
-
-            for (LibraryHit libraryHit : libraryHits) {
-                if (libraryHit.getSpectrumId().equals(spectrumDO.getId())) {
-                    right++;
-                    log.info("right:{}", spectrumDO.getSpectrumId());
-                    break;
-                }
-            }
-
-//            libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
-//            if (libraryHits.size() >= 5) {
-//                libraryHits = libraryHits.subList(0, 5);
-//            }
-//            if (libraryHits.get(0).getSpectrumId().equals(spectrumDO.getId())) {
-//                right++;
-//            } else {
-//                log.info("fail_id : {}, fail_score : {}", spectrumDO.getId(), libraryHits.get(0).getMatchScore());
-//            }
-//            result.put(spectrumDO, libraryHits);
+    @RequestMapping("/remove")
+    public void remove() {
+        String libraryId = "MassBank";
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            spectrumService.remove(new SpectrumQuery(), libraryId + "_" + decoyStrategy.getName());
         }
-        log.info("total spectrum: {}, right: {}", targetSpectrumDOList.size(), right);
-        int a = 0;
+        log.info("remove done");
     }
 
-    @RequestMapping("decoy")
+    @RequestMapping("/decoy")
     public void decoy() {
         MethodDO methodDO = new MethodDO();
         methodDO.setMzTolerance(0.001);
         methodDO.setPpmForMzTolerance(false);
-        methodDO.setThreshold(0.0);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
-//        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
-//        spectrumGenerator.execute("GNPS", methodDO);
-//        spectrumGenerator.execute("MassBank", methodDO);
+        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
+        spectrumGenerator.execute("GNPS", methodDO);
+        spectrumGenerator.execute("MassBank", methodDO);
 
 //        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
 //        spectrumGenerator.execute("GNPS", methodDO);
 //        spectrumGenerator.execute("MassBank", methodDO);
 
-        methodDO.setDecoyStrategy(DecoyStrategy.SpectrumBased.getName());
+//        methodDO.setDecoyStrategy(DecoyStrategy.SpectrumBased.getName());
 //        spectrumGenerator.execute("GNPS", methodDO);
-        spectrumGenerator.execute("MassBank", methodDO);
+//        spectrumGenerator.execute("MassBank", methodDO);
     }
 
     @RequestMapping("dataImport")
@@ -280,7 +244,7 @@ public class TestController {
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("MassBank");
         List<LibraryHit> libraryHits = Collections.synchronizedList(new ArrayList<>());
         String libraryId = "GNPS";
-        String decoyLibraryId = libraryId + "-spectrumBased";
+        String decoyLibraryId = libraryId + "_XYMeta";
         Double mzTolerance = 0.001;
         AtomicInteger incorrect = new AtomicInteger();
         AtomicInteger correct = new AtomicInteger();
@@ -359,7 +323,7 @@ public class TestController {
     public void report() {
         String queryLibraryId = "MassBank";
         String targetLibraryId = "GNPS";
-        String decoyLibraryId = targetLibraryId + "_naive";
+        String decoyLibraryId = targetLibraryId + "_XYMeta";
         MethodDO methodDO = new MethodDO();
         methodDO.setMzTolerance(0.001);
         methodDO.setPpmForMzTolerance(false);

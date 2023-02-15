@@ -309,6 +309,7 @@ public class SpectrumGenerator {
      * Convert ionPeaks to SpectrumDO
      */
     private SpectrumDO convertIonPeaksToSpectrum(List<IonPeak> ionPeaks, double precursorMz) {
+        ionPeaks.sort(Comparator.comparing(IonPeak::getMz));
         SpectrumDO spectrumDO = new SpectrumDO();
         double[] mzs = new double[ionPeaks.size()];
         double[] intensities = new double[ionPeaks.size()];
