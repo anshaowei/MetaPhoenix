@@ -177,13 +177,33 @@ public class Reporter {
         return new Result(true);
     }
 
-    public void scoreGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap) {
-        //init
-        double interval = 100;
+    public void scoreGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap, int scoreInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
-        List<List<Object>> datasheet = new ArrayList<>();
+        log.info("start export score graph : " + outputFileName);
         //header
         List<Object> header = Arrays.asList("score", "target", "decoy", "total", "FDR");
+        List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
+        dataSheet.add(0, header);
+        EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
+        log.info("export score graph success : " + outputFileName);
+    }
+
+    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap, int pInterval) {
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        log.info("start export estimatedPValue graph : " + outputFileName);
+        int scoreInterval = 100 * pInterval;
+        List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
+        for (int i = 0; i < dataSheet.size(); i++) {
+            List<Object> row = dataSheet.get(i);
+
+        }
+
+
+        EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(dataSheet);
+    }
+
+    private List<List<Object>> getDataSheet(ConcurrentHashMap<String, List<LibraryHit>> hitsMap, int scoreInterval) {
+        List<List<Object>> dataSheet = new ArrayList<>();
         List<LibraryHit> decoyHits = new ArrayList<>();
         List<LibraryHit> targetHits = new ArrayList<>();
         AtomicInteger correct = new AtomicInteger();
@@ -209,9 +229,9 @@ public class Reporter {
         targetHits.sort(Comparator.comparing(LibraryHit::getScore));
         double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
         double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
-        double step = (maxScore - minScore) / interval;
+        double step = (maxScore - minScore) / scoreInterval;
 
-        for (int i = 0; i < interval; i++) {
+        for (int i = 0; i < scoreInterval; i++) {
             double finalMinScore = minScore + i * step;
             double finalMaxScore = minScore + (i + 1) * step;
             int targetCount, decoyCount;
@@ -238,17 +258,8 @@ public class Reporter {
             row.add((double) decoyCount / decoyHits.size());
             row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
             row.add(fdr);
-            datasheet.add(row);
+            dataSheet.add(row);
         }
-        EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(datasheet);
-        log.info("export score graph success : " + outputFileName);
-    }
-
-    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap) {
-        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
-        List<List<Object>> dataSheet = new ArrayList<>();
-
-
-        EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(dataSheet);
+        return dataSheet;
     }
 }
