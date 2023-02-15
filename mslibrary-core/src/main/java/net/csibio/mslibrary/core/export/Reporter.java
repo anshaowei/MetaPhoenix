@@ -16,9 +16,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component("reporter")
 @Slf4j
@@ -37,13 +39,6 @@ public class Reporter {
         return null;
     }
 
-    /**
-     * write result to msp file
-     *
-     * @param fileName
-     * @param libraryId
-     * @return
-     */
     public Result toMsp(String fileName, String libraryId) {
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         if (spectrumDOS.size() == 0) {
@@ -134,14 +129,6 @@ public class Reporter {
         return new Result(true);
     }
 
-
-    /**
-     * write spectra into mgf file
-     *
-     * @param fileName
-     * @param libraryId
-     * @return
-     */
     public Result toMgf(String fileName, String libraryId) {
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         if (spectrumDOS.size() == 0) {
@@ -190,22 +177,34 @@ public class Reporter {
         return new Result(true);
     }
 
-    public Result scoreGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap) {
+    public void scoreGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap) {
+        //init
         double interval = 100;
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         List<List<Object>> datasheet = new ArrayList<>();
+        //header
+        List<Object> header = Arrays.asList("score", "target", "decoy", "total", "FDR");
         List<LibraryHit> decoyHits = new ArrayList<>();
         List<LibraryHit> targetHits = new ArrayList<>();
+        AtomicInteger correct = new AtomicInteger();
+        AtomicInteger incorrect = new AtomicInteger();
 
         hitsMap.forEach((k, v) -> {
-            for (LibraryHit hit : v) {
-                if (hit.isDecoy()) {
-                    decoyHits.add(hit);
-                } else {
-                    targetHits.add(hit);
+            if (v.size() != 0) {
+                correct.getAndIncrement();
+                for (LibraryHit hit : v) {
+                    if (hit.isDecoy()) {
+                        decoyHits.add(hit);
+                    } else {
+                        targetHits.add(hit);
+                        incorrect.getAndIncrement();
+                    }
                 }
             }
         });
+        incorrect.set(incorrect.get() - correct.get());
+        double pit = (double) incorrect.get() / (incorrect.get() + correct.get());
+
         decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
         targetHits.sort(Comparator.comparing(LibraryHit::getScore));
         double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
@@ -216,6 +215,16 @@ public class Reporter {
             double finalMinScore = minScore + i * step;
             double finalMaxScore = minScore + (i + 1) * step;
             int targetCount, decoyCount;
+            List<Object> row = new ArrayList<>();
+
+            targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+
+            //calculate FDR
+            double fdr = 0.0;
+            fdr = (double) decoyCount / targetCount * pit;
+
+            //calculate hits distribution
             if (i == 0) {
                 targetCount = targetHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
                 decoyCount = decoyHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
@@ -223,14 +232,23 @@ public class Reporter {
                 targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
                 decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
             }
-            List<Object> row = new ArrayList<>();
+
             row.add(finalMaxScore);
             row.add((double) targetCount / targetHits.size());
             row.add((double) decoyCount / decoyHits.size());
             row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
+            row.add(fdr);
             datasheet.add(row);
         }
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(datasheet);
-        return new Result(true);
+        log.info("export score graph success : " + outputFileName);
+    }
+
+    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap) {
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        List<List<Object>> dataSheet = new ArrayList<>();
+
+
+        EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(dataSheet);
     }
 }
