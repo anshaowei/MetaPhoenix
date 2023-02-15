@@ -181,25 +181,29 @@ public class Reporter {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export score graph : " + outputFileName);
         //header
-        List<Object> header = Arrays.asList("score", "target", "decoy", "total", "FDR");
+        List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy", "Total", "FDR", "PValue");
         List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
         log.info("export score graph success : " + outputFileName);
     }
 
-    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap, int pInterval) {
+    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export estimatedPValue graph : " + outputFileName);
-        int scoreInterval = 100 * pInterval;
-        List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
+        List<List<Object>> dataSheet = getDataSheet(hitsMap, 1000);
+        List<Double> pList = new ArrayList<>();
+        for (int i = 20; i > 0; i--) {
+            pList.add(i * 0.05);
+        }
+
         for (int i = 0; i < dataSheet.size(); i++) {
-            List<Object> row = dataSheet.get(i);
+            double pValue = (double) dataSheet.get(i).get(6);
 
         }
 
-
         EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(dataSheet);
+        log.info("export estimatedPValue graph success : " + outputFileName);
     }
 
     private List<List<Object>> getDataSheet(ConcurrentHashMap<String, List<LibraryHit>> hitsMap, int scoreInterval) {
@@ -240,9 +244,9 @@ public class Reporter {
             targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
 
-            //calculate FDR
-            double fdr = 0.0;
-            fdr = (double) decoyCount / targetCount * pit;
+            //calculate FDR and pValue
+            double fdr = (double) decoyCount / targetCount * pit;
+            double pValue = (double) decoyCount / (targetCount + decoyCount);
 
             //calculate hits distribution
             if (i == 0) {
@@ -253,11 +257,14 @@ public class Reporter {
                 decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
             }
 
+            //write data sheet
+            row.add(finalMinScore);
             row.add(finalMaxScore);
             row.add((double) targetCount / targetHits.size());
             row.add((double) decoyCount / decoyHits.size());
             row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
             row.add(fdr);
+            row.add(pValue);
             dataSheet.add(row);
         }
         return dataSheet;

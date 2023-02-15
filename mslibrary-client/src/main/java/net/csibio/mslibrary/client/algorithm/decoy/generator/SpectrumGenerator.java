@@ -149,6 +149,7 @@ public class SpectrumGenerator {
                 decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
                 return;
             }
+
             //2. get all ions which are smaller than precursorMz
             List<IonPeak> ionWarehouse = new ArrayList<>();
             candidateSpectra.forEach(spectrum -> {
@@ -159,6 +160,7 @@ public class SpectrumGenerator {
                     }
                 }
             });
+
             //3. remove a certain proportion of the ions in the target spectrum
             List<IonPeak> targetIonPeaks = new ArrayList<>();
             for (int i = 0; i < spectrumDO.getMzs().length; i++) {
@@ -169,6 +171,7 @@ public class SpectrumGenerator {
             for (int i = 0; i < removeNum; i++) {
                 targetIonPeaks.remove(new Random().nextInt(targetIonPeaks.size()));
             }
+
             //4. randomly select ions from S to fill the decoy spectrum
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
             for (int i = 0; i < removeNum; i++) {
@@ -178,6 +181,7 @@ public class SpectrumGenerator {
                 ionWarehouse.remove(random);
             }
             decoyIonPeaks.addAll(targetIonPeaks);
+
             //5. 30% of the ions in the decoy spectrum is randomly selected to shift +/- precursorMz/200,000
             int shiftNum = (int) (decoyIonPeaks.size() * 0.3);
             for (int i = 0; i < shiftNum; i++) {

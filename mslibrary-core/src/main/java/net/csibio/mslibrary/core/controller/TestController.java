@@ -4,8 +4,12 @@ package net.csibio.mslibrary.core.controller;
 import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
+import net.csibio.mslibrary.client.algorithm.search.FDRControlled;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
+import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
+import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
+import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.filter.NoiseFilter;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
@@ -48,6 +53,8 @@ public class TestController {
     Reporter reporter;
     @Autowired
     NoiseFilter noiseFilter;
+    @Autowired
+    FDRControlled fdrControlled;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
@@ -108,9 +115,22 @@ public class TestController {
 
     @RequestMapping("decoy")
     public void decoy() {
-//        spectrumGenerator.optNaive("GNPS");
-//        spectrumGenerator.spectrumBased("GNPS");
-//        spectrumGenerator.spectrumBased("MassBank");
+        MethodDO methodDO = new MethodDO();
+        methodDO.setMzTolerance(0.001);
+        methodDO.setPpmForMzTolerance(false);
+        methodDO.setThreshold(0.0);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
+        spectrumGenerator.execute("GNPS", methodDO);
+        spectrumGenerator.execute("MassBank", methodDO);
+
+        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
+        spectrumGenerator.execute("GNPS", methodDO);
+        spectrumGenerator.execute("MassBank", methodDO);
+
+        methodDO.setDecoyStrategy(DecoyStrategy.SpectrumBased.getName());
+        spectrumGenerator.execute("GNPS", methodDO);
+        spectrumGenerator.execute("MassBank", methodDO);
     }
 
     @RequestMapping("dataImport")
@@ -337,7 +357,17 @@ public class TestController {
 
     @RequestMapping("report")
     public void report() {
-        reporter.toMgf("test", "ST001794");
+        String queryLibraryId = "MassBank";
+        String targetLibraryId = "GNPS";
+        String decoyLibraryId = targetLibraryId + "_naive";
+        MethodDO methodDO = new MethodDO();
+        methodDO.setMzTolerance(0.001);
+        methodDO.setPpmForMzTolerance(false);
+        methodDO.setThreshold(0.0);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+
+        ConcurrentHashMap<String, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+        reporter.scoreGraph("test", hitsMap, 100);
     }
 
 }
