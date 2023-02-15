@@ -31,6 +31,45 @@ public class FDRControlled {
 
         //initiate
         log.info("FDRControlled identification progress start on library: " + queryLibraryId + " towards library: " + targetLibraryId + "&" + decoyLibraryId);
+        ConcurrentHashMap<String, List<LibraryHit>> allHitsMap = getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, method);
+
+        //process with different strategies except STDS
+        DecoyProcedure decoyProcedure = DecoyProcedure.valueOf(method.getDecoyProcedure());
+        switch (decoyProcedure) {
+            case CTDC -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
+                List<LibraryHit> allHits = allHitsMap.get(spectrumId);
+                if (allHits.size() > 0) {
+                    allHits.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                    allHitsMap.put(spectrumId, Collections.singletonList(allHits.get(0)));
+                }
+            });
+            case TTDC -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
+                List<LibraryHit> allHits = allHitsMap.get(spectrumId);
+                if (allHits.size() > 0) {
+                    allHits.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                    if (allHits.get(0).isDecoy()) {
+                        allHitsMap.put(spectrumId, new ArrayList<>());
+                    } else {
+                        allHitsMap.put(spectrumId, Collections.singletonList(allHits.get(0)));
+                    }
+                }
+            });
+            case Common -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
+                List<LibraryHit> allHits = allHitsMap.get(spectrumId);
+                allHits.removeIf(libraryHit -> libraryHit.isDecoy() && libraryHit.getScore() > method.getThreshold());
+            });
+            case STDS -> {
+            }
+            default -> log.error("Decoy procedure not supported: " + decoyProcedure);
+        }
+
+        //process STDS strategy
+
+
+    }
+
+    public ConcurrentHashMap<String, List<LibraryHit>> getAllHitsMap(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO method) {
+        //initiate
         ConcurrentHashMap<String, List<LibraryHit>> allHitsMap = new ConcurrentHashMap<>();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(queryLibraryId);
 
@@ -56,7 +95,7 @@ public class FDRControlled {
                             similarity.getUnWeightedEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
                 };
                 LibraryHit libraryHit = new LibraryHit();
-                libraryHit.setMatchScore(score);
+                libraryHit.setScore(score);
                 libraryHit.setSpectrumId(libSpectrum.getId());
                 libraryHit.setPrecursorMz(libSpectrum.getPrecursorMz());
                 if (libSpectrum.getLibraryId().equals(targetLibraryId)) {
@@ -71,40 +110,7 @@ public class FDRControlled {
             allHits.addAll(decoyHits);
             allHitsMap.put(spectrumDO.getId(), allHits);
         });
-
-        //process with different strategies except STDS
-        DecoyProcedure decoyProcedure = DecoyProcedure.valueOf(method.getDecoyProcedure());
-        switch (decoyProcedure) {
-            case CTDC -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
-                List<LibraryHit> allHits = allHitsMap.get(spectrumId);
-                if (allHits.size() > 0) {
-                    allHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
-                    allHitsMap.put(spectrumId, Collections.singletonList(allHits.get(0)));
-                }
-            });
-            case TTDC -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
-                List<LibraryHit> allHits = allHitsMap.get(spectrumId);
-                if (allHits.size() > 0) {
-                    allHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
-                    if (allHits.get(0).isDecoy()) {
-                        allHitsMap.put(spectrumId, new ArrayList<>());
-                    } else {
-                        allHitsMap.put(spectrumId, Collections.singletonList(allHits.get(0)));
-                    }
-                }
-            });
-            case Common -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
-                List<LibraryHit> allHits = allHitsMap.get(spectrumId);
-                allHits.removeIf(libraryHit -> libraryHit.isDecoy() && libraryHit.getMatchScore() > method.getThreshold());
-            });
-            case STDS -> {
-            }
-            default -> log.error("Decoy procedure not supported: " + decoyProcedure);
-        }
-
-        //process STDS strategy
-
-
+        return allHitsMap;
     }
 
 }

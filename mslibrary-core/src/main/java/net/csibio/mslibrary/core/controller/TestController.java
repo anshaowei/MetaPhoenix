@@ -9,12 +9,9 @@ import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.filter.NoiseFilter;
-import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.gnps.MspGNPSParser;
 import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
 import net.csibio.mslibrary.client.parser.massbank.MspMassBankParser;
-import net.csibio.mslibrary.client.service.CompoundService;
-import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.core.export.Reporter;
 import org.apache.poi.ss.usermodel.Cell;
@@ -35,12 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class TestController {
 
-    @Autowired
-    GnpsParser gnpsParser;
-    @Autowired
-    CompoundService compoundService;
-    @Autowired
-    LibraryService libraryService;
     @Autowired
     SpectrumService spectrumService;
     @Autowired
@@ -85,7 +76,7 @@ public class TestController {
             List<SpectrumDO> libSpectrumDOList = spectrumService.getAll(targetSpectrumQuery, "GNPS");
             for (SpectrumDO libSpectrumDO : libSpectrumDOList) {
                 LibraryHit libraryHit = new LibraryHit();
-                libraryHit.setMatchScore(similarity.getDotProduct(spectrumDO.getSpectrum(), libSpectrumDO.getSpectrum(), 0.001));
+                libraryHit.setScore(similarity.getDotProduct(spectrumDO.getSpectrum(), libSpectrumDO.getSpectrum(), 0.001));
                 libraryHit.setSpectrumId(libSpectrumDO.getId());
                 libraryHit.setPrecursorMz(libSpectrumDO.getPrecursorMz());
                 libraryHit.setPrecursorAdduct(libSpectrumDO.getPrecursorAdduct());
@@ -185,11 +176,11 @@ public class TestController {
                 LibraryHit libraryHit = new LibraryHit();
                 libraryHit.setSpectrumId(librarySpectrum.getId());
                 libraryHit.setSmiles(librarySpectrum.getSmiles());
-                libraryHit.setMatchScore(score);
+                libraryHit.setScore(score);
                 libraryHits.add(libraryHit);
             }
             if (libraryHits.size() > 1) {
-                libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
+                libraryHits.sort(Comparator.comparing(LibraryHit::getScore).reversed());
                 trueHits.add(libraryHits.get(0));
             }
             libraryHits = new ArrayList<>();
@@ -199,12 +190,12 @@ public class TestController {
                 LibraryHit libraryHit = new LibraryHit();
                 libraryHit.setSpectrumId(decoySpectrum.getId());
                 libraryHit.setSmiles(decoySpectrum.getSmiles());
-                libraryHit.setMatchScore(score);
+                libraryHit.setScore(score);
                 libraryHit.setDecoy(true);
                 libraryHits.add(libraryHit);
             }
             if (libraryHits.size() > 1) {
-                libraryHits.sort(Comparator.comparing(LibraryHit::getMatchScore).reversed());
+                libraryHits.sort(Comparator.comparing(LibraryHit::getScore).reversed());
                 falseHits.add(libraryHits.get(0));
             }
         });
@@ -222,8 +213,8 @@ public class TestController {
         for (int i = 0; i < 10000; i++) {
             threshold = i * 0.001;
             final double minValue = threshold;
-            List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue).toList();
-            List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue).toList();
+            List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getScore() > minValue).toList();
+            List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getScore() > minValue).toList();
             double pValue = (double) negativeHits.size() / positiveHits.size();
             if (count < fdrs.size()) {
                 if (pValue < fdrs.get(count)) {
@@ -246,11 +237,11 @@ public class TestController {
                 maxValue = thresholds.get(i + 1);
             }
             final double finalMaxValue = maxValue;
-            List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue).toList();
-            List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > minValue).toList();
+            List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getScore() > minValue).toList();
+            List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getScore() > minValue).toList();
             double pValue = (double) negativeHits.size() / positiveHits.size();
-            positiveHits = positiveHits.stream().filter(libraryHit -> libraryHit.getMatchScore() <= finalMaxValue).toList();
-            negativeHits = negativeHits.stream().filter(libraryHit -> libraryHit.getMatchScore() <= finalMaxValue).toList();
+            positiveHits = positiveHits.stream().filter(libraryHit -> libraryHit.getScore() <= finalMaxValue).toList();
+            negativeHits = negativeHits.stream().filter(libraryHit -> libraryHit.getScore() <= finalMaxValue).toList();
             List<Object> score = new ArrayList<>();
             score.add(pValue);
             score.add((double) positiveHits.size() / trueHits.size());
@@ -295,7 +286,7 @@ public class TestController {
                 libraryHit.setSpectrumId(librarySpectra.get(index).getId());
                 libraryHit.setLibraryName(libraryId);
                 libraryHit.setSmiles(librarySpectra.get(index).getSmiles());
-                libraryHit.setMatchScore(maxScore);
+                libraryHit.setScore(maxScore);
                 libraryHits.add(libraryHit);
 
                 //decoy打分
@@ -314,7 +305,7 @@ public class TestController {
                 decoyLibraryHit.setLibraryName(decoyLibraryId);
                 decoyLibraryHit.setDecoy(true);
                 decoyLibraryHit.setSmiles(decoyLibrarySpectra.get(index).getSmiles());
-                decoyLibraryHit.setMatchScore(maxScore);
+                decoyLibraryHit.setScore(maxScore);
                 libraryHits.add(decoyLibraryHit);
             }
         });
@@ -326,8 +317,8 @@ public class TestController {
         for (int i = 0; i < 100; i++) {
             threshold = i * 0.01;
             double finalThreshold = threshold;
-            List<LibraryHit> positiveHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && !libraryHit.isDecoy()).toList();
-            List<LibraryHit> negativeHits = libraryHits.stream().filter(libraryHit -> libraryHit.getMatchScore() > finalThreshold && libraryHit.isDecoy()).toList();
+            List<LibraryHit> positiveHits = libraryHits.stream().filter(libraryHit -> libraryHit.getScore() > finalThreshold && !libraryHit.isDecoy()).toList();
+            List<LibraryHit> negativeHits = libraryHits.stream().filter(libraryHit -> libraryHit.getScore() > finalThreshold && libraryHit.isDecoy()).toList();
             if (correct.get() + incorrect.get() == 0 || positiveHits.size() == 0) {
                 continue;
             }
@@ -342,11 +333,6 @@ public class TestController {
         EasyExcel.write("/Users/anshaowei/Downloads/test_opt.xlsx").sheet("sheet1").doWrite(scores);
 
         log.info("finish, threshold: " + threshold);
-    }
-
-    @RequestMapping("qqPlot")
-    public void qqPlot() {
-
     }
 
     @RequestMapping("report")

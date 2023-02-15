@@ -26,6 +26,6 @@ public class LibraryHit {
     String url;
 
     //打分
-    Double matchScore;
+    Double score;
 
 }

@@ -2,6 +2,7 @@ package net.csibio.mslibrary.core.export;
 
 import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.algorithm.search.FDRControlled;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -14,7 +15,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component("reporter")
 @Slf4j
@@ -24,6 +28,8 @@ public class Reporter {
     VMProperties vmProperties;
     @Autowired
     SpectrumService spectrumService;
+    @Autowired
+    FDRControlled fdrControlled;
 
     public Result toExcel(String fileName, List<LibraryHit> libraryHits) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
@@ -181,6 +187,50 @@ public class Reporter {
             throw new RuntimeException(e);
         }
         log.info("export msp file success : " + outputFileName);
+        return new Result(true);
+    }
+
+    public Result scoreGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap) {
+        double interval = 100;
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        List<List<Object>> datasheet = new ArrayList<>();
+        List<LibraryHit> decoyHits = new ArrayList<>();
+        List<LibraryHit> targetHits = new ArrayList<>();
+
+        hitsMap.forEach((k, v) -> {
+            for (LibraryHit hit : v) {
+                if (hit.isDecoy()) {
+                    decoyHits.add(hit);
+                } else {
+                    targetHits.add(hit);
+                }
+            }
+        });
+        decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
+        targetHits.sort(Comparator.comparing(LibraryHit::getScore));
+        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
+        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
+        double step = (maxScore - minScore) / interval;
+
+        for (int i = 0; i < interval; i++) {
+            double finalMinScore = minScore + i * step;
+            double finalMaxScore = minScore + (i + 1) * step;
+            int targetCount, decoyCount;
+            if (i == 0) {
+                targetCount = targetHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+                decoyCount = decoyHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+            } else {
+                targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+                decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+            }
+            List<Object> row = new ArrayList<>();
+            row.add(finalMaxScore);
+            row.add((double) targetCount / targetHits.size());
+            row.add((double) decoyCount / decoyHits.size());
+            row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
+            datasheet.add(row);
+        }
+        EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(datasheet);
         return new Result(true);
     }
 }
