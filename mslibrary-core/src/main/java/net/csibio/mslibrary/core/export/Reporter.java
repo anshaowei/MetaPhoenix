@@ -175,7 +175,7 @@ public class Reporter {
         return new Result(true);
     }
 
-    public void scoreGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap, int scoreInterval) {
+    public void scoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export score graph : " + outputFileName);
         //header
@@ -186,7 +186,7 @@ public class Reporter {
         log.info("export score graph success : " + outputFileName);
     }
 
-    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap, int pInterval) {
+    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int pInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export estimatedPValue graph : " + outputFileName);
         List<List<Object>> scoreDataSheet = getDataSheet(hitsMap, 100 * pInterval);
@@ -264,12 +264,13 @@ public class Reporter {
         log.info("export estimatedPValue graph success : " + outputFileName);
     }
 
-    private List<List<Object>> getDataSheet(ConcurrentHashMap<String, List<LibraryHit>> hitsMap, int scoreInterval) {
+    private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
         List<List<Object>> dataSheet = new ArrayList<>();
         List<LibraryHit> allTargetHits = new ArrayList<>();
         //a hit in the following lists means the top score hit for a specific query spectrum
         List<LibraryHit> decoyHits = new ArrayList<>();
         List<LibraryHit> targetHits = new ArrayList<>();
+        List<LibraryHit> trueHits = new ArrayList<>();
 
         hitsMap.forEach((k, v) -> {
             if (v.size() != 0) {
@@ -280,6 +281,12 @@ public class Reporter {
                         decoyHits.add(targetDecoyMap.get(true).get(0));
                     } else {
                         targetDecoyMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                        for (LibraryHit hit : targetDecoyMap.get(false)) {
+                            if (hit.getSmiles().equals(k.getSmiles())) {
+                                trueHits.add(hit);
+                                break;
+                            }
+                        }
                         allTargetHits.addAll(targetDecoyMap.get(false));
                         targetHits.add(targetDecoyMap.get(false).get(0));
                     }
@@ -289,6 +296,7 @@ public class Reporter {
 
         decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
         targetHits.sort(Comparator.comparing(LibraryHit::getScore));
+        trueHits.sort(Comparator.comparing(LibraryHit::getScore));
         //choose the range as given or calculated
 //        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
 //        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
@@ -309,7 +317,7 @@ public class Reporter {
             //calculate FDR, pValue and PIT
             double pit = (double) incorrectCount / (targetCount + incorrectCount);
             double fdr = (double) decoyCount / (targetCount + decoyCount) * pit;
-            double pValue = (double) decoyCount / (targetCount + decoyCount);
+            double pValue = (double) decoyCount / (targetCount);
 
             //calculate hits distribution
             if (i == 0) {

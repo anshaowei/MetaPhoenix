@@ -31,31 +31,31 @@ public class FDRControlled {
 
         //initiate
         log.info("FDRControlled identification progress start on library: " + queryLibraryId + " towards library: " + targetLibraryId + "&" + decoyLibraryId);
-        ConcurrentHashMap<String, List<LibraryHit>> allHitsMap = getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, method);
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> allHitsMap = getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, method);
 
         //process with different strategies except STDS
         DecoyProcedure decoyProcedure = DecoyProcedure.valueOf(method.getDecoyProcedure());
         switch (decoyProcedure) {
-            case CTDC -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
-                List<LibraryHit> allHits = allHitsMap.get(spectrumId);
+            case CTDC -> allHitsMap.keySet().parallelStream().forEach(spectrumDO -> {
+                List<LibraryHit> allHits = allHitsMap.get(spectrumDO);
                 if (allHits.size() > 0) {
                     allHits.sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                    allHitsMap.put(spectrumId, Collections.singletonList(allHits.get(0)));
+                    allHitsMap.put(spectrumDO, Collections.singletonList(allHits.get(0)));
                 }
             });
-            case TTDC -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
-                List<LibraryHit> allHits = allHitsMap.get(spectrumId);
+            case TTDC -> allHitsMap.keySet().parallelStream().forEach(spectrumDO -> {
+                List<LibraryHit> allHits = allHitsMap.get(spectrumDO);
                 if (allHits.size() > 0) {
                     allHits.sort(Comparator.comparing(LibraryHit::getScore).reversed());
                     if (allHits.get(0).isDecoy()) {
-                        allHitsMap.put(spectrumId, new ArrayList<>());
+                        allHitsMap.put(spectrumDO, new ArrayList<>());
                     } else {
-                        allHitsMap.put(spectrumId, Collections.singletonList(allHits.get(0)));
+                        allHitsMap.put(spectrumDO, Collections.singletonList(allHits.get(0)));
                     }
                 }
             });
-            case Common -> allHitsMap.keySet().parallelStream().forEach(spectrumId -> {
-                List<LibraryHit> allHits = allHitsMap.get(spectrumId);
+            case Common -> allHitsMap.keySet().parallelStream().forEach(spectrumDO -> {
+                List<LibraryHit> allHits = allHitsMap.get(spectrumDO);
                 allHits.removeIf(libraryHit -> libraryHit.isDecoy() && libraryHit.getScore() > method.getThreshold());
             });
             case STDS -> {
@@ -68,9 +68,9 @@ public class FDRControlled {
 
     }
 
-    public ConcurrentHashMap<String, List<LibraryHit>> getAllHitsMap(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO method) {
+    public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getAllHitsMap(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO method) {
         //initiate
-        ConcurrentHashMap<String, List<LibraryHit>> allHitsMap = new ConcurrentHashMap<>();
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> allHitsMap = new ConcurrentHashMap<>();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(queryLibraryId);
 
         //process each spectrum to get all hits
@@ -108,7 +108,7 @@ public class FDRControlled {
             }
             allHits.addAll(targetHits);
             allHits.addAll(decoyHits);
-            allHitsMap.put(spectrumDO.getId(), allHits);
+            allHitsMap.put(spectrumDO, allHits);
         });
         return allHitsMap;
     }

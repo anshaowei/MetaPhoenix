@@ -248,8 +248,8 @@ public class TestController {
         methodDO.setThreshold(0.0);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
 
-        ConcurrentHashMap<String, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-//        reporter.scoreGraph("score", hitsMap, 100);
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+        reporter.scoreGraph("score", hitsMap, 100);
         reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
     }
 
