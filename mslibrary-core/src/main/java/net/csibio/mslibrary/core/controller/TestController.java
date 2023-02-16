@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @RequestMapping("test")
@@ -250,7 +249,8 @@ public class TestController {
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
 
         ConcurrentHashMap<String, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-        reporter.scoreGraph("test", hitsMap, 100);
+//        reporter.scoreGraph("score", hitsMap, 100);
+        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
     }
 
 }

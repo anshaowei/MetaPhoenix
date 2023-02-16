@@ -7,6 +7,7 @@ import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.SpectrumService;
+import net.csibio.mslibrary.client.utils.ArrayUtil;
 import net.csibio.mslibrary.core.config.VMProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -185,18 +186,78 @@ public class Reporter {
         log.info("export score graph success : " + outputFileName);
     }
 
-    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap) {
+    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<String, List<LibraryHit>> hitsMap, int pInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export estimatedPValue graph : " + outputFileName);
-        List<List<Object>> dataSheet = getDataSheet(hitsMap, 1000);
-        List<Double> pList = new ArrayList<>();
-        for (int i = 20; i > 0; i--) {
-            pList.add(i * 0.05);
+        List<List<Object>> scoreDataSheet = getDataSheet(hitsMap, 100 * pInterval);
+
+        //reverse score data sheet to make pValue ascending
+        Collections.reverse(scoreDataSheet);
+        List<List<Object>> dataSheet = new ArrayList<>();
+        List<Double> thresholds = new ArrayList<>();
+
+        //pValue thresholds
+        double step = 1.0 / pInterval;
+        for (int i = 0; i < pInterval; i++) {
+            thresholds.add(step * (i + 1));
         }
 
-        for (int i = 0; i < dataSheet.size(); i++) {
-            double pValue = (double) dataSheet.get(i).get(6);
+        //record real pValue and sum frequencies from pValue 0~1
+        double[] pValueArray = new double[scoreDataSheet.size()];
+        double targetFrequency = 0.0;
+        double decoyFrequency = 0.0;
+        double totalFrequency = 0.0;
+        List<Double> targetFrequencyList = new ArrayList<>();
+        List<Double> decoyFrequencyList = new ArrayList<>();
+        List<Double> totalFrequencyList = new ArrayList<>();
+        for (int i = 0; i < scoreDataSheet.size(); i++) {
+            pValueArray[i] = (double) scoreDataSheet.get(i).get(6);
+            targetFrequency += (double) scoreDataSheet.get(i).get(2);
+            decoyFrequency += (double) scoreDataSheet.get(i).get(3);
+            totalFrequency += (double) scoreDataSheet.get(i).get(4);
+            targetFrequencyList.add(targetFrequency);
+            decoyFrequencyList.add(decoyFrequency);
+            totalFrequencyList.add(totalFrequency);
+        }
 
+        //for each threshold, find the nearest pValue and record the index
+        List<Integer> indexList = new ArrayList<>();
+        for (double threshold : thresholds) {
+            int index = ArrayUtil.findNearestIndex(pValueArray, threshold);
+            double diff = Math.abs(pValueArray[index] - threshold);
+            if (diff > step) {
+                indexList.add(-1);
+            } else {
+                indexList.add(index);
+            }
+        }
+
+        //header
+        List<Object> header = Arrays.asList("EstimatedPValue", "RealPValue", "TargetFrequency", "DecoyFrequency", "TotalFrequency");
+        dataSheet.add(header);
+        //calculate the frequency of each threshold according to the index
+        for (int i = 0; i < indexList.size(); i++) {
+            int index = indexList.get(i);
+            List<Object> row = new ArrayList<>();
+            row.add(thresholds.get(i));
+            if (index == -1) {
+                row.add("NA");
+                row.add("NA");
+                row.add("NA");
+                row.add("NA");
+            } else {
+                row.add(scoreDataSheet.get(index).get(6));
+                if (i == 0) {
+                    row.add(targetFrequencyList.get(index));
+                    row.add(decoyFrequencyList.get(index));
+                    row.add(totalFrequencyList.get(index));
+                } else {
+                    row.add(targetFrequencyList.get(index) - targetFrequencyList.get(indexList.get(i - 1)));
+                    row.add(decoyFrequencyList.get(index) - decoyFrequencyList.get(indexList.get(i - 1)));
+                    row.add(totalFrequencyList.get(index) - totalFrequencyList.get(indexList.get(i - 1)));
+                }
+            }
+            dataSheet.add(row);
         }
 
         EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(dataSheet);
@@ -228,8 +289,11 @@ public class Reporter {
 
         decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
         targetHits.sort(Comparator.comparing(LibraryHit::getScore));
-        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
-        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
+        //choose the range as given or calculated
+//        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
+//        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
+        double minScore = 0.0;
+        double maxScore = 1.0;
         double step = (maxScore - minScore) / scoreInterval;
 
         for (int i = 0; i < scoreInterval; i++) {
@@ -242,7 +306,7 @@ public class Reporter {
             decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             incorrectCount = allTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size() - targetCount;
 
-            //calculate FDR and pValue and PIT
+            //calculate FDR, pValue and PIT
             double pit = (double) incorrectCount / (targetCount + incorrectCount);
             double fdr = (double) decoyCount / (targetCount + decoyCount) * pit;
             double pValue = (double) decoyCount / (targetCount + decoyCount);
