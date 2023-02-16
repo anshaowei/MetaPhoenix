@@ -179,7 +179,8 @@ public class Reporter {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export score graph : " + outputFileName);
         //header
-        List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy", "Total", "FDR", "PValue", "PIT");
+        List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy", "Total", "FDR",
+                "TrueFDR", "PValue", "PIT", "TargetNum", "DecoyNum", "TotalNum", "trueNum", "falseNum");
         List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
@@ -266,11 +267,19 @@ public class Reporter {
 
     private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
         List<List<Object>> dataSheet = new ArrayList<>();
+        //for target-decoy FDR calculation
+        //all hits in the target library above score threshold
         List<LibraryHit> allTargetHits = new ArrayList<>();
-        //a hit in the following lists means the top score hit for a specific query spectrum
+        //top score hit for a spectrum in the decoy library
         List<LibraryHit> decoyHits = new ArrayList<>();
+        //top score hit for a spectrum in the target library
         List<LibraryHit> targetHits = new ArrayList<>();
+
+        //for true FDR calculation
+        //the top score hit in the target library and has the same smiles with the query spectrum
         List<LibraryHit> trueHits = new ArrayList<>();
+        //the hits in the target library above the given score threshold but not with the same smiles
+        List<LibraryHit> falseHits = new ArrayList<>();
 
         hitsMap.forEach((k, v) -> {
             if (v.size() != 0) {
@@ -281,11 +290,16 @@ public class Reporter {
                         decoyHits.add(targetDecoyMap.get(true).get(0));
                     } else {
                         targetDecoyMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                        List<LibraryHit> temp = new ArrayList<>();
                         for (LibraryHit hit : targetDecoyMap.get(false)) {
                             if (hit.getSmiles().equals(k.getSmiles())) {
-                                trueHits.add(hit);
-                                break;
+                                temp.add(hit);
+                            } else {
+                                falseHits.add(hit);
                             }
+                        }
+                        if (temp.size() != 0) {
+                            trueHits.add(temp.get(0));
                         }
                         allTargetHits.addAll(targetDecoyMap.get(false));
                         targetHits.add(targetDecoyMap.get(false).get(0));
@@ -294,9 +308,6 @@ public class Reporter {
             }
         });
 
-        decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
-        targetHits.sort(Comparator.comparing(LibraryHit::getScore));
-        trueHits.sort(Comparator.comparing(LibraryHit::getScore));
         //choose the range as given or calculated
 //        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
 //        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
@@ -307,12 +318,21 @@ public class Reporter {
         for (int i = 0; i < scoreInterval; i++) {
             double finalMinScore = minScore + i * step;
             double finalMaxScore = minScore + (i + 1) * step;
-            int targetCount, decoyCount, incorrectCount;
+            int targetCount, decoyCount, incorrectCount, rightCount, falseCount, allTargetCount;
             List<Object> row = new ArrayList<>();
 
+            //target-decoy strategy calculation
             targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            incorrectCount = allTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size() - targetCount;
+            allTargetCount = allTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            incorrectCount = allTargetCount - targetCount;
+            final int finalTargetCount = targetCount;
+            final int finalDecoyCount = decoyCount;
+
+            //real data calculation
+            rightCount = trueHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            falseCount = falseHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            double trueFdr = (double) falseCount / (rightCount + falseCount);
 
             //calculate FDR, pValue and PIT
             double pit = (double) incorrectCount / (targetCount + incorrectCount);
@@ -329,14 +349,34 @@ public class Reporter {
             }
 
             //write data sheet
+            //start score
             row.add(finalMinScore);
+            //end score
             row.add(finalMaxScore);
+            //target frequency
             row.add((double) targetCount / targetHits.size());
+            //decoy frequency
             row.add((double) decoyCount / decoyHits.size());
+            //total frequency
             row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
+            //FDR
             row.add(fdr);
+            //trueFDR
+            row.add(trueFdr);
+            //pValue
             row.add(pValue);
+            //PIT
             row.add(pit);
+            //target count above score threshold
+            row.add(finalTargetCount);
+            //decoy count above score threshold
+            row.add(finalDecoyCount);
+            //total count above score threshold
+            row.add(finalTargetCount + finalDecoyCount);
+            //true count
+            row.add(rightCount);
+            //false count
+            row.add(falseCount);
             dataSheet.add(row);
         }
         return dataSheet;

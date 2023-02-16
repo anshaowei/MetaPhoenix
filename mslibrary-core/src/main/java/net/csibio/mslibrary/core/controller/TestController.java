@@ -137,106 +137,6 @@ public class TestController {
         log.info("import success");
     }
 
-    /**
-     * 此图为Estimated p-value to identification distribution
-     * 参考文献：2017, Scheubert et al. Figure 2
-     */
-    @RequestMapping("distribution")
-    public void distribution() {
-        long start = System.currentTimeMillis();
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId("MassBank");
-        Double mzTolerance = 0.01;
-        List<LibraryHit> trueHits = Collections.synchronizedList(new ArrayList<>());
-        List<LibraryHit> falseHits = Collections.synchronizedList(new ArrayList<>());
-
-        spectrumDOS.parallelStream().forEach(spectrumDO -> {
-            List<LibraryHit> libraryHits = new ArrayList<>();
-            List<SpectrumDO> librarySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS");
-            List<SpectrumDO> decoySpectra = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, "GNPS-optNaive");
-            for (SpectrumDO librarySpectrum : librarySpectra) {
-//                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), mzTolerance);
-                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), librarySpectrum.getSpectrum(), mzTolerance);
-                LibraryHit libraryHit = new LibraryHit();
-                libraryHit.setSpectrumId(librarySpectrum.getId());
-                libraryHit.setSmiles(librarySpectrum.getSmiles());
-                libraryHit.setScore(score);
-                libraryHits.add(libraryHit);
-            }
-            if (libraryHits.size() > 1) {
-                libraryHits.sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                trueHits.add(libraryHits.get(0));
-            }
-            libraryHits = new ArrayList<>();
-            for (SpectrumDO decoySpectrum : decoySpectra) {
-//                double score = similarity.getDotProduct(spectrumDO.getSpectrum(), decoySpectrum.getSpectrum(), mzTolerance);
-                double score = similarity.getEntropySimilarity(spectrumDO.getSpectrum(), decoySpectrum.getSpectrum(), mzTolerance);
-                LibraryHit libraryHit = new LibraryHit();
-                libraryHit.setSpectrumId(decoySpectrum.getId());
-                libraryHit.setSmiles(decoySpectrum.getSmiles());
-                libraryHit.setScore(score);
-                libraryHit.setDecoy(true);
-                libraryHits.add(libraryHit);
-            }
-            if (libraryHits.size() > 1) {
-                libraryHits.sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                falseHits.add(libraryHits.get(0));
-            }
-        });
-
-        double threshold = 0.0;
-        List<List<Object>> scores = new ArrayList<>();
-
-        //找到20个estimated p-value阈值下的分数值
-        List<Double> fdrs = new ArrayList<>();
-        List<Double> thresholds = new ArrayList<>();
-        for (int i = 20; i > 0; i--) {
-            fdrs.add(i * 0.05);
-        }
-        int count = 0;
-        for (int i = 0; i < 10000; i++) {
-            threshold = i * 0.001;
-            final double minValue = threshold;
-            List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getScore() > minValue).toList();
-            List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getScore() > minValue).toList();
-            double pValue = (double) negativeHits.size() / positiveHits.size();
-            if (count < fdrs.size()) {
-                if (pValue < fdrs.get(count)) {
-                    thresholds.add(threshold);
-                    count++;
-                }
-            } else {
-                break;
-            }
-        }
-
-        //作图
-        scores.add(new ArrayList<>(Arrays.asList("Estimated-pValue", "true", "false", "true&false")));
-        for (int i = thresholds.size() - 1; i >= 0; i--) {
-            double minValue = thresholds.get(i);
-            double maxValue = 0.0;
-            if (i == thresholds.size() - 1) {
-                maxValue = 1.0;
-            } else {
-                maxValue = thresholds.get(i + 1);
-            }
-            final double finalMaxValue = maxValue;
-            List<LibraryHit> positiveHits = trueHits.stream().filter(libraryHit -> libraryHit.getScore() > minValue).toList();
-            List<LibraryHit> negativeHits = falseHits.stream().filter(libraryHit -> libraryHit.getScore() > minValue).toList();
-            double pValue = (double) negativeHits.size() / positiveHits.size();
-            positiveHits = positiveHits.stream().filter(libraryHit -> libraryHit.getScore() <= finalMaxValue).toList();
-            negativeHits = negativeHits.stream().filter(libraryHit -> libraryHit.getScore() <= finalMaxValue).toList();
-            List<Object> score = new ArrayList<>();
-            score.add(pValue);
-            score.add((double) positiveHits.size() / trueHits.size());
-            score.add((double) negativeHits.size() / falseHits.size());
-            score.add((double) (positiveHits.size() + negativeHits.size()) / (trueHits.size() + falseHits.size()));
-            scores.add(score);
-        }
-        EasyExcel.write("/Users/anshaowei/Downloads/scoreGraph.xlsx").sheet("sheet1").doWrite(scores);
-        long end = System.currentTimeMillis();
-        log.info("time: " + (end - start));
-    }
-
     @RequestMapping("report")
     public void report() {
         String queryLibraryId = "MassBank";
@@ -250,7 +150,7 @@ public class TestController {
 
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
         reporter.scoreGraph("score", hitsMap, 100);
-        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
+//        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
     }
 
 }
