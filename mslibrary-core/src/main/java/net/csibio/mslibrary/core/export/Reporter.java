@@ -15,12 +15,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Component("reporter")
 @Slf4j
@@ -181,7 +178,7 @@ public class Reporter {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export score graph : " + outputFileName);
         //header
-        List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy", "Total", "FDR", "PValue");
+        List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy", "Total", "FDR", "PValue", "PIT");
         List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
@@ -208,26 +205,26 @@ public class Reporter {
 
     private List<List<Object>> getDataSheet(ConcurrentHashMap<String, List<LibraryHit>> hitsMap, int scoreInterval) {
         List<List<Object>> dataSheet = new ArrayList<>();
+        List<LibraryHit> allTargetHits = new ArrayList<>();
+        //a hit in the following lists means the top score hit for a specific query spectrum
         List<LibraryHit> decoyHits = new ArrayList<>();
         List<LibraryHit> targetHits = new ArrayList<>();
-        AtomicInteger correct = new AtomicInteger();
-        AtomicInteger incorrect = new AtomicInteger();
 
         hitsMap.forEach((k, v) -> {
             if (v.size() != 0) {
-                correct.getAndIncrement();
-                for (LibraryHit hit : v) {
-                    if (hit.isDecoy()) {
-                        decoyHits.add(hit);
+                Map<Boolean, List<LibraryHit>> targetDecoyMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
+                for (Map.Entry<Boolean, List<LibraryHit>> entry : targetDecoyMap.entrySet()) {
+                    if (entry.getKey()) {
+                        targetDecoyMap.get(true).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                        decoyHits.add(targetDecoyMap.get(true).get(0));
                     } else {
-                        targetHits.add(hit);
-                        incorrect.getAndIncrement();
+                        targetDecoyMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                        allTargetHits.addAll(targetDecoyMap.get(false));
+                        targetHits.add(targetDecoyMap.get(false).get(0));
                     }
                 }
             }
         });
-        incorrect.set(incorrect.get() - correct.get());
-        double pit = (double) incorrect.get() / (incorrect.get() + correct.get());
 
         decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
         targetHits.sort(Comparator.comparing(LibraryHit::getScore));
@@ -238,14 +235,16 @@ public class Reporter {
         for (int i = 0; i < scoreInterval; i++) {
             double finalMinScore = minScore + i * step;
             double finalMaxScore = minScore + (i + 1) * step;
-            int targetCount, decoyCount;
+            int targetCount, decoyCount, incorrectCount;
             List<Object> row = new ArrayList<>();
 
             targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            incorrectCount = allTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size() - targetCount;
 
-            //calculate FDR and pValue
-            double fdr = (double) decoyCount / targetCount * pit;
+            //calculate FDR and pValue and PIT
+            double pit = (double) incorrectCount / (targetCount + incorrectCount);
+            double fdr = (double) decoyCount / (targetCount + decoyCount) * pit;
             double pValue = (double) decoyCount / (targetCount + decoyCount);
 
             //calculate hits distribution
@@ -265,6 +264,7 @@ public class Reporter {
             row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
             row.add(fdr);
             row.add(pValue);
+            row.add(pit);
             dataSheet.add(row);
         }
         return dataSheet;
