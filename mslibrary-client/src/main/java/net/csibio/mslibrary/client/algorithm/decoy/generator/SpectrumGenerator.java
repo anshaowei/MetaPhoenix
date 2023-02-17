@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.client.algorithm.decoy.generator;
 
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
@@ -39,8 +40,8 @@ public class SpectrumGenerator {
         }
 
         //insert decoy spectra into database
-        decoySpectrumDOS.parallelStream().forEach(spectrumDO -> spectrumDO.setLibraryId(libraryId + "_" + method.getDecoyStrategy()));
-        spectrumService.insert(decoySpectrumDOS, libraryId + "_" + method.getDecoyStrategy());
+        decoySpectrumDOS.parallelStream().forEach(spectrumDO -> spectrumDO.setLibraryId(libraryId + SymbolConst.DELIMITER + method.getDecoyStrategy()));
+        spectrumService.insert(decoySpectrumDOS, libraryId + SymbolConst.DELIMITER + method.getDecoyStrategy());
         log.info("Decoy spectra generation finished, cost {} ms", System.currentTimeMillis() - start);
     }
 

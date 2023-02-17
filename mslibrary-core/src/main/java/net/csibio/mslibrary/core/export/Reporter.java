@@ -278,7 +278,7 @@ public class Reporter {
         //for true FDR calculation
         //the top score hit in the target library and has the same smiles with the query spectrum
         List<LibraryHit> trueHits = new ArrayList<>();
-        //the hits in the target library above the given score threshold but not with the same smiles
+        //the top score hit in the target library but not with the same smiles
         List<LibraryHit> falseHits = new ArrayList<>();
 
         hitsMap.forEach((k, v) -> {
@@ -290,16 +290,10 @@ public class Reporter {
                         decoyHits.add(targetDecoyMap.get(true).get(0));
                     } else {
                         targetDecoyMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                        List<LibraryHit> temp = new ArrayList<>();
-                        for (LibraryHit hit : targetDecoyMap.get(false)) {
-                            if (hit.getSmiles().equals(k.getSmiles())) {
-                                temp.add(hit);
-                            } else {
-                                falseHits.add(hit);
-                            }
-                        }
-                        if (temp.size() != 0) {
-                            trueHits.add(temp.get(0));
+                        if (k.getSmiles().equals(targetDecoyMap.get(false).get(0).getSmiles())) {
+                            trueHits.add(targetDecoyMap.get(false).get(0));
+                        } else {
+                            falseHits.add(targetDecoyMap.get(false).get(0));
                         }
                         allTargetHits.addAll(targetDecoyMap.get(false));
                         targetHits.add(targetDecoyMap.get(false).get(0));
