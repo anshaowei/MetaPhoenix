@@ -36,12 +36,6 @@ public class GnpsParser {
     @Autowired
     SpectrumService spectrumService;
 
-    /**
-     * 该功能解析并将谱图插入数据库
-     *
-     * @param filePath
-     * @return
-     */
     public Result parseJSON(String filePath) {
 
         long startTime = System.currentTimeMillis();
@@ -51,12 +45,11 @@ public class GnpsParser {
         try {
             parser = jsonFactory.createParser(new File(filePath));
             int spectrumCount = 0;
+            log.info("start parse file: " + filePath);
 
-            //文件估算及预解析
+            //pre scan
             HashSet<String> libraryNames = new HashSet<>();
-            HashSet<String> compoundIndexes = new HashSet<>();
 
-            log.info("开始执行GNPS数据库解析任务");
             while (!parser.isClosed()) {
                 JsonToken jsonToken = parser.nextToken();
                 if (JsonToken.FIELD_NAME.equals(jsonToken)) {
@@ -66,19 +59,12 @@ public class GnpsParser {
                     if (parser.getCurrentName().equals("library_membership")) {
                         parser.nextToken();
                         libraryNames.add(parser.getValueAsString());
-                        String libraryName = parser.getValueAsString();
-                        int i = 0;
-                        while (i <= 9) {
-                            parser.nextToken();
-                            i++;
-                        }
-                        compoundIndexes.add(libraryName + "@" + parser.getValueAsString());
                     }
                 }
             }
-            log.info("初步扫描完成，文件共包含" + libraryNames.size() + "个库，大约" + compoundIndexes.size() + "个化合物，" + spectrumCount + "张谱图");
+            log.info("pre scan finished, file contains " + libraryNames.size() + " libraries, " + spectrumCount + " spectra");
 
-            //生成化合物库
+            //generate library
             List<LibraryDO> libraryDOS = new ArrayList<>();
             for (String libraryName : libraryNames) {
                 LibraryDO libraryDO = new LibraryDO();
@@ -87,13 +73,13 @@ public class GnpsParser {
                 libraryDOS.add(libraryDO);
             }
 
-            //插入数据库
+            //insert library
             if (libraryService.insert(libraryDOS).isFailed()) {
-                log.error("生成化合物库失败，数据库中已存在同名数据库");
+                log.error("insert library failed, library with same name already exist");
                 Result result = new Result(false);
                 return result.setErrorResult(ResultCode.LIBRARY_WITH_SAME_NAME_ALREADY_EXIST);
             }
-            log.info("化合物库插入数据库成功");
+            log.info("insert library success, " + libraryDOS.size() + " libraries inserted");
 
             HashMap<String, List<SpectrumDO>> spectrumMap = new HashMap<>();
             for (String libraryName : libraryNames) {
@@ -313,14 +299,14 @@ public class GnpsParser {
                     }
                 }
             }
-            log.info("解析完成，共用时" + (System.currentTimeMillis() - startTime) / 1000 + "秒，开始向数据库插入");
+            log.info("finish parse json file, start insert to database");
             for (String libraryName : spectrumMap.keySet()) {
                 LibraryDO libraryDO = libraryService.getById(libraryName);
                 libraryDO.setSpectrumCount(spectrumMap.get(libraryName).size());
                 libraryService.update(libraryDO);
                 spectrumService.insert(spectrumMap.get(libraryName), libraryDO.getId());
             }
-            log.info("向数据库共插入" + spectrumCount + "张谱图完成，共用时" + (System.currentTimeMillis() - startTime) / 1000 + "秒");
+            log.info("finish insert to database, time cost " + (System.currentTimeMillis() - startTime) / 1000 + "s");
         } catch (Exception e) {
             e.printStackTrace();
         }
