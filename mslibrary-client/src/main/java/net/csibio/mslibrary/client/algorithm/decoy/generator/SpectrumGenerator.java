@@ -9,6 +9,7 @@ import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.client.utils.ArrayUtil;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -91,39 +92,30 @@ public class SpectrumGenerator {
         }
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //1. insert precursor ion peak
-            List<IonPeak> decoyIonPeaks = new ArrayList<>();
-            List<IonPeak> ionPeaks = ionPeakMap.get(spectrumDO.getId());
+            TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
             IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
             decoyIonPeaks.add(precursorIonPeak);
 
-            //repeat until the number of peaks in decoy is the same as the original spectrum
-            for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
-                //2. randomly select an ion from other spectra
+            //2. randomly select an ion from other spectra
+            while (decoyIonPeaks.size() < spectrumDO.getMzs().length) {
                 int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
                 IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
-                if (ionPeak.getMz() >= precursorIonPeak.getMz()) {
-                    i--;
-                    continue;
-                }
-                boolean repeat = false;
-                for (IonPeak decoyIonPeak : decoyIonPeaks) {
-                    if (Math.abs(ionPeak.getMz() - decoyIonPeak.getMz()) < (method.getPpmForMzTolerance() ? method.getPpm() * Constants.PPM * ionPeak.getMz() : method.getMzTolerance())) {
-                        i--;
-                        repeat = true;
-                        break;
-                    }
-                }
-                if (repeat)
-                    continue;
-
-                //到此处的时候ionPeak的mz的随机选取已经完成，下一步进行ionPeak的强度改变
-                int random = new Random().nextInt(ionPeaks.size());
-                IonPeak randomIonPeak = ionPeaks.get(random);
-                ionPeak.setIntensity(randomIonPeak.getIntensity());
-                ionPeaks.remove(random);
                 decoyIonPeaks.add(ionPeak);
             }
-            decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
+
+            //3. arrange the ion intensity from the original spectrum
+            List<IonPeak> ionPeaks = new ArrayList<>();
+            CollectionUtils.addAll(ionPeaks, new Object[ionPeakMap.get(spectrumDO.getId()).size()]);
+            Collections.copy(ionPeaks, ionPeakMap.get(spectrumDO.getId()));
+            ionPeaks.add(precursorIonPeak);
+            for (IonPeak decoyIonPeak : decoyIonPeaks) {
+                int randomIndex = new Random().nextInt(ionPeaks.size());
+                IonPeak ionPeak = ionPeaks.get(randomIndex);
+                decoyIonPeak.setIntensity(ionPeak.getIntensity());
+                ionPeaks.remove(randomIndex);
+            }
+
+            decoySpectrumDOS.add(convertIonPeaksToSpectrum(new ArrayList<>(decoyIonPeaks), spectrumDO.getPrecursorMz()));
         });
     }
 
