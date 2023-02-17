@@ -69,8 +69,8 @@ public class TestController {
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
-//        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
-//        mspMassBankParser.parseEurope("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
+        mspMassBankParser.parseEurope("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
 //        mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
         mspMassBankParser.parseMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }

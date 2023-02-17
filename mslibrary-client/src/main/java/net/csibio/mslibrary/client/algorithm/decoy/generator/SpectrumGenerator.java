@@ -36,6 +36,8 @@ public class SpectrumGenerator {
             case XYMeta -> xymeta(spectrumDOS, decoySpectrumDOS, method);
             case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
             case FragmentationTree -> fragmentationTree(spectrumDOS, decoySpectrumDOS);
+            case Entropy_1 -> entropy_1(spectrumDOS, decoySpectrumDOS, method);
+            case Entropy_2 -> entropy_2(spectrumDOS, decoySpectrumDOS, method);
             default -> log.error("Decoy procedure {} is not supported", method.getDecoyStrategy());
         }
 
@@ -76,6 +78,57 @@ public class SpectrumGenerator {
             }
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         }
+    }
+
+    private void entropy_1(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO method) {
+        List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
+        HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
+        HashMap<String, List<IonPeak>> ionPeakMap = new HashMap<>();
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            List<IonPeak> otherIonPeaks = separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap);
+            ionPeaksWithoutPrecursor.addAll(otherIonPeaks);
+            ionPeakMap.put(spectrumDO.getId(), otherIonPeaks);
+        }
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            //1. insert precursor ion peak
+            List<IonPeak> decoyIonPeaks = new ArrayList<>();
+            List<IonPeak> ionPeaks = ionPeakMap.get(spectrumDO.getId());
+            IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
+            decoyIonPeaks.add(precursorIonPeak);
+
+            //repeat until the number of peaks in decoy is the same as the original spectrum
+            for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
+                //2. randomly select an ion from other spectra
+                int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
+                IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
+                if (ionPeak.getMz() >= precursorIonPeak.getMz()) {
+                    i--;
+                    continue;
+                }
+                boolean repeat = false;
+                for (IonPeak decoyIonPeak : decoyIonPeaks) {
+                    if (Math.abs(ionPeak.getMz() - decoyIonPeak.getMz()) < (method.getPpmForMzTolerance() ? method.getPpm() * Constants.PPM * ionPeak.getMz() : method.getMzTolerance())) {
+                        i--;
+                        repeat = true;
+                        break;
+                    }
+                }
+                if (repeat)
+                    continue;
+
+                //到此处的时候ionPeak的mz的随机选取已经完成，下一步进行ionPeak的强度改变
+                int random = new Random().nextInt(ionPeaks.size());
+                IonPeak randomIonPeak = ionPeaks.get(random);
+                ionPeak.setIntensity(randomIonPeak.getIntensity());
+                ionPeaks.remove(random);
+                decoyIonPeaks.add(ionPeak);
+            }
+            decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
+        });
+    }
+
+    private void entropy_2(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO method) {
+
     }
 
     /**
