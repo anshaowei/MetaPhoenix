@@ -2,7 +2,6 @@ package net.csibio.mslibrary.core.export;
 
 import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
-import net.csibio.mslibrary.client.algorithm.search.FDRControlled;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -28,8 +27,6 @@ public class Reporter {
     VMProperties vmProperties;
     @Autowired
     SpectrumService spectrumService;
-    @Autowired
-    FDRControlled fdrControlled;
 
     public Result toExcel(String fileName, List<LibraryHit> libraryHits) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";

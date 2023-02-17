@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.client.filter;
 
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Component("noiseFilter")
 @Slf4j
@@ -73,6 +75,11 @@ public class NoiseFilter {
         //5. remove spectra with ion count > 300
         spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs().length > 300);
         log.info("remove {} spectra with ion count > 300, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
+        count = spectrumDOS.size();
+
+        //6. remove MS1 spectra
+        spectrumDOS.removeIf(spectrumDO -> Objects.equals(spectrumDO.getMsLevel(), MsLevel.MS1.getCode()));
+        log.info("remove {} MS1 spectra, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
 
         spectrumService.remove(new SpectrumQuery(), libraryId);
         spectrumService.insert(spectrumDOS, libraryId);

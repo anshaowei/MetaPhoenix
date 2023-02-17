@@ -36,7 +36,7 @@ public class GnpsParser {
     @Autowired
     SpectrumService spectrumService;
 
-    public Result parseJSON(String filePath) {
+    public void parseJSON(String filePath) {
 
         long startTime = System.currentTimeMillis();
         JsonFactory jsonFactory = new MappingJsonFactory();
@@ -76,8 +76,7 @@ public class GnpsParser {
             //insert library
             if (libraryService.insert(libraryDOS).isFailed()) {
                 log.error("insert library failed, library with same name already exist");
-                Result result = new Result(false);
-                return result.setErrorResult(ResultCode.LIBRARY_WITH_SAME_NAME_ALREADY_EXIST);
+                return;
             }
             log.info("insert library success, " + libraryDOS.size() + " libraries inserted");
 
@@ -310,7 +309,6 @@ public class GnpsParser {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new Result(true);
     }
 
 }
