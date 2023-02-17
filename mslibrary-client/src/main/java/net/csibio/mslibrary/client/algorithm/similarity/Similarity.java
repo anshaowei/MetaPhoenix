@@ -5,10 +5,9 @@ import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import org.apache.commons.math3.stat.StatUtils;
 import org.springframework.stereotype.Component;
 
-@Component("similarity")
 public class Similarity {
 
-    public double getDotProduct(Spectrum runSpectrum, Spectrum libSpectrum, double mzTolerance) {
+    public static double getDotProduct(Spectrum runSpectrum, Spectrum libSpectrum, double mzTolerance) {
         int expIndex = 0;
         double[] libMzArray = libSpectrum.getMzs();
         double[] libIntArray = libSpectrum.getInts();
@@ -61,7 +60,7 @@ public class Similarity {
         return dotProduct / Math.sqrt(libNorm) / Math.sqrt(expNorm) * expCounter / libCounter;
     }
 
-    public double getUnWeightedEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
+    public static double getUnWeightedEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
 
         Spectrum spectrumA = SpectrumUtil.clone(spectrum1);
         Spectrum spectrumB = SpectrumUtil.clone(spectrum2);
@@ -76,7 +75,7 @@ public class Similarity {
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
 
-    public double getEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
+    public static double getEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
         Spectrum spectrumA = SpectrumUtil.clone(spectrum1);
         Spectrum spectrumB = SpectrumUtil.clone(spectrum2);
         SpectrumUtil.normalize(spectrumA);
@@ -106,7 +105,7 @@ public class Similarity {
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
 
-    private double getEntropy(Spectrum spectrum) {
+    private static double getEntropy(Spectrum spectrum) {
         double[] intensityArray = spectrum.getInts();
         double sum = 0;
         for (double intensity : intensityArray) {

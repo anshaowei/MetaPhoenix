@@ -2,6 +2,7 @@ package net.csibio.mslibrary.core.export;
 
 import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -260,6 +261,14 @@ public class Reporter {
 
         EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(dataSheet);
         log.info("export estimatedPValue graph success : " + outputFileName);
+    }
+
+    public void entropyDistributionGraph(String libraryId, int interval) {
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        List<Double> entropyList = new ArrayList<>();
+        for (SpectrumDO spectrumDO: spectrumDOS){
+
+        }
     }
 
     private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {

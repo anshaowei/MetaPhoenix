@@ -24,8 +24,6 @@ public class FDRControlled {
 
     @Autowired
     SpectrumService spectrumService;
-    @Autowired
-    Similarity similarity;
 
     public void execute(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO method) {
 
@@ -88,11 +86,11 @@ public class FDRControlled {
                 SpectrumMatchMethod spectrumMatchMethod = SpectrumMatchMethod.valueOf(method.getSpectrumMatchMethod());
                 double score = switch (spectrumMatchMethod) {
                     case Entropy ->
-                            similarity.getEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
+                            Similarity.getEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
                     case Cosine ->
-                            similarity.getDotProduct(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
+                            Similarity.getDotProduct(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
                     case Unweighted_Entropy ->
-                            similarity.getUnWeightedEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
+                            Similarity.getUnWeightedEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
                 };
                 LibraryHit libraryHit = new LibraryHit();
                 libraryHit.setScore(score);

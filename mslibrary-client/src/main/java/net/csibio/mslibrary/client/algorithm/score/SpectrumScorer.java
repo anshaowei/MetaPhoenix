@@ -19,23 +19,21 @@ public class SpectrumScorer {
     IsotopeCalculator isotopeCalculator;
     @Autowired
     IsotopeFinder isotopeFinder;
-    @Autowired
-    Similarity similarity;
 
     public double ms1ForwardScore(Spectrum ms1Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return similarity.getDotProduct(ms1Spectrum, libSpectrum, mzTolerance);
+        return Similarity.getDotProduct(ms1Spectrum, libSpectrum, mzTolerance);
     }
 
     public double ms1ReverseScore(Spectrum ms1Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return similarity.getDotProduct(libSpectrum, ms1Spectrum, mzTolerance);
+        return Similarity.getDotProduct(libSpectrum, ms1Spectrum, mzTolerance);
     }
 
     public double ms2ForwardScore(Spectrum ms2Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return similarity.getDotProduct(ms2Spectrum, libSpectrum, mzTolerance);
+        return Similarity.getDotProduct(ms2Spectrum, libSpectrum, mzTolerance);
     }
 
     public double ms2ReverseScore(Spectrum ms2Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return similarity.getDotProduct(libSpectrum, ms2Spectrum, mzTolerance);
+        return Similarity.getDotProduct(libSpectrum, ms2Spectrum, mzTolerance);
     }
 
     public double ms1IsotopeScore(Spectrum ms1Spectrum, String formula, double monoMz, double mzTolerance, boolean isPpm) {
