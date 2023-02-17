@@ -140,7 +140,7 @@ public class SpectrumGenerator {
 
             //1. find spectra contains the precursorMz
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
-            List<SpectrumDO> spectraWarehouse = findSpectra(spectrumDOS, spectrumDO.getPrecursorMz(), mzTolerance);
+            List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance).toList();
 
             //2. get all ions which are smaller than precursorMz
             List<IonPeak> ionWarehouse = new ArrayList<>();
@@ -231,7 +231,8 @@ public class SpectrumGenerator {
             for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
                 //2. find set of peaks of all spectra containing the added peak
                 Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * lastAddedMz : methodDO.getMzTolerance();
-                List<SpectrumDO> candidateSpectra = findSpectra(spectrumDOS, lastAddedMz, mzTolerance);
+                double finalLastAddedMz = lastAddedMz;
+                List<SpectrumDO> candidateSpectra = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), finalLastAddedMz) < mzTolerance).toList();
 
                 //3. draw 5 ions from each spectrum and add them to the candidate ion peak set
                 List<IonPeak> candidateIonPeaks = new ArrayList<>();
@@ -270,19 +271,6 @@ public class SpectrumGenerator {
             }
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
         });
-    }
-
-    /**
-     * find spectra containing the given mz
-     */
-    private List<SpectrumDO> findSpectra(List<SpectrumDO> spectrumDOS, double mz, Double mzTolerance) {
-        List<SpectrumDO> candidates = Collections.synchronizedList(new ArrayList<>());
-        spectrumDOS.parallelStream().forEach(spectrumDO -> {
-            if (ArrayUtil.findNearestDiff(spectrumDO.getMzs(), mz) < mzTolerance) {
-                candidates.add(spectrumDO);
-            }
-        });
-        return candidates;
     }
 
     /**
