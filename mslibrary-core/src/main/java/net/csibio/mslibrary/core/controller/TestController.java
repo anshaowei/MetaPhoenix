@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.search.FDRControlled;
-import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
@@ -50,8 +49,6 @@ public class TestController {
     SpectrumParser spectrumParser;
     @Autowired
     MspMassBankParser mspMassBankParser;
-    @Autowired
-    Similarity similarity;
     @Autowired
     MspGNPSParser mspGNPSParser;
     @Autowired

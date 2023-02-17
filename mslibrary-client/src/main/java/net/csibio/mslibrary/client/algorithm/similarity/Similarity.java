@@ -105,7 +105,7 @@ public class Similarity {
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
 
-    private static double getEntropy(Spectrum spectrum) {
+    public static double getEntropy(Spectrum spectrum) {
         double[] intensityArray = spectrum.getInts();
         double sum = 0;
         for (double intensity : intensityArray) {

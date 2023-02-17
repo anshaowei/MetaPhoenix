@@ -260,14 +260,37 @@ public class Reporter {
         }
 
         EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(dataSheet);
-        log.info("export estimatedPValue graph success : " + outputFileName);
+        log.info("export estimatedPValue graph success: " + outputFileName);
     }
 
-    public void entropyDistributionGraph(String libraryId, int interval) {
+    public void entropyDistributionGraph(String fileName, String libraryId, int interval) {
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        log.info("start export entropy distribution graph : " + outputFileName);
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        List<Double> entropyList = new ArrayList<>();
-        for (SpectrumDO spectrumDO: spectrumDOS){
-
+        List<List<Object>> dataSheet = new ArrayList<>();
+        if (spectrumDOS.size() != 0) {
+            List<Double> entropyList = new ArrayList<>();
+            for (SpectrumDO spectrumDO : spectrumDOS) {
+                entropyList.add(Similarity.getEntropy(spectrumDO.getSpectrum()));
+            }
+            Collections.sort(entropyList);
+            double minValue = entropyList.get(0);
+            double maxValue = entropyList.get(entropyList.size() - 1);
+            double step = (maxValue - minValue) / interval;
+            for (int i = 0; i < interval; i++) {
+                List<Object> data = new ArrayList<>();
+                double minThreshold = minValue + i * step;
+                double maxThreshold = minValue + (i + 1) * step;
+                double fraction = (double) entropyList.stream().filter(entropy -> entropy > minThreshold && entropy <= maxThreshold).toList().size() / entropyList.size();
+                data.add(minThreshold);
+                data.add(maxThreshold);
+                data.add(fraction);
+                dataSheet.add(data);
+            }
+            EasyExcel.write(outputFileName).sheet("entropyDistributionGraph").doWrite(dataSheet);
+            log.info("export entropyDistributionGraph graph success: " + outputFileName);
+        } else {
+            log.error("No spectra in library: {}", libraryId);
         }
     }
 
