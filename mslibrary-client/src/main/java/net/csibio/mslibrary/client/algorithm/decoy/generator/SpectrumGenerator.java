@@ -120,7 +120,63 @@ public class SpectrumGenerator {
     }
 
     private void entropy_2(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO method) {
+        List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
+        HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
+        HashMap<String, List<IonPeak>> ionPeakMap = new HashMap<>();
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            List<IonPeak> otherIonPeaks = separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap);
+            ionPeaksWithoutPrecursor.addAll(otherIonPeaks);
+            ionPeakMap.put(spectrumDO.getId(), otherIonPeaks);
+        }
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            //1. insert precursor ion peak
+            TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
+            IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
+            decoyIonPeaks.add(precursorIonPeak);
 
+            //2. find spectra contains the precursor ion mz
+            List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < method.getMzTolerance()).toList();
+
+            //3. get all ions which are smaller than precursorMz
+            List<IonPeak> ionWarehouse = new ArrayList<>();
+            spectraWarehouse.forEach(spectrum -> {
+                for (int i = 0; i < spectrum.getMzs().length; i++) {
+                    if (spectrum.getMzs()[i] < spectrumDO.getPrecursorMz()) {
+                        IonPeak ionPeak = new IonPeak(spectrum.getMzs()[i], spectrum.getInts()[i]);
+                        ionWarehouse.add(ionPeak);
+                    }
+                }
+            });
+
+            //4. if ionWarehouse is too small, enlarge it with random ions
+            if (ionWarehouse.size() < spectrumDO.getMzs().length) {
+                for (int i = 0; i < spectrumDO.getMzs().length * 5; i++) {
+                    SpectrumDO randomSpectrum = spectrumDOS.get(new Random().nextInt(spectrumDOS.size()));
+                    int randomIndex = new Random().nextInt(randomSpectrum.getMzs().length);
+                    IonPeak randomIonPek = new IonPeak(randomSpectrum.getMzs()[randomIndex], randomSpectrum.getInts()[randomIndex]);
+                    ionWarehouse.add(randomIonPek);
+                }
+            }
+
+            //5. randomly get mzs from the ionWarehouse
+            while (decoyIonPeaks.size() < spectrumDO.getMzs().length) {
+                int randomIndex = new Random().nextInt(ionWarehouse.size());
+                decoyIonPeaks.add(ionWarehouse.get(randomIndex));
+            }
+
+            //6. arrange the ion intensity from the original spectrum
+            List<IonPeak> ionPeaks = new ArrayList<>();
+            CollectionUtils.addAll(ionPeaks, new Object[ionPeakMap.get(spectrumDO.getId()).size()]);
+            Collections.copy(ionPeaks, ionPeakMap.get(spectrumDO.getId()));
+            ionPeaks.add(precursorIonPeak);
+            for (IonPeak decoyIonPeak : decoyIonPeaks) {
+                int randomIndex = new Random().nextInt(ionPeaks.size());
+                IonPeak ionPeak = ionPeaks.get(randomIndex);
+                decoyIonPeak.setIntensity(ionPeak.getIntensity());
+                ionPeaks.remove(randomIndex);
+            }
+            decoySpectrumDOS.add(convertIonPeaksToSpectrum(new ArrayList<>(decoyIonPeaks), spectrumDO.getPrecursorMz()));
+        });
     }
 
     /**
