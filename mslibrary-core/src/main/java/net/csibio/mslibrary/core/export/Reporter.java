@@ -2,6 +2,7 @@ package net.csibio.mslibrary.core.export;
 
 import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.algorithm.similarity.Entropy;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
 import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
@@ -271,7 +272,7 @@ public class Reporter {
         if (spectrumDOS.size() != 0) {
             List<Double> entropyList = new ArrayList<>();
             for (SpectrumDO spectrumDO : spectrumDOS) {
-                entropyList.add(Similarity.getEntropy(spectrumDO.getSpectrum()));
+                entropyList.add(Entropy.getEntropy(spectrumDO.getSpectrum()));
             }
             Collections.sort(entropyList);
             double minValue = entropyList.get(0);

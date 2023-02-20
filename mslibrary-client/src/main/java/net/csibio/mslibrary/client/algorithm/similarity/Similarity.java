@@ -3,7 +3,6 @@ package net.csibio.mslibrary.client.algorithm.similarity;
 import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import org.apache.commons.math3.stat.StatUtils;
-import org.springframework.stereotype.Component;
 
 public class Similarity {
 
@@ -66,11 +65,11 @@ public class Similarity {
         Spectrum spectrumB = SpectrumUtil.clone(spectrum2);
         SpectrumUtil.normalize(spectrumA);
         SpectrumUtil.normalize(spectrumB);
-        double entropyA = getEntropy(spectrumA);
-        double entropyB = getEntropy(spectrumB);
+        double entropyA = Entropy.getEntropy(spectrumA);
+        double entropyB = Entropy.getEntropy(spectrumB);
 
         Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, 0.5, 0.5, mzTolerance);
-        double entropyMix = getEntropy(mixSpectrum);
+        double entropyMix = Entropy.getEntropy(mixSpectrum);
 
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
@@ -81,8 +80,8 @@ public class Similarity {
         SpectrumUtil.normalize(spectrumA);
         SpectrumUtil.normalize(spectrumB);
 
-        double entropyA = getEntropy(spectrumA);
-        double entropyB = getEntropy(spectrumB);
+        double entropyA = Entropy.getEntropy(spectrumA);
+        double entropyB = Entropy.getEntropy(spectrumB);
         double weightA;
         double weightB;
 
@@ -100,23 +99,9 @@ public class Similarity {
 
         //根据权重混合两张谱图
         Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, weightA, weightB, mzTolerance);
-        double entropyMix = getEntropy(mixSpectrum);
+        double entropyMix = Entropy.getEntropy(mixSpectrum);
 
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
-    }
-
-    public static double getEntropy(Spectrum spectrum) {
-        double[] intensityArray = spectrum.getInts();
-        double sum = 0;
-        for (double intensity : intensityArray) {
-            sum += intensity;
-        }
-        double entropy = 0;
-        for (double intensity : intensityArray) {
-            double p = intensity / sum;
-            entropy += p * Math.log(p);
-        }
-        return -entropy;
     }
 
 }
