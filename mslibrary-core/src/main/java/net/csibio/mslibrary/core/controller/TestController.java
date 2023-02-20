@@ -66,8 +66,8 @@ public class TestController {
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
-        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
-        mspMassBankParser.parseEurope("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+//        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
+//        mspMassBankParser.parseEurope("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
 //        mspGNPSParser.parse("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
         mspMassBankParser.parseMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
@@ -96,19 +96,16 @@ public class TestController {
         methodDO.setMzTolerance(0.001);
         methodDO.setPpmForMzTolerance(false);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
-        methodDO.setDecoyStrategy(DecoyStrategy.SpectrumBased.getName());
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        for (LibraryDO libraryDO : libraryDOS) {
-            spectrumGenerator.execute(libraryDO.getId(), methodDO);
+        methodDO.setDecoyStrategy(DecoyStrategy.Entropy_1.getName());
+
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            methodDO.setDecoyStrategy(decoyStrategy.getName());
+            List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+            for (LibraryDO libraryDO : libraryDOS) {
+                spectrumGenerator.execute(libraryDO.getId(), methodDO);
+            }
         }
 
-//        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
-//        spectrumGenerator.execute("GNPS", methodDO);
-//        spectrumGenerator.execute("MassBank", methodDO);
-
-//        methodDO.setDecoyStrategy(DecoyStrategy.SpectrumBased.getName());
-//        spectrumGenerator.execute("GNPS", methodDO);
-//        spectrumGenerator.execute("MassBank", methodDO);
     }
 
     @RequestMapping("dataImport")
@@ -166,6 +163,14 @@ public class TestController {
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
         reporter.scoreGraph("score", hitsMap, 100);
 //        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
+    }
+
+    @RequestMapping("entropy")
+    public void entropy() {
+        String libraryId = "MoNA-MassBank";
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+
+        }
     }
 
 }
