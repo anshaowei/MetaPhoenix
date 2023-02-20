@@ -332,10 +332,12 @@ public class Reporter {
         });
 
         //choose the range as given or calculated
-//        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
-//        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
-        double minScore = 0.0;
-        double maxScore = 1.0;
+        decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
+        targetHits.sort(Comparator.comparing(LibraryHit::getScore));
+        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
+        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
+//        double minScore = 0.0;
+//        double maxScore = 1.0;
         double step = (maxScore - minScore) / scoreInterval;
 
         for (int i = 0; i < scoreInterval; i++) {
