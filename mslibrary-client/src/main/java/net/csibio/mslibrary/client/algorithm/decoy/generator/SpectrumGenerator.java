@@ -180,56 +180,6 @@ public class SpectrumGenerator {
     }
 
     /**
-     * optimized naive method
-     */
-    private void optNaive(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO method) {
-        List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
-        HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
-        HashMap<String, List<IonPeak>> ionPeakMap = new HashMap<>();
-        for (SpectrumDO spectrumDO : spectrumDOS) {
-            List<IonPeak> otherIonPeaks = separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap);
-            ionPeaksWithoutPrecursor.addAll(otherIonPeaks);
-            ionPeakMap.put(spectrumDO.getId(), otherIonPeaks);
-        }
-        for (SpectrumDO spectrumDO : spectrumDOS) {
-            //1. insert precursor ion peak
-            List<IonPeak> decoyIonPeaks = new ArrayList<>();
-            List<IonPeak> ionPeaks = ionPeakMap.get(spectrumDO.getId());
-            IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
-            decoyIonPeaks.add(precursorIonPeak);
-
-            //2. 从剩余谱图的所有ionPeak中随机挑选若干，使得target和decoy谱图的ionPeak数量相同，且decoy的信号值为随机的打乱后的原谱图信号值（保证熵相同）
-            for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
-                //对每张谱图，不要小于precursorMz的或者与已加入的谱图重复的
-                int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
-                IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
-                if (ionPeak.getMz() >= precursorIonPeak.getMz()) {
-                    i--;
-                    continue;
-                }
-                boolean repeat = false;
-                for (IonPeak decoyIonPeak : decoyIonPeaks) {
-                    if (Math.abs(ionPeak.getMz() - decoyIonPeak.getMz()) < (method.getPpmForMzTolerance() ? method.getPpm() * Constants.PPM * ionPeak.getMz() : method.getMzTolerance())) {
-                        i--;
-                        repeat = true;
-                        break;
-                    }
-                }
-                if (repeat)
-                    continue;
-
-                //到此处的时候ionPeak的mz的随机选取已经完成，下一步进行ionPeak的强度改变
-                int random = new Random().nextInt(ionPeaks.size());
-                IonPeak randomIonPeak = ionPeaks.get(random);
-                ionPeak.setIntensity(randomIonPeak.getIntensity());
-                ionPeaks.remove(random);
-                decoyIonPeaks.add(ionPeak);
-            }
-            decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
-        }
-    }
-
-    /**
      * 1. For each target spectrum, build a signal warehouse S
      * 2. S contains all ions which are smaller than the precursorMz from spectra with more than one
      * 3. remove a certain proportion of the ions in the target spectrum
