@@ -4,12 +4,15 @@ import net.csibio.aird.bean.common.Spectrum;
 
 public class Entropy {
 
-    public static double getEntropy(double[] array) {
+    public static double getEntropy(double[] intensityArray) {
+        double sum = 0;
+        for (double intensity : intensityArray) {
+            sum += intensity;
+        }
         double entropy = 0;
-        for (double d : array) {
-            if (d > 0) {
-                entropy += d * Math.log(d);
-            }
+        for (double intensity : intensityArray) {
+            double p = intensity / sum;
+            entropy += p * Math.log(p);
         }
         return -entropy;
     }
