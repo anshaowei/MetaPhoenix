@@ -2,7 +2,6 @@ package net.csibio.mslibrary.client.algorithm.decoy.generator;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
-import net.csibio.mslibrary.client.algorithm.similarity.Entropy;
 import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
@@ -66,17 +65,17 @@ public class SpectrumGenerator {
 
         //Generate decoy spectra
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
-            //insert precursor ion peak
-            TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
-            IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
-            decoyIonPeaks.add(precursorIonPeak);
-
             //randomly add ion peaks from other spectra
-            while (decoyIonPeaks.size() < spectrumDO.getMzs().length) {
+            TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
+            while (decoyIonPeaks.size() < spectrumDO.getMzs().length - 1) {
                 int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
                 IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
                 decoyIonPeaks.add(ionPeak);
             }
+
+            //insert precursor ion peak
+            IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
+            decoyIonPeaks.add(precursorIonPeak);
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(new ArrayList<>(decoyIonPeaks), spectrumDO.getPrecursorMz()));
         });
     }
@@ -94,32 +93,31 @@ public class SpectrumGenerator {
             ionPeakMap.put(spectrumDO.getId(), otherIonPeaks);
         });
 
-        spectrumDOS.parallelStream().forEach(spectrumDO -> {
-            //1. insert precursor ion peak
+        for (SpectrumDO spectrumDO : spectrumDOS) {
             TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
-            IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
-            decoyIonPeaks.add(precursorIonPeak);
-
-            //2. randomly select an ion from other spectra
-            while (decoyIonPeaks.size() < spectrumDO.getMzs().length) {
+            //1. randomly select an ion from other spectra
+            while (decoyIonPeaks.size() < spectrumDO.getMzs().length - 1) {
                 int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
                 IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
                 decoyIonPeaks.add(ionPeak);
             }
 
-            //3. arrange the ion intensity from the original spectrum
+            //2. arrange the ion intensity from the original spectrum
             List<IonPeak> ionPeaks = new ArrayList<>();
             CollectionUtils.addAll(ionPeaks, new Object[ionPeakMap.get(spectrumDO.getId()).size()]);
             Collections.copy(ionPeaks, ionPeakMap.get(spectrumDO.getId()));
-            ionPeaks.add(precursorIonPeak);
             for (IonPeak decoyIonPeak : decoyIonPeaks) {
                 int randomIndex = new Random().nextInt(ionPeaks.size());
                 IonPeak ionPeak = ionPeaks.get(randomIndex);
                 decoyIonPeak.setIntensity(ionPeak.getIntensity());
                 ionPeaks.remove(randomIndex);
             }
+
+            //3. add precursor ion peak
+            IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
+            decoyIonPeaks.add(precursorIonPeak);
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(new ArrayList<>(decoyIonPeaks), spectrumDO.getPrecursorMz()));
-        });
+        }
     }
 
     /**
@@ -351,8 +349,9 @@ public class SpectrumGenerator {
             IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
             ionPeaks.add(ionPeak);
         }
+        IonPeak precursorIonPeak = new IonPeak(spectrumDO.getMzs()[index], spectrumDO.getInts()[index]);
+        precursorIonPeakMap.put(spectrumDO.getId(), precursorIonPeak);
         ionPeaks.remove(index);
-        precursorIonPeakMap.put(spectrumDO.getId(), new IonPeak(spectrumDO.getMzs()[index], spectrumDO.getInts()[index]));
         return ionPeaks;
     }
 
