@@ -2,6 +2,7 @@ package net.csibio.mslibrary.client.algorithm.decoy.generator;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
+import net.csibio.mslibrary.client.algorithm.similarity.Entropy;
 import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component("spectrumGenerator")
 @Slf4j
@@ -54,41 +56,44 @@ public class SpectrumGenerator {
      * 3. stop until the number of peaks in decoy is the same as the original spectrum
      */
     private void naive(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
-        List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
-        HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
+        List<IonPeak> ionPeaksWithoutPrecursor = Collections.synchronizedList(new ArrayList<>());
+        ConcurrentHashMap<String, IonPeak> precursorIonPeakMap = new ConcurrentHashMap<>();
 
         //Collect all ions except precursor ion
-        for (SpectrumDO spectrumDO : spectrumDOS) {
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
             ionPeaksWithoutPrecursor.addAll(separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap));
-        }
+        });
 
         //Generate decoy spectra
-        for (SpectrumDO spectrumDO : spectrumDOS) {
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //insert precursor ion peak
-            List<IonPeak> decoyIonPeaks = new ArrayList<>();
+            TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
             IonPeak precursorIonPeak = precursorIonPeakMap.get(spectrumDO.getId());
             decoyIonPeaks.add(precursorIonPeak);
 
             //randomly add ion peaks from other spectra
-            for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
+            while (decoyIonPeaks.size() < spectrumDO.getMzs().length) {
                 int randomIndex = new Random().nextInt(ionPeaksWithoutPrecursor.size());
                 IonPeak ionPeak = ionPeaksWithoutPrecursor.get(randomIndex);
                 decoyIonPeaks.add(ionPeak);
-                ionPeaksWithoutPrecursor.remove(randomIndex);
             }
-            decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
-        }
+            decoySpectrumDOS.add(convertIonPeaksToSpectrum(new ArrayList<>(decoyIonPeaks), spectrumDO.getPrecursorMz()));
+        });
     }
 
+    /**
+     * only keep the entropy of the target and decoy same compared to naive method
+     */
     private void entropy_1(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO method) {
-        List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
-        HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
-        HashMap<String, List<IonPeak>> ionPeakMap = new HashMap<>();
-        for (SpectrumDO spectrumDO : spectrumDOS) {
+        List<IonPeak> ionPeaksWithoutPrecursor = Collections.synchronizedList(new ArrayList<>());
+        ConcurrentHashMap<String, IonPeak> precursorIonPeakMap = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, List<IonPeak>> ionPeakMap = new ConcurrentHashMap<>();
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
             List<IonPeak> otherIonPeaks = separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap);
             ionPeaksWithoutPrecursor.addAll(otherIonPeaks);
             ionPeakMap.put(spectrumDO.getId(), otherIonPeaks);
-        }
+        });
+
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //1. insert precursor ion peak
             TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
@@ -113,20 +118,24 @@ public class SpectrumGenerator {
                 decoyIonPeak.setIntensity(ionPeak.getIntensity());
                 ionPeaks.remove(randomIndex);
             }
-
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(new ArrayList<>(decoyIonPeaks), spectrumDO.getPrecursorMz()));
         });
     }
 
+    /**
+     * mz generation considered the spectrum correlation rather than random
+     * keep the entropy of the target and decoy same compared to naive method
+     */
     private void entropy_2(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO method) {
-        List<IonPeak> ionPeaksWithoutPrecursor = new ArrayList<>();
-        HashMap<String, IonPeak> precursorIonPeakMap = new HashMap<>();
-        HashMap<String, List<IonPeak>> ionPeakMap = new HashMap<>();
-        for (SpectrumDO spectrumDO : spectrumDOS) {
+        List<IonPeak> ionPeaksWithoutPrecursor = Collections.synchronizedList(new ArrayList<>());
+        ConcurrentHashMap<String, IonPeak> precursorIonPeakMap = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, List<IonPeak>> ionPeakMap = new ConcurrentHashMap<>();
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
             List<IonPeak> otherIonPeaks = separatePrecursorIonPeak(spectrumDO, precursorIonPeakMap);
             ionPeaksWithoutPrecursor.addAll(otherIonPeaks);
             ionPeakMap.put(spectrumDO.getId(), otherIonPeaks);
-        }
+        });
+
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //1. insert precursor ion peak
             TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
@@ -136,8 +145,8 @@ public class SpectrumGenerator {
             //2. find spectra contains the precursor ion mz
             List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < method.getMzTolerance()).toList();
 
-            //3. get all ions which are smaller than precursorMz
-            List<IonPeak> ionWarehouse = new ArrayList<>();
+            //3. get all ions which are smaller than the precursorMz
+            TreeSet<IonPeak> ionWarehouse = new TreeSet<>();
             spectraWarehouse.forEach(spectrum -> {
                 for (int i = 0; i < spectrum.getMzs().length; i++) {
                     if (spectrum.getMzs()[i] < spectrumDO.getPrecursorMz()) {
@@ -149,18 +158,21 @@ public class SpectrumGenerator {
 
             //4. if ionWarehouse is too small, enlarge it with random ions
             if (ionWarehouse.size() < spectrumDO.getMzs().length) {
-                for (int i = 0; i < spectrumDO.getMzs().length * 5; i++) {
+                while (ionWarehouse.size() < 5 * spectrumDO.getMzs().length) {
                     SpectrumDO randomSpectrum = spectrumDOS.get(new Random().nextInt(spectrumDOS.size()));
                     int randomIndex = new Random().nextInt(randomSpectrum.getMzs().length);
                     IonPeak randomIonPek = new IonPeak(randomSpectrum.getMzs()[randomIndex], randomSpectrum.getInts()[randomIndex]);
-                    ionWarehouse.add(randomIonPek);
+                    if (randomIonPek.getMz() < spectrumDO.getPrecursorMz()) {
+                        ionWarehouse.add(randomIonPek);
+                    }
                 }
             }
 
             //5. randomly get mzs from the ionWarehouse
+            List<IonPeak> ionWarehouseList = new ArrayList<>(ionWarehouse);
             while (decoyIonPeaks.size() < spectrumDO.getMzs().length) {
                 int randomIndex = new Random().nextInt(ionWarehouse.size());
-                decoyIonPeaks.add(ionWarehouse.get(randomIndex));
+                decoyIonPeaks.add(ionWarehouseList.get(randomIndex));
             }
 
             //6. arrange the ion intensity from the original spectrum
@@ -327,7 +339,7 @@ public class SpectrumGenerator {
     /**
      * separate precursor ion peak from ion peaks
      */
-    private List<IonPeak> separatePrecursorIonPeak(SpectrumDO spectrumDO, HashMap<String, IonPeak> precursorIonPeakMap) {
+    private List<IonPeak> separatePrecursorIonPeak(SpectrumDO spectrumDO, ConcurrentHashMap<String, IonPeak> precursorIonPeakMap) {
         List<IonPeak> ionPeaks = new ArrayList<>();
         double diff = Double.MAX_VALUE;
         int index = 0;
