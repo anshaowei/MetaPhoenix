@@ -85,9 +85,9 @@ public class TestController {
             for (LibraryDO libraryDO : libraryDOS) {
                 spectrumService.remove(new SpectrumQuery(), libraryDO.getId() + SymbolConst.DELIMITER + decoyStrategy.getName());
                 mongoTemplate.dropCollection("spectrum" + SymbolConst.DELIMITER + libraryDO.getId() + SymbolConst.DELIMITER + decoyStrategy.getName());
+                log.info("remove done: " + libraryDO.getId() + SymbolConst.DELIMITER + decoyStrategy.getName());
             }
         }
-        log.info("remove done");
     }
 
     @RequestMapping("/decoy")
@@ -95,16 +95,28 @@ public class TestController {
         MethodDO methodDO = new MethodDO();
         methodDO.setMzTolerance(0.001);
         methodDO.setPpmForMzTolerance(false);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
         methodDO.setDecoyStrategy(DecoyStrategy.Entropy_1.getName());
+        int repeat = 1;
 
+        //all the strategies on all the libraries
         for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
             methodDO.setDecoyStrategy(decoyStrategy.getName());
             List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
             for (LibraryDO libraryDO : libraryDOS) {
-                spectrumGenerator.execute(libraryDO.getId(), methodDO);
+                for (int i = 0; i < repeat; i++) {
+                    spectrumGenerator.execute(libraryDO.getId(), methodDO);
+                }
             }
         }
+
+        //all the strategies on one library
+//        String libraryId = "BERKELEY-LAB";
+//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+//            methodDO.setDecoyStrategy(decoyStrategy.getName());
+//            for (int i = 0; i < repeat; i++) {
+//                spectrumGenerator.execute(libraryId, methodDO);
+//            }
+//        }
 
     }
 
@@ -152,25 +164,18 @@ public class TestController {
     @RequestMapping("report")
     public void report() {
         String queryLibraryId = "GNPS-NIST14-MATCHES";
-        String targetLibraryId = "MASSBANK";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
+        String targetLibraryId = "MassBank-MoNA";
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Entropy_1.getName();
         MethodDO methodDO = new MethodDO();
         methodDO.setMzTolerance(0.001);
         methodDO.setPpmForMzTolerance(false);
         methodDO.setThreshold(0.0);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
 
+        //score distribution sheet by the target-decoy strategy
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
         reporter.scoreGraph("score", hitsMap, 100);
-//        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
-    }
-
-    @RequestMapping("entropy")
-    public void entropy() {
-        String libraryId = "MoNA-MassBank";
-        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-
-        }
+        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
     }
 
 }
