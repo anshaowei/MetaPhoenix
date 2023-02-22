@@ -294,6 +294,17 @@ public class Reporter {
         }
     }
 
+    public void fakeIdentificationGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        log.info("start export fake identification graph : " + outputFileName);
+        //header
+        List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy");
+        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval);
+        dataSheet.add(0, header);
+        EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
+        log.info("export fake identification graph success : " + outputFileName);
+    }
+
     private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
         List<List<Object>> dataSheet = new ArrayList<>();
         //for target-decoy FDR calculation
@@ -402,6 +413,56 @@ public class Reporter {
             row.add(rightCount);
             //false count
             row.add(falseCount);
+            dataSheet.add(row);
+        }
+        return dataSheet;
+    }
+
+    private List<List<Object>> getSimpleDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+        List<List<Object>> dataSheet = new ArrayList<>();
+        List<LibraryHit> decoyHits = new ArrayList<>();
+        List<LibraryHit> targetHits = new ArrayList<>();
+        hitsMap.forEach((k, v) -> {
+            if (v.size() != 0) {
+                Map<Boolean, List<LibraryHit>> targetDecoyMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
+                decoyHits.addAll(targetDecoyMap.get(true));
+                targetHits.addAll(targetDecoyMap.get(false));
+            }
+        });
+
+        //choose the range as given or calculated
+        decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
+        targetHits.sort(Comparator.comparing(LibraryHit::getScore));
+        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
+        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
+//        double minScore = 0.0;
+//        double maxScore = 1.0;
+        double step = (maxScore - minScore) / scoreInterval;
+
+        for (int i = 0; i < scoreInterval; i++) {
+            double finalMinScore = minScore + i * step;
+            double finalMaxScore = minScore + (i + 1) * step;
+            int targetCount, decoyCount;
+            List<Object> row = new ArrayList<>();
+
+            //calculate hits distribution
+            if (i == 0) {
+                targetCount = targetHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+                decoyCount = decoyHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+            } else {
+                targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+                decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+            }
+
+            //write data sheet
+            //start score
+            row.add(finalMinScore);
+            //end score
+            row.add(finalMaxScore);
+            //target frequency
+            row.add((double) targetCount / targetHits.size());
+            //decoy frequency
+            row.add((double) decoyCount / decoyHits.size());
             dataSheet.add(row);
         }
         return dataSheet;
