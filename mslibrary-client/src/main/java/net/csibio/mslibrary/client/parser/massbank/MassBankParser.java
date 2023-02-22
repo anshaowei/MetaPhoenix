@@ -17,14 +17,14 @@ import java.util.List;
 
 @Component
 @Slf4j
-public class MspMassBankParser {
+public class MassBankParser {
 
     @Autowired
     SpectrumService spectrumService;
     @Autowired
     LibraryService libraryService;
 
-    public void parseEurope(String filePath) {
+    public void parseMspEU(String filePath) {
 
         //read file use buffer
         File file = new File(filePath);
@@ -254,7 +254,7 @@ public class MspMassBankParser {
         }
     }
 
-    public void parseMoNA(String filePath) {
+    public void parseMspMoNA(String filePath) {
         //read file use buffer
         File file = new File(filePath);
         FileInputStream fis = null;

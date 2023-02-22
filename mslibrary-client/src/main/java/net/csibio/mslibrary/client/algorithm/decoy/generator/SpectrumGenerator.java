@@ -193,7 +193,6 @@ public class SpectrumGenerator {
      * 5. finally, 30% of the ions in the decoy spectrum is randomly selected to shift +/- precursorMz/200,000
      */
     private void xymeta(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
-
         double removeProportion = 0.5;
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //1. find spectra contains the precursorMz
@@ -257,16 +256,6 @@ public class SpectrumGenerator {
                 }
             }
             decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
-        });
-    }
-
-    public void fragmentationTree(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
-        spectrumDOS.parallelStream().forEach(spectrumDO -> {
-            SpectrumDO decoySpectrumDO = new SpectrumDO();
-            decoySpectrumDO.setMzs(spectrumDO.getMzs());
-            decoySpectrumDO.setInts(spectrumDO.getInts());
-            decoySpectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz());
-            decoySpectrumDOS.add(decoySpectrumDO);
         });
     }
 
