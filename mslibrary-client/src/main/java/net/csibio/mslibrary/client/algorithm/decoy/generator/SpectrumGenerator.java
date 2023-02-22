@@ -142,7 +142,7 @@ public class SpectrumGenerator {
 
             //2. find spectra contains the precursor ion mz
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
-            List<SpectrumDO> spectraWarehouse = spectrumDOS.parallelStream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance).toList();
+            List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance).toList();
 
             //3. get all ions which are smaller than the precursorMz
             TreeSet<IonPeak> ionWarehouse = new TreeSet<>();
@@ -197,7 +197,7 @@ public class SpectrumGenerator {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //1. find spectra contains the precursorMz
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
-            List<SpectrumDO> spectraWarehouse = spectrumDOS.parallelStream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance).toList();
+            List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance).toList();
 
             //2. get all ions which are smaller than precursorMz
             TreeSet<IonPeak> ionWarehouse = new TreeSet<>();
@@ -280,7 +280,7 @@ public class SpectrumGenerator {
                 //2. find set of peaks of all spectra containing the added peak
                 Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * lastAddedMz : methodDO.getMzTolerance();
                 double finalLastAddedMz = lastAddedMz;
-                List<SpectrumDO> candidateSpectra = spectrumDOS.parallelStream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), finalLastAddedMz) < mzTolerance).toList();
+                List<SpectrumDO> candidateSpectra = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), finalLastAddedMz) < mzTolerance).toList();
 
                 //3. draw 5 ions from each spectrum and add them to the candidate ion peak set
                 List<IonPeak> candidateIonPeaks = new ArrayList<>();
