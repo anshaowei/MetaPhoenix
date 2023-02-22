@@ -251,9 +251,15 @@ public class Reporter {
                     row.add(decoyFrequencyList.get(index));
                     row.add(totalFrequencyList.get(index));
                 } else {
-                    row.add(targetFrequencyList.get(index) - targetFrequencyList.get(indexList.get(i - 1)));
-                    row.add(decoyFrequencyList.get(index) - decoyFrequencyList.get(indexList.get(i - 1)));
-                    row.add(totalFrequencyList.get(index) - totalFrequencyList.get(indexList.get(i - 1)));
+                    if (indexList.get(i - 1) == -1) {
+                        row.add(targetFrequencyList.get(index));
+                        row.add(decoyFrequencyList.get(index));
+                        row.add(totalFrequencyList.get(index));
+                    } else {
+                        row.add(targetFrequencyList.get(index) - targetFrequencyList.get(indexList.get(i - 1)));
+                        row.add(decoyFrequencyList.get(index) - decoyFrequencyList.get(indexList.get(i - 1)));
+                        row.add(totalFrequencyList.get(index) - totalFrequencyList.get(indexList.get(i - 1)));
+                    }
                 }
             }
             dataSheet.add(row);
@@ -455,13 +461,9 @@ public class Reporter {
             }
 
             //write data sheet
-            //start score
             row.add(finalMinScore);
-            //end score
             row.add(finalMaxScore);
-            //target frequency
             row.add((double) targetCount / targetHits.size());
-            //decoy frequency
             row.add((double) decoyCount / decoyHits.size());
             dataSheet.add(row);
         }

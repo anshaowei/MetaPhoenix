@@ -67,11 +67,12 @@ public class FDRControlled {
     }
 
     public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getAllHitsMap(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO method) {
-        //initiate
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> allHitsMap = new ConcurrentHashMap<>();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(queryLibraryId);
+        return getAllHitsMap(spectrumDOS, targetLibraryId, decoyLibraryId, method);
+    }
 
-        //process each spectrum to get all hits
+    public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getAllHitsMap(List<SpectrumDO> spectrumDOS, String targetLibraryId, String decoyLibraryId, MethodDO method) {
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> allHitsMap = new ConcurrentHashMap<>();
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             double mzTolerance = method.getPpmForMzTolerance() ? method.getPpm() * spectrumDO.getPrecursorMz() * Constants.PPM : method.getMzTolerance();
             List<SpectrumDO> targetSpectrumDOS = spectrumService.getByPrecursorMz(spectrumDO.getPrecursorMz(), mzTolerance, targetLibraryId);
