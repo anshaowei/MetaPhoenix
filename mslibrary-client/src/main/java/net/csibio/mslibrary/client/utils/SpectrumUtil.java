@@ -71,7 +71,10 @@ public class SpectrumUtil {
             ints[i] = mixMap.get(mzs[i]);
         }
 
-        return new Spectrum(mzs, ints);
+        //mix谱图信号归一化
+        Spectrum mixSpectrum = new Spectrum(mzs, ints);
+        normalize(mixSpectrum);
+        return mixSpectrum;
     }
 
     public static Spectrum clone(Spectrum spectrum) {
