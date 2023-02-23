@@ -432,17 +432,17 @@ public class Reporter {
             if (v.size() != 0) {
                 Map<Boolean, List<LibraryHit>> decoyTargetMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
                 //remain all the hits
-//                decoyHits.addAll(decoyTargetMap.get(true));
-//                targetHits.addAll(decoyTargetMap.get(false));
+                decoyHits.addAll(decoyTargetMap.get(true));
+                targetHits.addAll(decoyTargetMap.get(false));
                 //remain only the best hit
-                if (decoyTargetMap.get(true).size() != 0) {
-                    decoyTargetMap.get(true).sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                    decoyHits.add(decoyTargetMap.get(true).get(0));
-                }
-                if (decoyTargetMap.get(false).size() != 0) {
-                    decoyTargetMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                    targetHits.add(decoyTargetMap.get(false).get(0));
-                }
+//                if (decoyTargetMap.get(true).size() != 0) {
+//                    decoyTargetMap.get(true).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+//                    decoyHits.add(decoyTargetMap.get(true).get(0));
+//                }
+//                if (decoyTargetMap.get(false).size() != 0) {
+//                    decoyTargetMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+//                    targetHits.add(decoyTargetMap.get(false).get(0));
+//                }
             }
         });
 
@@ -467,8 +467,8 @@ public class Reporter {
             }
 
             //write data sheet
-            row.add(finalMinScore);
-            row.add(finalMaxScore);
+//            row.add(Math.log10(finalMinScore) / Math.log10(2));
+            row.add(Math.log10(finalMaxScore) / Math.log10(2));
             row.add((double) targetCount / targetHits.size());
             row.add((double) decoyCount / decoyHits.size());
             dataSheet.add(row);
