@@ -269,18 +269,22 @@ public class SpectrumGenerator {
     public void spectrumBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //1. add precursor ion peak to decoy spectrum
-            List<IonPeak> decoyIonPeaks = new ArrayList<>();
+            TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
             int precursorIndex = ArrayUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
             IonPeak precursorIonPeak = new IonPeak(spectrumDO.getMzs()[precursorIndex], spectrumDO.getInts()[precursorIndex]);
             decoyIonPeaks.add(precursorIonPeak);
             double lastAddedMz = spectrumDO.getPrecursorMz();
 
             //repeat the following steps until the number of peaks in the decoy spectrum mimics target spectrum
-            for (int i = 0; i < spectrumDO.getMzs().length - 1; i++) {
+            int repeatCount = 0;
+            while (decoyIonPeaks.size() < spectrumDO.getMzs().length) {
                 //2. find set of peaks of all spectra containing the added peak
                 Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * lastAddedMz : methodDO.getMzTolerance();
                 double finalLastAddedMz = lastAddedMz;
                 List<SpectrumDO> candidateSpectra = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), finalLastAddedMz) < mzTolerance).toList();
+                if (candidateSpectra.size() == 0) {
+                    break;
+                }
 
                 //3. draw 5 ions from each spectrum and add them to the candidate ion peak set
                 List<IonPeak> candidateIonPeaks = new ArrayList<>();
@@ -302,22 +306,20 @@ public class SpectrumGenerator {
 
                 //4. randomly select a peak from the set and add it to the decoy spectrum
                 if (candidateIonPeaks.size() == 0) {
-                    continue;
+                    break;
                 }
                 int randomIndex = new Random().nextInt(candidateIonPeaks.size());
                 IonPeak randomIonPeak = candidateIonPeaks.get(randomIndex);
-
-                //5. if the ion mz is the same as the last added mz, skip this ion
-                if (randomIonPeak.getMz() == lastAddedMz) {
-                    i--;
-                    continue;
-                }
-
-                //6. record the last added peak
                 decoyIonPeaks.add(randomIonPeak);
                 lastAddedMz = randomIonPeak.getMz();
+                repeatCount++;
+                if (repeatCount > spectrumDO.getMzs().length * 5) {
+                    break;
+                }
             }
-            decoySpectrumDOS.add(convertIonPeaksToSpectrum(decoyIonPeaks, spectrumDO.getPrecursorMz()));
+            if (decoyIonPeaks.size() == spectrumDO.getMzs().length) {
+                decoySpectrumDOS.add(convertIonPeaksToSpectrum(new ArrayList<>(decoyIonPeaks), spectrumDO.getPrecursorMz()));
+            }
         });
     }
 
