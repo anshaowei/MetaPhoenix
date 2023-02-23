@@ -349,12 +349,12 @@ public class Reporter {
         });
 
         //choose the range as given or calculated
-        decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
-        targetHits.sort(Comparator.comparing(LibraryHit::getScore));
-        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
-        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
-//        double minScore = 0.0;
-//        double maxScore = 1.0;
+//        decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
+//        targetHits.sort(Comparator.comparing(LibraryHit::getScore));
+//        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
+//        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
+        double minScore = 0.0;
+        double maxScore = 1.0;
         double step = (maxScore - minScore) / scoreInterval;
 
         for (int i = 0; i < scoreInterval; i++) {
@@ -430,19 +430,25 @@ public class Reporter {
         List<LibraryHit> targetHits = new ArrayList<>();
         hitsMap.forEach((k, v) -> {
             if (v.size() != 0) {
-                Map<Boolean, List<LibraryHit>> targetDecoyMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
-                decoyHits.addAll(targetDecoyMap.get(true));
-                targetHits.addAll(targetDecoyMap.get(false));
+                Map<Boolean, List<LibraryHit>> decoyTargetMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
+                //remain all the hits
+//                decoyHits.addAll(decoyTargetMap.get(true));
+//                targetHits.addAll(decoyTargetMap.get(false));
+                //remain only the best hit
+                if (decoyTargetMap.get(true).size() != 0) {
+                    decoyTargetMap.get(true).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                    decoyHits.add(decoyTargetMap.get(true).get(0));
+                }
+                if (decoyTargetMap.get(false).size() != 0) {
+                    decoyTargetMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                    targetHits.add(decoyTargetMap.get(false).get(0));
+                }
             }
         });
 
         //choose the range as given or calculated
-        decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
-        targetHits.sort(Comparator.comparing(LibraryHit::getScore));
-        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
-        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
-//        double minScore = 0.0;
-//        double maxScore = 1.0;
+        double minScore = 0.0;
+        double maxScore = 1.0;
         double step = (maxScore - minScore) / scoreInterval;
 
         for (int i = 0; i < scoreInterval; i++) {
