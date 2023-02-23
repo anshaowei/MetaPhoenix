@@ -68,7 +68,7 @@ public class Similarity {
         double entropyA = Entropy.getEntropy(spectrumA);
         double entropyB = Entropy.getEntropy(spectrumB);
 
-        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, 0.5, 0.5, mzTolerance);
+        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, 1, 1, mzTolerance);
         double entropyMix = Entropy.getEntropy(mixSpectrum);
 
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
@@ -85,7 +85,7 @@ public class Similarity {
         double weightA;
         double weightB;
 
-        //给出两个谱图的权重，取值范围0~1
+        //dynamic weight
         if (entropyA >= 3) {
             weightA = 1;
         } else {
@@ -97,7 +97,7 @@ public class Similarity {
             weightB = 0.25 + entropyB * 0.25;
         }
 
-        //根据权重混合两张谱图
+        //mix spectrum
         Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, weightA, weightB, mzTolerance);
         double entropyMix = Entropy.getEntropy(mixSpectrum);
 
