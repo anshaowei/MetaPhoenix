@@ -418,13 +418,13 @@ public class Reporter {
         log.info("start export fake identification graph : " + outputFileName);
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy");
-        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, false, true);
+        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, true, true, -30);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
         log.info("export fake identification graph success : " + outputFileName);
     }
 
-    private List<List<Object>> getSimpleDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit, boolean logScale) {
+    private List<List<Object>> getSimpleDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {
         List<List<Object>> dataSheet = new ArrayList<>();
         List<LibraryHit> decoyHits = new ArrayList<>();
         List<LibraryHit> targetHits = new ArrayList<>();
@@ -453,7 +453,7 @@ public class Reporter {
         List<Double> thresholds = new ArrayList<>();
         if (logScale) {
             for (int i = 0; i < scoreInterval; i++) {
-                thresholds.add(Math.pow(2, -scoreInterval + i));
+                thresholds.add(Math.pow(2, minLogScore + i * Math.abs(minLogScore) / (double) scoreInterval));
             }
         } else {
             for (int i = 0; i < scoreInterval; i++) {
@@ -488,8 +488,8 @@ public class Reporter {
 
             //write data sheet
             if (logScale) {
-                row.add(-scoreInterval + i);
-                row.add(-scoreInterval + i + 1);
+                row.add(minLogScore + i * Math.abs(minLogScore) / (double) scoreInterval);
+                row.add(minLogScore + (i + 1) * Math.abs(minLogScore) / (double) scoreInterval);
             } else {
                 row.add(finalMinScore);
                 row.add(finalMaxScore);
