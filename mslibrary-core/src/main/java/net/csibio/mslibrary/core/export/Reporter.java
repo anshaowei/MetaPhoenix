@@ -300,17 +300,6 @@ public class Reporter {
         }
     }
 
-    public void fakeIdentificationGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
-        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
-        log.info("start export fake identification graph : " + outputFileName);
-        //header
-        List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy");
-        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval);
-        dataSheet.add(0, header);
-        EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
-        log.info("export fake identification graph success : " + outputFileName);
-    }
-
     private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
         List<List<Object>> dataSheet = new ArrayList<>();
         //for target-decoy FDR calculation
@@ -424,36 +413,67 @@ public class Reporter {
         return dataSheet;
     }
 
-    private List<List<Object>> getSimpleDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+    public void fakeIdentificationGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        log.info("start export fake identification graph : " + outputFileName);
+        //header
+        List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy");
+        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, false, true);
+        dataSheet.add(0, header);
+        EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
+        log.info("export fake identification graph success : " + outputFileName);
+    }
+
+    private List<List<Object>> getSimpleDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit, boolean logScale) {
         List<List<Object>> dataSheet = new ArrayList<>();
         List<LibraryHit> decoyHits = new ArrayList<>();
         List<LibraryHit> targetHits = new ArrayList<>();
         hitsMap.forEach((k, v) -> {
             if (v.size() != 0) {
                 Map<Boolean, List<LibraryHit>> decoyTargetMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
-                //remain all the hits
-                decoyHits.addAll(decoyTargetMap.get(true));
-                targetHits.addAll(decoyTargetMap.get(false));
-                //remain only the best hit
-//                if (decoyTargetMap.get(true).size() != 0) {
-//                    decoyTargetMap.get(true).sort(Comparator.comparing(LibraryHit::getScore).reversed());
-//                    decoyHits.add(decoyTargetMap.get(true).get(0));
-//                }
-//                if (decoyTargetMap.get(false).size() != 0) {
-//                    decoyTargetMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
-//                    targetHits.add(decoyTargetMap.get(false).get(0));
-//                }
+                if (bestHit) {
+                    //remain only the best hit
+                    if (decoyTargetMap.get(true).size() != 0) {
+                        decoyTargetMap.get(true).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                        decoyHits.add(decoyTargetMap.get(true).get(0));
+                    }
+                    if (decoyTargetMap.get(false).size() != 0) {
+                        decoyTargetMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                        targetHits.add(decoyTargetMap.get(false).get(0));
+                    }
+                } else {
+                    //remain all the hits
+                    decoyHits.addAll(decoyTargetMap.get(true));
+                    targetHits.addAll(decoyTargetMap.get(false));
+                }
             }
         });
 
-        //choose the range as given or calculated
-        double minScore = 0.0;
-        double maxScore = 1.0;
-        double step = (maxScore - minScore) / scoreInterval;
+        //use score or log(score) as x-axis
+        List<Double> thresholds = new ArrayList<>();
+        if (logScale) {
+            for (int i = 0; i < scoreInterval; i++) {
+                thresholds.add(Math.pow(2, -scoreInterval + i));
+            }
+        } else {
+            for (int i = 0; i < scoreInterval; i++) {
+                thresholds.add((double) i / scoreInterval);
+            }
+        }
 
         for (int i = 0; i < scoreInterval; i++) {
-            double finalMinScore = minScore + i * step;
-            double finalMaxScore = minScore + (i + 1) * step;
+            double finalMinScore;
+            if (i == 0) {
+                finalMinScore = 0.0;
+            } else {
+                finalMinScore = thresholds.get(i);
+            }
+            double finalMaxScore;
+            if (i == scoreInterval - 1) {
+                finalMaxScore = 1.0;
+            } else {
+                finalMaxScore = thresholds.get(i + 1);
+            }
             int targetCount, decoyCount;
             List<Object> row = new ArrayList<>();
 
@@ -467,8 +487,13 @@ public class Reporter {
             }
 
             //write data sheet
-//            row.add(Math.log10(finalMinScore) / Math.log10(2));
-            row.add(Math.log10(finalMaxScore) / Math.log10(2));
+            if (logScale) {
+                row.add(-scoreInterval + i);
+                row.add(-scoreInterval + i + 1);
+            } else {
+                row.add(finalMinScore);
+                row.add(finalMaxScore);
+            }
             row.add((double) targetCount / targetHits.size());
             row.add((double) decoyCount / decoyHits.size());
             dataSheet.add(row);
