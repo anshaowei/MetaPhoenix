@@ -173,22 +173,22 @@ public class Reporter {
         return new Result(true);
     }
 
-    public void scoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+    public void scoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export score graph : " + outputFileName);
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy", "Total", "FDR",
                 "TrueFDR", "PValue", "PIT", "TargetNum", "DecoyNum", "TotalNum", "trueNum", "falseNum");
-        List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
+        List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval, bestHit);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
         log.info("export score graph success : " + outputFileName);
     }
 
-    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int pInterval) {
+    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int pInterval, boolean bestHit) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export estimatedPValue graph : " + outputFileName);
-        List<List<Object>> scoreDataSheet = getDataSheet(hitsMap, 100 * pInterval);
+        List<List<Object>> scoreDataSheet = getDataSheet(hitsMap, 100 * pInterval, bestHit);
 
         //reverse score data sheet to make pValue ascending
         Collections.reverse(scoreDataSheet);
@@ -300,48 +300,56 @@ public class Reporter {
         }
     }
 
-    private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+    private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit) {
         List<List<Object>> dataSheet = new ArrayList<>();
-        //for target-decoy FDR calculation
         //all hits in the target library above score threshold
         List<LibraryHit> allTargetHits = new ArrayList<>();
-        //top score hit for a spectrum in the decoy library
+
+        //for target-decoy estimated FDR calculation
         List<LibraryHit> decoyHits = new ArrayList<>();
-        //top score hit for a spectrum in the target library
         List<LibraryHit> targetHits = new ArrayList<>();
 
         //for true FDR calculation
-        //the top score hit in the target library and has the same smiles with the query spectrum
         List<LibraryHit> trueHits = new ArrayList<>();
-        //the top score hit in the target library but not with the same smiles
         List<LibraryHit> falseHits = new ArrayList<>();
 
         hitsMap.forEach((k, v) -> {
             if (v.size() != 0) {
-                Map<Boolean, List<LibraryHit>> targetDecoyMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
-                for (Map.Entry<Boolean, List<LibraryHit>> entry : targetDecoyMap.entrySet()) {
+                Map<Boolean, List<LibraryHit>> decoyTargetMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
+                for (Map.Entry<Boolean, List<LibraryHit>> entry : decoyTargetMap.entrySet()) {
                     if (entry.getKey()) {
-                        targetDecoyMap.get(true).sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                        decoyHits.add(targetDecoyMap.get(true).get(0));
-                    } else {
-                        targetDecoyMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                        if (k.getSmiles().equals(targetDecoyMap.get(false).get(0).getSmiles())) {
-                            trueHits.add(targetDecoyMap.get(false).get(0));
+                        decoyTargetMap.get(true).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                        if (bestHit) {
+                            decoyHits.add(decoyTargetMap.get(true).get(0));
                         } else {
-                            falseHits.add(targetDecoyMap.get(false).get(0));
+                            decoyHits.addAll(decoyTargetMap.get(true));
                         }
-                        allTargetHits.addAll(targetDecoyMap.get(false));
-                        targetHits.add(targetDecoyMap.get(false).get(0));
+                    } else {
+                        decoyTargetMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                        if (bestHit) {
+                            targetHits.add(decoyTargetMap.get(false).get(0));
+                            if (k.getSmiles().equals(decoyTargetMap.get(false).get(0).getSmiles())) {
+                                trueHits.add(decoyTargetMap.get(false).get(0));
+                            } else {
+                                falseHits.add(decoyTargetMap.get(false).get(0));
+                            }
+                        } else {
+                            targetHits.addAll(decoyTargetMap.get(false));
+                            for (LibraryHit hit : decoyTargetMap.get(false)) {
+                                if (k.getSmiles().equals(hit.getSmiles())) {
+                                    trueHits.add(hit);
+                                } else {
+                                    falseHits.add(hit);
+                                }
+                            }
+                        }
+                        allTargetHits.addAll(decoyTargetMap.get(false));
                     }
                 }
             }
         });
 
         //choose the range as given or calculated
-//        decoyHits.sort(Comparator.comparing(LibraryHit::getScore));
-//        targetHits.sort(Comparator.comparing(LibraryHit::getScore));
-//        double minScore = Math.min(decoyHits.get(0).getScore(), targetHits.get(0).getScore());
-//        double maxScore = Math.max(decoyHits.get(decoyHits.size() - 1).getScore(), targetHits.get(targetHits.size() - 1).getScore());
         double minScore = 0.0;
         double maxScore = 1.0;
         double step = (maxScore - minScore) / scoreInterval;
@@ -413,15 +421,15 @@ public class Reporter {
         return dataSheet;
     }
 
-    public void fakeIdentificationGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+    public void simpleScoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export fake identification graph : " + outputFileName);
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy");
-        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, true, true, -30);
+        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, false, true, -30);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
-        log.info("export fake identification graph success : " + outputFileName);
+        log.info("export simple identification graph success : " + outputFileName);
     }
 
     private List<List<Object>> getSimpleDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {
