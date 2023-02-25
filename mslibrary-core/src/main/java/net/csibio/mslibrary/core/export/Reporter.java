@@ -374,7 +374,12 @@ public class Reporter {
             double trueFdr = (double) falseCount / (rightCount + falseCount);
 
             //calculate FDR, pValue and PIT
-            double pit = (double) incorrectCount / (targetCount + incorrectCount);
+            double pit;
+            if (bestHit) {
+                pit = (double) incorrectCount / (targetCount + incorrectCount);
+            } else {
+                pit = 1.0;
+            }
             double fdr = (double) decoyCount / (targetCount + decoyCount) * pit;
             double pValue = (double) decoyCount / (targetCount);
 
