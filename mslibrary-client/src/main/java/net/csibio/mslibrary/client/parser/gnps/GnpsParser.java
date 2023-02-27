@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.constants.enums.IonMode;
 import net.csibio.mslibrary.client.constants.enums.LibraryType;
 import net.csibio.mslibrary.client.domain.bean.spectrum.AnnotationHistory;
@@ -316,7 +317,7 @@ public class GnpsParser {
 
         //create library
         LibraryDO libraryDO = new LibraryDO();
-        libraryDO.setName("GNPS");
+        libraryDO.setName(file.getName().replace(".msp", ""));
         if (libraryService.insert(libraryDO).isFailed()) {
             log.error("Create library failed");
             return;
@@ -336,7 +337,7 @@ public class GnpsParser {
             }
             br.close();
             fis.close();
-            log.info("Start importing, Total spectrum count: {}", spectrumCount);
+            log.info("Start GNPS-format msp file importing, total spectrum count: {}", spectrumCount);
 
             fis = new FileInputStream(file);
             br = new BufferedReader(new java.io.InputStreamReader(fis));
@@ -485,13 +486,14 @@ public class GnpsParser {
                         }
                         line = br.readLine();
                     }
+                    spectrumDO.setMsLevel(MsLevel.MS2.getCode());
                     spectrumDOS.add(spectrumDO);
                 } else {
                     line = br.readLine();
                 }
             }
-            spectrumService.insert(spectrumDOS, "GNPS");
-            log.info("Finish importing, inserted spectrum count: {}", spectrumCount);
+            spectrumService.insert(spectrumDOS, libraryDO.getId());
+            log.info("Finish GNPS-format msp file importing, inserted spectrum count: {}", spectrumCount);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
