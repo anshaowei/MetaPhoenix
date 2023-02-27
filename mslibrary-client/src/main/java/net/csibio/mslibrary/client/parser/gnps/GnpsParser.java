@@ -44,7 +44,7 @@ public class GnpsParser {
         try {
             parser = jsonFactory.createParser(new File(filePath));
             int spectrumCount = 0;
-            log.info("start parse file: " + filePath);
+            log.info("Start parsing JSON file: " + filePath);
 
             //pre scan
             HashSet<String> libraryNames = new HashSet<>();
@@ -61,7 +61,7 @@ public class GnpsParser {
                     }
                 }
             }
-            log.info("pre scan finished, file contains " + libraryNames.size() + " libraries, " + spectrumCount + " spectra");
+            log.info("Pre scan: File contains about " + libraryNames.size() + " libraries, " + spectrumCount + " spectra");
 
             //generate library
             List<LibraryDO> libraryDOS = new ArrayList<>();
@@ -74,10 +74,10 @@ public class GnpsParser {
 
             //insert library
             if (libraryService.insert(libraryDOS).isFailed()) {
-                log.error("insert library failed, library with same name already exist");
+                log.error("Insert library failed, library with the same name already exist");
                 return;
             }
-            log.info("insert library success, " + libraryDOS.size() + " libraries inserted");
+            log.info("Insert library success, " + libraryDOS.size() + " libraries inserted");
 
             HashMap<String, List<SpectrumDO>> spectrumMap = new HashMap<>();
             for (String libraryName : libraryNames) {
@@ -297,14 +297,14 @@ public class GnpsParser {
                     }
                 }
             }
-            log.info("finish parse json file, start insert to database");
+            log.info("Finish parsing JSON file, start inserting to database");
             for (String libraryName : spectrumMap.keySet()) {
                 LibraryDO libraryDO = libraryService.getById(libraryName);
                 libraryDO.setSpectrumCount(spectrumMap.get(libraryName).size());
                 libraryService.update(libraryDO);
                 spectrumService.insert(spectrumMap.get(libraryName), libraryDO.getId());
             }
-            log.info("finish insert to database, time cost " + (System.currentTimeMillis() - startTime) / 1000 + "s");
+            log.info("Insert to database success, time cost " + (System.currentTimeMillis() - startTime) / 1000 + "s");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -314,6 +314,7 @@ public class GnpsParser {
         //read file use buffer
         File file = new File(filePath);
         FileInputStream fis;
+        log.info("Start GNPS-format msp file importing, file name: {}", file.getName());
 
         //create library
         LibraryDO libraryDO = new LibraryDO();
@@ -322,6 +323,7 @@ public class GnpsParser {
             log.error("Create library failed");
             return;
         }
+        log.info("Create library success, library id: {}", libraryDO.getId());
 
         try {
             //fast read of spectra information
@@ -337,7 +339,7 @@ public class GnpsParser {
             }
             br.close();
             fis.close();
-            log.info("Start GNPS-format msp file importing, total spectrum count: {}", spectrumCount);
+            log.info("Pre scan: total spectrum count: {}", spectrumCount);
 
             fis = new FileInputStream(file);
             br = new BufferedReader(new java.io.InputStreamReader(fis));
