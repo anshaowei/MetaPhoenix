@@ -79,7 +79,7 @@ public class TestController {
 //        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
 
         //sirius
-        siriusParser.parseSpectrum("/Users/anshaowei/Downloads/2_ALL_GNPS_Filtered_Halimide/spectrum.ms");
+        siriusParser.parse("C:\\Database\\gnps-filtered");
     }
 
     @RequestMapping("/filter")
