@@ -40,6 +40,7 @@ public class SiriusParser {
                 log.info("file {} is not a directory", f.getAbsolutePath());
             }
         }
+        spectrumService.insert(spectrumDOS, "sirius");
     }
 
     public SpectrumDO parseSpectrum(String decoySpectrumFile) {
