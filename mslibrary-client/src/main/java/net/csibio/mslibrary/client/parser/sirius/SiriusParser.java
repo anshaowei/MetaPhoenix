@@ -34,7 +34,10 @@ public class SiriusParser {
                         SpectrumDO spectrumDO = parseSpectrum(subFile.getAbsolutePath());
                         spectrumDOS.add(spectrumDO);
                     }
+                    log.info("finish parsing {}", subFile.getAbsolutePath());
                 }
+            } else {
+                log.info("file {} is not a directory", f.getAbsolutePath());
             }
         }
     }
