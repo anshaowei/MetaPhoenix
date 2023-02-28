@@ -2,7 +2,6 @@ package net.csibio.mslibrary.core.export;
 
 import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
-import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -57,6 +56,11 @@ public class Exporter {
                 //formula
                 if (spectrumDO.getFormula() != null) {
                     bufferedWriter.write("FORMULA: " + spectrumDO.getFormula());
+                    bufferedWriter.newLine();
+                }
+                //ontology
+                if (spectrumDO.getOntology() != null) {
+                    bufferedWriter.write("ONTOLOGY: " + spectrumDO.getOntology());
                     bufferedWriter.newLine();
                 }
                 //inchiKey

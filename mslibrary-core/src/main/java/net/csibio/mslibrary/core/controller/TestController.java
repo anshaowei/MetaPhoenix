@@ -119,31 +119,33 @@ public class TestController {
         int repeat = 1;
 
         //all the strategies on all the libraries
-//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-//            methodDO.setDecoyStrategy(decoyStrategy.getName());
-//            List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//            for (LibraryDO libraryDO : libraryDOS) {
-//                for (int i = 0; i < repeat; i++) {
-//                    spectrumGenerator.execute(libraryDO.getId(), methodDO);
-//                }
-//            }
-//        }
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            if (decoyStrategy.equals(DecoyStrategy.Entropy_2) || decoyStrategy.equals(DecoyStrategy.XYMeta)) {
+                methodDO.setDecoyStrategy(decoyStrategy.getName());
+                List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+                for (LibraryDO libraryDO : libraryDOS) {
+                    for (int i = 0; i < repeat; i++) {
+                        spectrumGenerator.execute(libraryDO.getId(), methodDO);
+                    }
+                }
+            }
+        }
 
         //all the strategies on one library
-        String libraryId = "MassBank-MoNA";
-        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-            methodDO.setDecoyStrategy(decoyStrategy.getName());
-            for (int i = 0; i < repeat; i++) {
-                spectrumGenerator.execute(libraryId, methodDO);
-            }
-        }
-        libraryId = "GNPS-NIST14-MATCHES";
-        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-            methodDO.setDecoyStrategy(decoyStrategy.getName());
-            for (int i = 0; i < repeat; i++) {
-                spectrumGenerator.execute(libraryId, methodDO);
-            }
-        }
+//        String libraryId = "MassBank-MoNA";
+//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+//            methodDO.setDecoyStrategy(decoyStrategy.getName());
+//            for (int i = 0; i < repeat; i++) {
+//                spectrumGenerator.execute(libraryId, methodDO);
+//            }
+//        }
+//        libraryId = "GNPS-NIST14-MATCHES";
+//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+//            methodDO.setDecoyStrategy(decoyStrategy.getName());
+//            for (int i = 0; i < repeat; i++) {
+//                spectrumGenerator.execute(libraryId, methodDO);
+//            }
+//        }
 
     }
 
@@ -216,7 +218,8 @@ public class TestController {
 
     @RequestMapping("export")
     public void export() {
-        exporter.toMsp("test", "MassBank-MoNA");
+        exporter.toMsp("ALL_GNPS_Filtered", "ALL_GNPS");
+        exporter.toMsp("MassBank-MoNA_Filtered", "MassBank-MoNA");
     }
 
     @RequestMapping("integrate")
