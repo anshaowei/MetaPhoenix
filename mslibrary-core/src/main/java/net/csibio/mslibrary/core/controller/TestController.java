@@ -19,6 +19,7 @@ import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
 import net.csibio.mslibrary.client.parser.massbank.MassBankParser;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
+import net.csibio.mslibrary.core.export.Exporter;
 import net.csibio.mslibrary.core.export.Reporter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -61,6 +62,8 @@ public class TestController {
     GnpsParser gnpsParser;
     @Autowired
     MongoTemplate mongoTemplate;
+    @Autowired
+    Exporter exporter;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
@@ -213,7 +216,7 @@ public class TestController {
 
     @RequestMapping("export")
     public void export() {
-        reporter.toMsp("test", "MassBank-MoNA");
+        exporter.toMsp("test", "MassBank-MoNA");
     }
 
     @RequestMapping("integrate")
