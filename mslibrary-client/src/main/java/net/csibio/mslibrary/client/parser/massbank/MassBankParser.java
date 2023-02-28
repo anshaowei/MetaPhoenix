@@ -15,7 +15,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
+@Component("massBankParser")
 @Slf4j
 public class MassBankParser {
 

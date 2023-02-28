@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+@Component("gnpsParser")
 @Slf4j
-@Component
 public class GnpsParser {
 
     @Autowired

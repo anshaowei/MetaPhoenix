@@ -17,6 +17,7 @@ import net.csibio.mslibrary.client.filter.NoiseFilter;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
 import net.csibio.mslibrary.client.parser.massbank.MassBankParser;
+import net.csibio.mslibrary.client.parser.sirius.SiriusParser;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.core.export.Exporter;
@@ -33,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -64,17 +64,22 @@ public class TestController {
     MongoTemplate mongoTemplate;
     @Autowired
     Exporter exporter;
+    @Autowired
+    SiriusParser siriusParser;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
 //        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 
         //massbank
 //        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+//        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+
+        //sirius
+        siriusParser.parseSpectrum("/Users/anshaowei/Downloads/2_ALL_GNPS_Filtered_Halimide/spectrum.ms");
     }
 
     @RequestMapping("/filter")
@@ -220,40 +225,6 @@ public class TestController {
     public void export() {
         exporter.toMsp("ALL_GNPS_Filtered", "ALL_GNPS");
         exporter.toMsp("MassBank-MoNA_Filtered", "MassBank-MoNA");
-    }
-
-    @RequestMapping("integrate")
-    public void integrate() {
-        MethodDO methodDO = new MethodDO();
-        methodDO.setMzTolerance(0.001);
-        methodDO.setPpmForMzTolerance(false);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
-
-        log.info("start integrate");
-        String targetLibraryId = "MassBank-MoNA";
-        List<SpectrumDO> spectrumDOS = Collections.synchronizedList(new ArrayList<>());
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        libraryDOS.remove(libraryService.getById(targetLibraryId));
-        libraryDOS.remove(libraryService.getById("MASSBANKEU"));
-        libraryDOS.remove(libraryService.getById("MASSBANK"));
-        libraryDOS.parallelStream().forEach(libraryDO -> {
-            ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(libraryDO.getId(), targetLibraryId, null, methodDO);
-            for (SpectrumDO spectrumDO : hitsMap.keySet()) {
-                List<LibraryHit> libraryHits = hitsMap.get(spectrumDO);
-                libraryHits.removeIf(libraryHit -> libraryHit.getScore() < 0.7);
-                int count = 0;
-                for (LibraryHit libraryHit : libraryHits) {
-                    if (libraryHit.getSmiles().equals(spectrumDO.getSmiles())) {
-                        count++;
-                    }
-                }
-                if (count == 1) {
-                    spectrumDOS.add(spectrumDO);
-                }
-            }
-        });
-        spectrumService.insert(spectrumDOS, "query");
-        log.info("integrate success");
     }
 
 }
