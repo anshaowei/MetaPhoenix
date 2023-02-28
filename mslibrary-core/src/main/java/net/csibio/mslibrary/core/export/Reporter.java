@@ -431,7 +431,7 @@ public class Reporter {
         log.info("start export fake identification graph : " + outputFileName);
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy");
-        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, false, true, -30);
+        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, true, false, -30);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
         log.info("export simple identification graph success : " + outputFileName);
@@ -446,18 +446,22 @@ public class Reporter {
                 Map<Boolean, List<LibraryHit>> decoyTargetMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
                 if (bestHit) {
                     //remain only the best hit
-                    if (decoyTargetMap.get(true).size() != 0) {
+                    if (decoyTargetMap.get(true) != null && decoyTargetMap.get(true).size() != 0) {
                         decoyTargetMap.get(true).sort(Comparator.comparing(LibraryHit::getScore).reversed());
                         decoyHits.add(decoyTargetMap.get(true).get(0));
                     }
-                    if (decoyTargetMap.get(false).size() != 0) {
+                    if (decoyTargetMap.get(false) != null && decoyTargetMap.get(false).size() != 0) {
                         decoyTargetMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
                         targetHits.add(decoyTargetMap.get(false).get(0));
                     }
                 } else {
                     //remain all the hits
-                    decoyHits.addAll(decoyTargetMap.get(true));
-                    targetHits.addAll(decoyTargetMap.get(false));
+                    if (decoyTargetMap.get(true) != null) {
+                        decoyHits.addAll(decoyTargetMap.get(true));
+                    }
+                    if (decoyTargetMap.get(false) != null) {
+                        targetHits.addAll(decoyTargetMap.get(false));
+                    }
                 }
             }
         });
@@ -508,7 +512,11 @@ public class Reporter {
                 row.add(finalMaxScore);
             }
             row.add((double) targetCount / targetHits.size());
-            row.add((double) decoyCount / decoyHits.size());
+            if (decoyCount != 0) {
+                row.add((double) decoyCount / decoyHits.size());
+            } else {
+                row.add(0.0);
+            }
             dataSheet.add(row);
         }
         return dataSheet;
