@@ -33,10 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("test")
@@ -66,9 +64,13 @@ public class TestController {
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
-        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
+        //gnps
+//        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+
+        //massbank
 //        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
         massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
@@ -186,59 +188,32 @@ public class TestController {
     @RequestMapping("report")
     public void report() {
         //real score distribution sheet by the target-decoy strategy
-        String queryLibraryId = "MASSBANKEU";
-        String targetLibraryId = "MassBank-MoNA";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
+//        String queryLibraryId = "Integration";
+//        String targetLibraryId = "MassBank-MoNA";
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
+//        MethodDO methodDO = new MethodDO();
+//        methodDO.setMzTolerance(0.001);
+//        methodDO.setPpmForMzTolerance(false);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+//        reporter.scoreGraph("score", hitsMap, 200, true);
+//        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 40, true);
+
+        //simple identification process
+        String queryLibraryId = "MassBank-MoNA";
+        String targetLibraryId = "ALL_GNPS";
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Entropy_2.getName();
         MethodDO methodDO = new MethodDO();
         methodDO.setMzTolerance(0.001);
         methodDO.setPpmForMzTolerance(false);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-        reporter.scoreGraph("score", hitsMap, 200, false);
-        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 40, false);
-
-        //simple identification process
-//        String queryLibraryId = "CASMI";
-//        String targetLibraryId = "MassBank-MoNA";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Entropy_2.getName();
-//        MethodDO methodDO = new MethodDO();
-//        methodDO.setMzTolerance(0.001);
-//        methodDO.setPpmForMzTolerance(false);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-//        reporter.simpleScoreGraph("simpleScoreGraph", hitsMap, 60);
+        reporter.simpleScoreGraph("simpleScoreGraph", hitsMap, 50);
     }
 
-    @RequestMapping("batchTest")
-    public void batchTest() {
-        String targetLibraryId = "MassBank-MoNA";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Entropy_2.getName();
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        LibraryDO targetLibraryDO = libraryService.getById(targetLibraryId);
-        libraryDOS.remove(targetLibraryDO);
-        libraryDOS.parallelStream().forEach(libraryDO -> {
-            String queryLibraryId = libraryDO.getId();
-            MethodDO methodDO = new MethodDO();
-            methodDO.setMzTolerance(0.001);
-            methodDO.setPpmForMzTolerance(false);
-            methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
-            ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-            List<LibraryHit> allHits = new ArrayList<>();
-            for (SpectrumDO spectrumDO : hitsMap.keySet()) {
-                List<LibraryHit> libraryHits = hitsMap.get(spectrumDO);
-                allHits.addAll(libraryHits);
-            }
-            allHits = allHits.stream().filter(libraryHit -> !libraryHit.isDecoy()).collect(Collectors.toList());
-            int totalNum = allHits.size();
-            allHits = allHits.stream().filter(libraryHit -> libraryHit.getScore() > 0.7).collect(Collectors.toList());
-            int proportion = (int) (((double) allHits.size() / totalNum) * 1000);
-            libraryDO.setCount(proportion);
-            log.info("libraryId {}, proportion: {}", libraryDO.getId(), proportion);
-        });
-        libraryDOS.sort(Comparator.comparing(LibraryDO::getCount));
-        for (LibraryDO libraryDO : libraryDOS) {
-            log.info("libraryId {}, proportion: {}", libraryDO.getId(), libraryDO.getCount());
-        }
+    @RequestMapping("export")
+    public void export() {
+        reporter.toMsp("test", "MassBank-MoNA");
     }
 
     @RequestMapping("integrate")
@@ -250,22 +225,28 @@ public class TestController {
 
         log.info("start integrate");
         String targetLibraryId = "MassBank-MoNA";
-        LibraryDO integrateLibraryDO = new LibraryDO();
-        integrateLibraryDO.setName("Integration");
-        libraryService.insert(integrateLibraryDO);
         List<SpectrumDO> spectrumDOS = Collections.synchronizedList(new ArrayList<>());
         List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        libraryDOS.remove(libraryService.getById(targetLibraryId));
+        libraryDOS.remove(libraryService.getById("MASSBANKEU"));
+        libraryDOS.remove(libraryService.getById("MASSBANK"));
         libraryDOS.parallelStream().forEach(libraryDO -> {
             ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(libraryDO.getId(), targetLibraryId, null, methodDO);
             for (SpectrumDO spectrumDO : hitsMap.keySet()) {
                 List<LibraryHit> libraryHits = hitsMap.get(spectrumDO);
-                libraryHits.removeIf(libraryHit -> !(libraryHit.getScore() > 0.7 && libraryHit.getSmiles().equals(spectrumDO.getSmiles())));
-                if (libraryHits.size() > 0) {
+                libraryHits.removeIf(libraryHit -> libraryHit.getScore() < 0.7);
+                int count = 0;
+                for (LibraryHit libraryHit : libraryHits) {
+                    if (libraryHit.getSmiles().equals(spectrumDO.getSmiles())) {
+                        count++;
+                    }
+                }
+                if (count == 1) {
                     spectrumDOS.add(spectrumDO);
                 }
             }
         });
-        spectrumService.insert(spectrumDOS, integrateLibraryDO.getId());
+        spectrumService.insert(spectrumDOS, "query");
         log.info("integrate success");
     }
 
