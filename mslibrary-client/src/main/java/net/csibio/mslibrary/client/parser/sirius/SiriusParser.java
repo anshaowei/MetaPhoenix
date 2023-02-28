@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,10 +23,11 @@ public class SiriusParser {
     public void parse(String filePath) {
         File file = new File(filePath);
         File[] files = file.listFiles();
-        List<SpectrumDO> spectrumDOS = Collections.synchronizedList(new ArrayList<>());
         assert files != null;
+        List<File> fileList = Arrays.asList(files);
+        List<SpectrumDO> spectrumDOS = Collections.synchronizedList(new ArrayList<>());
         log.info("start parsing {} files", files.length);
-        for (File f : files) {
+        fileList.parallelStream().forEach(f -> {
             if (f.isDirectory()) {
                 File[] subFiles = f.listFiles();
                 assert subFiles != null;
@@ -39,7 +41,7 @@ public class SiriusParser {
             } else {
                 log.info("file {} is not a directory", f.getAbsolutePath());
             }
-        }
+        });
         spectrumService.insert(spectrumDOS, "sirius");
     }
 
