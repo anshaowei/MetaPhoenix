@@ -25,21 +25,18 @@ public class SiriusParser {
         File[] files = file.listFiles();
         assert files != null;
         List<File> fileList = Arrays.asList(files);
+        fileList.removeIf(f -> !f.isDirectory());
         List<SpectrumDO> spectrumDOS = Collections.synchronizedList(new ArrayList<>());
         log.info("start parsing {} files", files.length);
         fileList.parallelStream().forEach(f -> {
-            if (f.isDirectory()) {
-                File[] subFiles = f.listFiles();
-                assert subFiles != null;
-                for (File subFile : subFiles) {
-                    if (subFile.getName().endsWith(".ms")) {
-                        SpectrumDO spectrumDO = parseSpectrum(subFile.getAbsolutePath());
-                        spectrumDOS.add(spectrumDO);
-                        log.info("finish parsing {}", subFile.getAbsolutePath());
-                    }
+            File[] subFiles = f.listFiles();
+            assert subFiles != null;
+            for (File subFile : subFiles) {
+                if (subFile.getName().equals("spectrum.ms")) {
+                    SpectrumDO spectrumDO = parseSpectrum(subFile.getAbsolutePath());
+                    spectrumDOS.add(spectrumDO);
+                    log.info("finish parsing {}", subFile.getAbsolutePath());
                 }
-            } else {
-                log.info("file {} is not a directory", f.getAbsolutePath());
             }
         });
         spectrumService.insert(spectrumDOS, "sirius");
@@ -87,6 +84,8 @@ public class SiriusParser {
             }
             spectrumDO.setMzs(mzArray);
             spectrumDO.setInts(intensityArray);
+            fis.close();
+            br.close();
             return spectrumDO;
         } catch (Exception e) {
             log.error("error when parsing decoy spectrum file: {}", decoySpectrumFile);
