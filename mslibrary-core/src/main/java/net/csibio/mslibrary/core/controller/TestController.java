@@ -34,8 +34,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("test")
@@ -73,13 +76,14 @@ public class TestController {
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
 //        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
 //        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
 //        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
 //        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
 
         //sirius
-        siriusParser.parse("C:\\Database\\gnps-filtered");
+//        siriusParser.parse("/Users/anshaowei/Documents/Metabolomics/library/Decoy");
     }
 
     @RequestMapping("/filter")
@@ -206,14 +210,14 @@ public class TestController {
         //real score distribution sheet by the target-decoy strategy
         String queryLibraryId = "MassBank-MoNA";
         String targetLibraryId = "ALL_GNPS";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
+        String decoyLibraryId = "sirius";
         MethodDO methodDO = new MethodDO();
         methodDO.setMzTolerance(0.001);
         methodDO.setPpmForMzTolerance(false);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-        reporter.scoreGraph("score", hitsMap, 200, false);
-        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 40, false);
+        reporter.scoreGraph("score", hitsMap, 100, false);
+//        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 40, false);
 
         //simple identification process
 //        String queryLibraryId = "MassBank-MoNA";
@@ -231,6 +235,28 @@ public class TestController {
     public void export() {
         exporter.toMsp("ALL_GNPS_Filtered", "ALL_GNPS");
         exporter.toMsp("MassBank-MoNA_Filtered", "MassBank-MoNA");
+    }
+
+    @RequestMapping("integrate")
+    public void integrate() {
+        String libraryId = "MassBank-MoNA";
+        String queryLibraryId = "test";
+        List<SpectrumDO> querySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
+        List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
+        Map<String, List<SpectrumDO>> compoundMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getSmiles));
+        compoundMap.entrySet().parallelStream().forEach(entry -> {
+            List<SpectrumDO> spectrumDOList = entry.getValue();
+            if (spectrumDOList.size() > 1) {
+                SpectrumDO spectrumDO = new SpectrumDO();
+                spectrumDO.setLibraryId(queryLibraryId);
+                spectrumDO.setSmiles(spectrumDOList.get(0).getSmiles());
+
+            } else {
+                SpectrumDO spectrumDO = spectrumDOList.get(0);
+                spectrumDO.setLibraryId(queryLibraryId);
+                querySpectrumDOS.add(spectrumDO);
+            }
+        });
     }
 
 }
