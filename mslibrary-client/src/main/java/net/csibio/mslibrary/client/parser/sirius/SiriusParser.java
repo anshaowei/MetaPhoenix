@@ -25,17 +25,20 @@ public class SiriusParser {
         File[] files = file.listFiles();
         assert files != null;
         List<File> fileList = Arrays.asList(files);
-        fileList.removeIf(f -> !f.isDirectory());
         List<SpectrumDO> spectrumDOS = Collections.synchronizedList(new ArrayList<>());
         log.info("start parsing {} files", files.length);
         fileList.parallelStream().forEach(f -> {
-            File[] subFiles = f.listFiles();
-            assert subFiles != null;
-            for (File subFile : subFiles) {
-                if (subFile.getName().equals("spectrum.ms")) {
-                    SpectrumDO spectrumDO = parseSpectrum(subFile.getAbsolutePath());
-                    spectrumDOS.add(spectrumDO);
-                    log.info("finish parsing {}", subFile.getAbsolutePath());
+            if (!f.getName().equals(".compression") && !f.getName().equals(".version") && !f.getName().equals(".format")) {
+                File[] subFiles = f.listFiles();
+                assert subFiles != null;
+                for (File subFile : subFiles) {
+                    if (subFile.getName().equals("spectrum.ms")) {
+                        SpectrumDO spectrumDO = parseSpectrum(subFile.getAbsolutePath());
+                        if (spectrumDO.getPrecursorMz() != null || spectrumDO.getMzs().length != 0) {
+                            spectrumDOS.add(spectrumDO);
+                        }
+                        log.info("finish parsing {}", subFile.getAbsolutePath());
+                    }
                 }
             }
         });
@@ -61,12 +64,6 @@ public class SiriusParser {
                     String[] items = line.substring(2).split(" ");
                     if (items[0].equals("precursormz")) {
                         spectrumDO.setPrecursorMz(Double.parseDouble(items[1]));
-                    }
-                    if (items[0].equals("name")) {
-                        spectrumDO.setCompoundName(items[1]);
-                    }
-                    if (items[0].equals("ionmode")) {
-                        spectrumDO.setIonMode(items[1]);
                     }
                 }
                 if (label && !line.startsWith(" ") && !line.startsWith("##") && !line.startsWith(">") && !line.equals("")) {
