@@ -168,34 +168,35 @@ public class Reporter {
         hitsMap.forEach((k, v) -> {
             if (v.size() != 0) {
                 Map<Boolean, List<LibraryHit>> decoyTargetMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
-                for (Map.Entry<Boolean, List<LibraryHit>> entry : decoyTargetMap.entrySet()) {
-                    if (entry.getKey()) {
-                        decoyTargetMap.get(true).sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                        if (bestHit) {
-                            decoyHits.add(decoyTargetMap.get(true).get(0));
+                List<LibraryHit> targetHitsList = decoyTargetMap.get(false);
+                List<LibraryHit> decoyHitsList = decoyTargetMap.get(true);
+                if (targetHitsList.size() != 0) {
+                    targetHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                    if (bestHit) {
+                        targetHits.add(targetHitsList.get(0));
+                        if (targetHitsList.get(0).getSmiles().equals(k.getSmiles())) {
+                            trueHits.add(targetHitsList.get(0));
                         } else {
-                            decoyHits.addAll(decoyTargetMap.get(true));
+                            falseHits.add(targetHitsList.get(0));
                         }
                     } else {
-                        decoyTargetMap.get(false).sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                        if (bestHit) {
-                            targetHits.add(decoyTargetMap.get(false).get(0));
-                            if (k.getSmiles().equals(decoyTargetMap.get(false).get(0).getSmiles())) {
-                                trueHits.add(decoyTargetMap.get(false).get(0));
+                        targetHits.addAll(targetHitsList);
+                        for (LibraryHit libraryHit : targetHitsList) {
+                            if (libraryHit.getSmiles().equals(k.getSmiles())) {
+                                trueHits.add(libraryHit);
                             } else {
-                                falseHits.add(decoyTargetMap.get(false).get(0));
-                            }
-                        } else {
-                            targetHits.addAll(decoyTargetMap.get(false));
-                            for (LibraryHit hit : decoyTargetMap.get(false)) {
-                                if (k.getSmiles().equals(hit.getSmiles())) {
-                                    trueHits.add(hit);
-                                } else {
-                                    falseHits.add(hit);
-                                }
+                                falseHits.add(libraryHit);
                             }
                         }
-                        allTargetHits.addAll(decoyTargetMap.get(false));
+                    }
+                    allTargetHits.addAll(targetHitsList);
+                }
+                if (decoyHitsList != null && decoyHitsList.size() != 0) {
+                    decoyHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                    if (bestHit) {
+                        decoyHits.add(decoyHitsList.get(0));
+                    } else {
+                        decoyHits.addAll(decoyHitsList);
                     }
                 }
             }
