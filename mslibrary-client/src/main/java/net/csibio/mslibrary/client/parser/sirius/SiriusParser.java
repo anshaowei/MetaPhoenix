@@ -21,6 +21,7 @@ public class SiriusParser {
     SpectrumService spectrumService;
 
     public void parse(String filePath) {
+        String libraryId = "sirius";
         File file = new File(filePath);
         File[] files = file.listFiles();
         assert files != null;
@@ -35,6 +36,7 @@ public class SiriusParser {
                     if (subFile.getName().equals("spectrum.ms")) {
                         SpectrumDO spectrumDO = parseSpectrum(subFile.getAbsolutePath());
                         if (spectrumDO.getPrecursorMz() != null || spectrumDO.getMzs().length != 0) {
+                            spectrumDO.setLibraryId(libraryId);
                             spectrumDOS.add(spectrumDO);
                         }
                         log.info("finish parsing {}", subFile.getAbsolutePath());
@@ -42,7 +44,8 @@ public class SiriusParser {
                 }
             }
         });
-        spectrumService.insert(spectrumDOS, "sirius");
+        spectrumService.insert(spectrumDOS, libraryId);
+        log.info("Finish parsing sirius generated library");
     }
 
     public SpectrumDO parseSpectrum(String decoySpectrumFile) {
