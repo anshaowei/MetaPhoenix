@@ -154,6 +154,7 @@ public class Reporter {
 
     private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit) {
         List<List<Object>> dataSheet = new ArrayList<>();
+
         //all hits in the target library above score threshold
         List<LibraryHit> allTargetHits = new ArrayList<>();
 
@@ -279,12 +280,12 @@ public class Reporter {
         return dataSheet;
     }
 
-    public void simpleScoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+    public void simpleScoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export fake identification graph : " + outputFileName);
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy");
-        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, true, false, -30);
+        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, bestHit, logScale, minLogScore);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
         log.info("export simple identification graph success : " + outputFileName);
