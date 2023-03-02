@@ -69,6 +69,7 @@ public class Similarity {
         double entropyB = Entropy.getEntropy(spectrumB);
 
         Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, 1, 1, mzTolerance);
+        SpectrumUtil.normalize(mixSpectrum);
         double entropyMix = Entropy.getEntropy(mixSpectrum);
 
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
@@ -99,6 +100,7 @@ public class Similarity {
 
         //mix spectrum
         Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, weightA, weightB, mzTolerance);
+        SpectrumUtil.normalize(mixSpectrum);
         double entropyMix = Entropy.getEntropy(mixSpectrum);
 
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);

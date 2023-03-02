@@ -30,7 +30,8 @@ public class NoiseFilter {
 
         //1. remove spectra with empty key information
         spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getMzs() == null || spectrumDO.getInts() == null
-                || spectrumDO.getMzs().length == 0 || spectrumDO.getInts().length == 0 || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 || spectrumDO.getIonMode() == null);
+                || spectrumDO.getMzs().length == 0 || spectrumDO.getInts().length == 0 || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0
+                || spectrumDO.getIonMode() == null || spectrumDO.getSmiles().equals("N/A"));
         log.info("remove {} spectra with empty key information, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 
@@ -98,7 +99,8 @@ public class NoiseFilter {
 
         //1. remove spectra with empty key information
         spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getMzs() == null || spectrumDO.getInts() == null
-                || spectrumDO.getMzs().length == 0 || spectrumDO.getInts().length == 0 || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0);
+                || spectrumDO.getMzs().length == 0 || spectrumDO.getInts().length == 0 || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0
+                || spectrumDO.getIonMode() == null || spectrumDO.getSmiles().equals("N/A"));
         log.info("remove {} spectra with empty key information, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 

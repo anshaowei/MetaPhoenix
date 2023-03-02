@@ -284,7 +284,7 @@ public class Reporter {
         log.info("start export fake identification graph : " + outputFileName);
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy");
-        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, true, true, -30);
+        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, true, false, -30);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
         log.info("export simple identification graph success : " + outputFileName);

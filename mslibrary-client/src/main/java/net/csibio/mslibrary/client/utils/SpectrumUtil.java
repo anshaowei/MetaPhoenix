@@ -66,11 +66,7 @@ public class SpectrumUtil {
             mzs[i] = mixMzList.get(i);
             ints[i] = mixMap.get(mzs[i]);
         }
-
-        //normalize the mixSpectrum
-        Spectrum mixSpectrum = new Spectrum(mzs, ints);
-        normalize(mixSpectrum);
-        return mixSpectrum;
+        return new Spectrum(mzs, ints);
     }
 
     public static Spectrum clone(Spectrum spectrum) {
