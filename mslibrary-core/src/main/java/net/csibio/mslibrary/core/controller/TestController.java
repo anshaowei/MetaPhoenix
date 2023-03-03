@@ -2,11 +2,13 @@ package net.csibio.mslibrary.core.controller;
 
 
 import lombok.extern.slf4j.Slf4j;
-import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
+import net.csibio.mslibrary.client.algorithm.integrate.Integrator;
 import net.csibio.mslibrary.client.algorithm.search.FDRControlled;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
+import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
+import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -19,7 +21,6 @@ import net.csibio.mslibrary.client.parser.massbank.MassBankParser;
 import net.csibio.mslibrary.client.parser.sirius.SiriusParser;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
-import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import net.csibio.mslibrary.core.export.Exporter;
 import net.csibio.mslibrary.core.export.Reporter;
 import org.apache.poi.ss.usermodel.Cell;
@@ -34,10 +35,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("test")
@@ -68,6 +67,8 @@ public class TestController {
     Exporter exporter;
     @Autowired
     SiriusParser siriusParser;
+    @Autowired
+    Integrator integrator;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
@@ -207,16 +208,16 @@ public class TestController {
     @RequestMapping("report")
     public void report() {
         //real score distribution sheet by the target-decoy strategy
-//        String queryLibraryId = "MassBank-MoNA-merged";
-//        String targetLibraryId = "ALL_GNPS-merged";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
-//        MethodDO methodDO = new MethodDO();
-//        methodDO.setMzTolerance(0.001);
-//        methodDO.setPpmForMzTolerance(false);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-//        reporter.scoreGraph("score", hitsMap, 50, false);
-//        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20, true);
+        String queryLibraryId = "MassBank-MoNA-merged";
+        String targetLibraryId = "MassBank-MoNA-merged";
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
+        MethodDO methodDO = new MethodDO();
+        methodDO.setMzTolerance(0.001);
+        methodDO.setPpmForMzTolerance(false);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getRecallHitsMap(targetLibraryId, decoyLibraryId, methodDO);
+        reporter.scoreGraph("score", hitsMap, 50);
+        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
 
         //simple identification process
 //        String queryLibraryId = "MassBank-MoNA-merged";
@@ -230,12 +231,12 @@ public class TestController {
 //        reporter.simpleScoreGraph("simpleScoreGraph", hitsMap, 50, false, false, -30);
 
         //entropy distribution graph
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        for (LibraryDO libraryDO : libraryDOS) {
-            String libraryId = libraryDO.getId();
-            List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
-            reporter.entropyDistributionGraph(libraryId, libraryId, 50);
-        }
+//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//        for (LibraryDO libraryDO : libraryDOS) {
+//            String libraryId = libraryDO.getId();
+//            List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
+//            reporter.entropyDistributionGraph(libraryId, libraryId, 50);
+//        }
     }
 
     @RequestMapping("export")
@@ -247,46 +248,7 @@ public class TestController {
     @RequestMapping("integrate")
     public void integrate() {
         String libraryId = "MassBank-MoNA";
-        String queryLibraryId = libraryId + SymbolConst.DELIMITER + "merged";
-
-        LibraryDO libraryDO = new LibraryDO();
-        libraryDO.setName(queryLibraryId);
-        try {
-            libraryService.insert(libraryDO);
-        } catch (Exception e) {
-            log.error("library already exists");
-        }
-        List<SpectrumDO> querySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
-        List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
-        Map<String, List<SpectrumDO>> compoundMap = spectrumDOS.stream().collect(Collectors.groupingBy(SpectrumDO::getSmiles));
-        compoundMap.keySet().parallelStream().forEach(smiles -> {
-            List<SpectrumDO> spectrumDOList = compoundMap.get(smiles);
-            if (spectrumDOList.size() > 1) {
-                SpectrumDO spectrumDO = new SpectrumDO();
-                Spectrum mergedSpectrum = new Spectrum(new double[0], new double[0]);
-                for (SpectrumDO tempSpectrumDO : spectrumDOList) {
-                    Spectrum tempSpectrum = new Spectrum(tempSpectrumDO.getMzs(), tempSpectrumDO.getInts());
-                    mergedSpectrum = SpectrumUtil.mixByWeight(mergedSpectrum, tempSpectrum, 1, 1, 0.001);
-                }
-                for (int i = 0; i < mergedSpectrum.getInts().length; i++) {
-                    mergedSpectrum.getInts()[i] = mergedSpectrum.getInts()[i] / spectrumDOList.size();
-                }
-                spectrumDO.setMzs(mergedSpectrum.getMzs());
-                spectrumDO.setInts(mergedSpectrum.getInts());
-                spectrumDO.setLibraryId(queryLibraryId);
-                spectrumDO.setSmiles(spectrumDOList.get(0).getSmiles());
-                spectrumDO.setPrecursorMz(spectrumDOList.get(0).getPrecursorMz());
-                querySpectrumDOS.add(spectrumDO);
-            } else {
-                SpectrumDO spectrumDO = spectrumDOList.get(0);
-                spectrumDO.setLibraryId(queryLibraryId);
-                spectrumDO.setSmiles(spectrumDOList.get(0).getSmiles());
-                spectrumDO.setPrecursorMz(spectrumDOList.get(0).getPrecursorMz());
-                querySpectrumDOS.add(spectrumDO);
-            }
-        });
-        spectrumService.insert(querySpectrumDOS, queryLibraryId);
-        log.info("integrate library: {} success", libraryId);
+        integrator.integrate(libraryId);
     }
 
 }

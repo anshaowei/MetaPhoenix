@@ -25,22 +25,22 @@ public class Reporter {
     @Autowired
     SpectrumService spectrumService;
 
-    public void scoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit) {
+    public void scoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export score graph : " + outputFileName);
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "CTDC_FDR",
                 "BestSTDS_FDR", "STDS_FDR", "true_FDR", "pValue", "PIT", "true_Count", "false_Count");
-        List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval, bestHit);
+        List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
         log.info("export score graph success : " + outputFileName);
     }
 
-    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int pInterval, boolean bestHit) {
+    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int pInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export estimatedPValue graph : " + outputFileName);
-        List<List<Object>> scoreDataSheet = getDataSheet(hitsMap, 100 * pInterval, bestHit);
+        List<List<Object>> scoreDataSheet = getDataSheet(hitsMap, 100 * pInterval);
 
         //reverse score data sheet to make pValue ascending
         Collections.reverse(scoreDataSheet);
@@ -152,7 +152,7 @@ public class Reporter {
         }
     }
 
-    private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit) {
+    private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
         List<List<Object>> dataSheet = new ArrayList<>();
 
         //all hits above a score threshold for the target-decoy strategy

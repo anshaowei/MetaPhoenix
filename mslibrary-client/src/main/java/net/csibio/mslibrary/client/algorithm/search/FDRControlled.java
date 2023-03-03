@@ -71,6 +71,12 @@ public class FDRControlled {
         return getAllHitsMap(spectrumDOS, targetLibraryId, decoyLibraryId, method);
     }
 
+    public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getRecallHitsMap(String targetLibraryId, String decoyLibraryId, MethodDO method) {
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(targetLibraryId);
+        spectrumDOS.removeIf(spectrumDO -> !spectrumDO.getPrecursorAdduct().equals("[M+H]+"));
+        return getAllHitsMap(spectrumDOS, targetLibraryId, decoyLibraryId, method);
+    }
+
     public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getAllHitsMap(List<SpectrumDO> spectrumDOS, String targetLibraryId, String decoyLibraryId, MethodDO method) {
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> allHitsMap = new ConcurrentHashMap<>();
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
