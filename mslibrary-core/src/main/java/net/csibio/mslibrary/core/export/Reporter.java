@@ -30,11 +30,131 @@ public class Reporter {
         log.info("start export score graph : " + outputFileName);
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "CTDC_FDR",
-                "BestSTDS_FDR", "STDS_FDR", "true_FDR", "pValue", "PIT", "true_Count", "false_Count");
+                "BestSTDS_FDR", "STDS_FDR", "true_FDR", "standard_FDR", "pValue", "PIT", "true_Count", "false_Count");
         List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
         log.info("export score graph success : " + outputFileName);
+    }
+
+    private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+        List<List<Object>> dataSheet = new ArrayList<>();
+
+        //all hits above a score threshold for the target-decoy strategy
+        List<LibraryHit> decoyHits = new ArrayList<>();
+        List<LibraryHit> targetHits = new ArrayList<>();
+
+        //the top score hits of each spectrum
+        List<LibraryHit> bestDecoyHits = new ArrayList<>();
+        List<LibraryHit> bestTargetHits = new ArrayList<>();
+        List<LibraryHit> ctdcList = new ArrayList<>();
+
+        //for true FDR calculation
+        List<LibraryHit> trueHits = new ArrayList<>();
+        List<LibraryHit> falseHits = new ArrayList<>();
+
+        //collect data
+        hitsMap.forEach((k, v) -> {
+            if (v.size() != 0) {
+                //concatenated target-decoy competition
+                v.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                ctdcList.add(v.get(0));
+
+                //separated target-decoy competition
+                Map<Boolean, List<LibraryHit>> decoyTargetMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
+                List<LibraryHit> targetHitsList = decoyTargetMap.get(false);
+                List<LibraryHit> decoyHitsList = decoyTargetMap.get(true);
+                if (targetHitsList.size() != 0) {
+                    targetHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                    bestTargetHits.add(targetHitsList.get(0));
+                    targetHits.addAll(targetHitsList);
+                    for (LibraryHit hit : targetHitsList) {
+                        if (hit.getSmiles().equals(k.getSmiles())) {
+                            trueHits.add(hit);
+                        } else {
+                            falseHits.add(hit);
+                        }
+                    }
+                }
+                if (decoyHitsList != null && decoyHitsList.size() != 0) {
+                    decoyHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                    bestDecoyHits.add(decoyHitsList.get(0));
+                    decoyHits.addAll(decoyHitsList);
+                }
+            }
+        });
+
+        //score range and step
+        double minScore = 0.0;
+        double maxScore = 1.0;
+        double step = (maxScore - minScore) / scoreInterval;
+
+        for (int i = 0; i < scoreInterval; i++) {
+            double finalMinScore = minScore + i * step;
+            double finalMaxScore = minScore + (i + 1) * step;
+            int targetCount, decoyCount, rightCount, falseCount, bestTargetCount, bestDecoyCount;
+            List<Object> row = new ArrayList<>();
+
+            //concatenated target-decoy strategy calculation
+            double CTDC_FDR = (double) 2 * ctdcList.stream().filter(hit -> hit.getScore() > finalMinScore && hit.isDecoy()).toList().size()
+                    / ctdcList.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+
+            //separated target-decoy strategy calculation
+            targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            bestTargetCount = bestTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            bestDecoyCount = bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            double PIT = (double) (targetCount - bestTargetCount) / targetCount;
+            double BestSTDS_FDR = (double) bestDecoyCount / (bestTargetCount + bestDecoyCount) * PIT;
+            double STDS_FDR = (double) decoyCount / targetCount;
+            double pValue = (double) decoyCount / (targetCount);
+
+            //real data calculation
+            rightCount = trueHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            falseCount = falseHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            double trueFDR = (double) falseCount / (rightCount + falseCount);
+
+            //hits distribution
+            if (i == 0) {
+                targetCount = targetHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+                decoyCount = decoyHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+            } else {
+                targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+                decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+            }
+
+            //write data sheet
+            //start score
+            row.add(finalMinScore);
+            //end score
+            row.add(finalMaxScore);
+            //target frequency
+            row.add((double) targetCount / targetHits.size());
+            //decoy frequency
+            row.add((double) decoyCount / decoyHits.size());
+            //total frequency
+            row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
+            //CTDC FDR
+            row.add(CTDC_FDR);
+            //BestSTDS FDR
+            row.add(BestSTDS_FDR);
+            //STDS FDR
+            row.add(STDS_FDR);
+            //trueFDR
+            row.add(trueFDR);
+            //standard FDR
+            row.add(1 - finalMinScore);
+            //pValue
+            row.add(pValue);
+            //PIT
+            row.add(PIT);
+            //true count
+            row.add(rightCount);
+            //false count
+            row.add(falseCount);
+            dataSheet.add(row);
+        }
+        return dataSheet;
     }
 
     public void estimatedPValueGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int pInterval) {
@@ -150,124 +270,6 @@ public class Reporter {
         } else {
             log.error("No spectra in library: {}", libraryId);
         }
-    }
-
-    private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
-        List<List<Object>> dataSheet = new ArrayList<>();
-
-        //all hits above a score threshold for the target-decoy strategy
-        List<LibraryHit> decoyHits = new ArrayList<>();
-        List<LibraryHit> targetHits = new ArrayList<>();
-
-        //the top score hits of each spectrum
-        List<LibraryHit> bestDecoyHits = new ArrayList<>();
-        List<LibraryHit> bestTargetHits = new ArrayList<>();
-        List<LibraryHit> ctdcList = new ArrayList<>();
-
-        //for true FDR calculation
-        List<LibraryHit> trueHits = new ArrayList<>();
-        List<LibraryHit> falseHits = new ArrayList<>();
-
-        //collect data
-        hitsMap.forEach((k, v) -> {
-            if (v.size() != 0) {
-                //concatenated target-decoy competition
-                v.sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                ctdcList.add(v.get(0));
-
-                //separated target-decoy competition
-                Map<Boolean, List<LibraryHit>> decoyTargetMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
-                List<LibraryHit> targetHitsList = decoyTargetMap.get(false);
-                List<LibraryHit> decoyHitsList = decoyTargetMap.get(true);
-                if (targetHitsList.size() != 0) {
-                    targetHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                    bestTargetHits.add(targetHitsList.get(0));
-                    targetHits.addAll(targetHitsList);
-                    for (LibraryHit hit : targetHitsList) {
-                        if (hit.getSmiles().equals(k.getSmiles())) {
-                            trueHits.add(hit);
-                        } else {
-                            falseHits.add(hit);
-                        }
-                    }
-                }
-                if (decoyHitsList != null && decoyHitsList.size() != 0) {
-                    decoyHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
-                    bestDecoyHits.add(decoyHitsList.get(0));
-                    decoyHits.addAll(decoyHitsList);
-                }
-            }
-        });
-
-        //score range and step
-        double minScore = 0.0;
-        double maxScore = 1.0;
-        double step = (maxScore - minScore) / scoreInterval;
-
-        for (int i = 0; i < scoreInterval; i++) {
-            double finalMinScore = minScore + i * step;
-            double finalMaxScore = minScore + (i + 1) * step;
-            int targetCount, decoyCount, rightCount, falseCount, bestTargetCount, bestDecoyCount;
-            List<Object> row = new ArrayList<>();
-
-            //concatenated target-decoy strategy calculation
-            double CTDC_FDR = (double) 2 * ctdcList.stream().filter(hit -> hit.getScore() > finalMinScore && hit.isDecoy()).toList().size()
-                    / ctdcList.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-
-            //separated target-decoy strategy calculation
-            targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            bestTargetCount = bestTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            bestDecoyCount = bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            double PIT = (double) (targetCount - bestTargetCount) / targetCount;
-            double BestSTDS_FDR = (double) bestDecoyCount / (bestTargetCount + bestDecoyCount) * PIT;
-            double STDS_FDR = (double) decoyCount / targetCount;
-            double pValue = (double) decoyCount / (targetCount);
-
-            //real data calculation
-            rightCount = trueHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            falseCount = falseHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            double trueFDR = (double) falseCount / (rightCount + falseCount);
-
-            //hits distribution
-            if (i == 0) {
-                targetCount = targetHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
-                decoyCount = decoyHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
-            } else {
-                targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
-                decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
-            }
-
-            //write data sheet
-            //start score
-            row.add(finalMinScore);
-            //end score
-            row.add(finalMaxScore);
-            //target frequency
-            row.add((double) targetCount / targetHits.size());
-            //decoy frequency
-            row.add((double) decoyCount / decoyHits.size());
-            //total frequency
-            row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
-            //CTDC FDR
-            row.add(CTDC_FDR);
-            //BestSTDS FDR
-            row.add(BestSTDS_FDR);
-            //STDS FDR
-            row.add(STDS_FDR);
-            //trueFDR
-            row.add(trueFDR);
-            //pValue
-            row.add(pValue);
-            //PIT
-            row.add(PIT);
-            //true count
-            row.add(rightCount);
-            //false count
-            row.add(falseCount);
-            dataSheet.add(row);
-        }
-        return dataSheet;
     }
 
     public void simpleScoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {

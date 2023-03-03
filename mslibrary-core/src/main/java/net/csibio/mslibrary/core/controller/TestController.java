@@ -108,15 +108,15 @@ public class TestController {
         }
 
         //only remain specific libraries
-//        for (LibraryDO libraryDO : libraryDOS) {
-//            if (libraryDO.getId().equals("GNPS-NIST14-MATCHES") || libraryDO.getId().equals("MassBank-MoNA")) {
-//                continue;
-//            }
-//            spectrumService.remove(new SpectrumQuery(), libraryDO.getId());
-//            libraryService.remove(libraryDO.getId());
-//            mongoTemplate.dropCollection("spectrum" + SymbolConst.DELIMITER + libraryDO.getId());
-//            log.info("remove done: " + libraryDO.getId());
-//        }
+        for (LibraryDO libraryDO : libraryDOS) {
+            if (libraryDO.getId().equals("ALL_GNPS") || libraryDO.getId().equals("MassBank-MoNA")) {
+                continue;
+            }
+            spectrumService.remove(new SpectrumQuery(), libraryDO.getId());
+            libraryService.remove(libraryDO.getId());
+            mongoTemplate.dropCollection("spectrum" + SymbolConst.DELIMITER + libraryDO.getId());
+            log.info("remove done: " + libraryDO.getId());
+        }
     }
 
     @RequestMapping("/decoy")
@@ -189,26 +189,26 @@ public class TestController {
     @RequestMapping("report")
     public void report() {
         //real score distribution sheet by the target-decoy strategy
-//        String queryLibraryId = "MassBank-MoNA";
-//        String targetLibraryId = "ALL_GNPS";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
-//        MethodDO methodDO = new MethodDO();
-//        methodDO.setMzTolerance(0.001);
-//        methodDO.setPpmForMzTolerance(false);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-//        reporter.scoreGraph("score", hitsMap, 50);
-//        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
-
-        //recall method
-        String targetLibraryId = "MassBank-MoNA-merged";
+        String queryLibraryId = "MassBank-MoNA-integrated";
+        String targetLibraryId = "ALL_GNPS-integrated";
         String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
         MethodDO methodDO = new MethodDO();
         methodDO.setMzTolerance(0.001);
         methodDO.setPpmForMzTolerance(false);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getRecallHitsMap(targetLibraryId, decoyLibraryId, methodDO);
-        reporter.scoreGraph("score", hitsMap, 100);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+        reporter.scoreGraph("score", hitsMap, 50);
+        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
+
+        //recall method
+//        String targetLibraryId = "ALL_GNPS-integrated";
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
+//        MethodDO methodDO = new MethodDO();
+//        methodDO.setMzTolerance(0.001);
+//        methodDO.setPpmForMzTolerance(false);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getRecallHitsMap(targetLibraryId, decoyLibraryId, methodDO);
+//        reporter.scoreGraph("score", hitsMap, 100);
 
         //simple identification process
 //        String queryLibraryId = "MassBank-MoNA-merged";
@@ -228,12 +228,10 @@ public class TestController {
 //            List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
 //            reporter.entropyDistributionGraph(libraryId, libraryId, 50);
 //        }
-    }
 
-    @RequestMapping("export")
-    public void export() {
-        exporter.toMsp("ALL_GNPS_Filtered", "ALL_GNPS");
-        exporter.toMsp("MassBank-MoNA_Filtered", "MassBank-MoNA");
+        //export
+//        exporter.toMsp("ALL_GNPS_Filtered", "ALL_GNPS");
+//        exporter.toMsp("MassBank-MoNA_Filtered", "MassBank-MoNA");
     }
 
     @RequestMapping("integrate")
