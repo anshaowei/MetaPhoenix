@@ -73,9 +73,9 @@ public class NoiseFilter {
         log.info("remove {} spectra with <5 peaks with relative intensity above 2%, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 
-        //5. remove spectra with ion count > 300
-        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs().length > 300);
-        log.info("remove {} spectra with ion count > 300, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
+        //5. remove spectra with precursorMz > 1000
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getPrecursorMz() > 1000);
+        log.info("remove {} spectra with precursorMz > 1000, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 
         //6. remove spectra except MS2
