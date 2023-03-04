@@ -37,6 +37,39 @@ public class Reporter {
         log.info("export score graph success : " + outputFileName);
     }
 
+    public void compareFDRGraph(String fileName, List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList, int scoreInterval) {
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        log.info("start export compareFDRGraph : " + outputFileName);
+
+        //init
+        List<List<Object>> compareSheet = new ArrayList<>();
+        for (int i = 0; i < scoreInterval; i++) {
+            List<Object> row = new ArrayList<>();
+            compareSheet.add(row);
+        }
+        List<Object> header = Arrays.asList("trueFDR", "standardFDR", "A", "B", "C");
+        compareSheet.add(0, header);
+
+        for (int i = 0; i < hitsMapList.size(); i++) {
+            List<List<Object>> dataSheet = getDataSheet(hitsMapList.get(i), scoreInterval);
+            for (int j = 1; j < dataSheet.size(); j++) {
+                //trueFDR
+                Double trueFDR = (Double) dataSheet.get(j).get(6);
+                //Standard_FDR
+                Double standard_FDR = 0.5 * (scoreInterval - j + 1) / scoreInterval;
+                //BestSTDS_FDR
+                Double bestSTDS_FDR = (Double) dataSheet.get(j).get(7);
+                if (i == 0) {
+                    compareSheet.get(j).add(trueFDR);
+                    compareSheet.get(j).add(standard_FDR);
+                }
+                compareSheet.get(j).add(bestSTDS_FDR);
+            }
+        }
+        EasyExcel.write(outputFileName).sheet("compareFDRGraph").doWrite(compareSheet);
+        log.info("export compare success : " + outputFileName);
+    }
+
     private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
         List<List<Object>> dataSheet = new ArrayList<>();
 

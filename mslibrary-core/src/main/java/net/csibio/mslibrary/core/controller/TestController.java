@@ -28,6 +28,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -189,26 +190,41 @@ public class TestController {
     @RequestMapping("report")
     public void report() {
         //real score distribution sheet by the target-decoy strategy
-        String queryLibraryId = "MassBank-MoNA-integrated";
-        String targetLibraryId = "ALL_GNPS-integrated";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
-        MethodDO methodDO = new MethodDO();
-        methodDO.setMzTolerance(0.001);
-        methodDO.setPpmForMzTolerance(false);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-        reporter.scoreGraph("score", hitsMap, 50);
-        reporter.estimatedPValueGraph("estimatedPValue", hitsMap, 20);
-
-        //recall method
+//        String queryLibraryId = "MassBank-MoNA-integrated";
 //        String targetLibraryId = "ALL_GNPS-integrated";
 //        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
 //        MethodDO methodDO = new MethodDO();
 //        methodDO.setMzTolerance(0.001);
 //        methodDO.setPpmForMzTolerance(false);
 //        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+//        reporter.scoreGraph("score1", hitsMap, 50);
+
+        //recall method
+//        String targetLibraryId = "MassBank-MoNA-integrated";
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
+//        MethodDO methodDO = new MethodDO();
+//        methodDO.setMzTolerance(0.001);
+//        methodDO.setPpmForMzTolerance(false);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
 //        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getRecallHitsMap(targetLibraryId, decoyLibraryId, methodDO);
-//        reporter.scoreGraph("score", hitsMap, 100);
+//        reporter.scoreGraph("score4", hitsMap, 100);
+//        reporter.estimatedPValueGraph("estimatedPValueGraph", hitsMap, 20);
+
+        //compare
+        MethodDO methodDO = new MethodDO();
+        methodDO.setMzTolerance(0.001);
+        methodDO.setPpmForMzTolerance(false);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
+        String targetLibraryId = "MassBank-MoNA-integrated";
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap1 = fdrControlled.getRecallHitsMap(targetLibraryId, decoyLibraryId, methodDO);
+        decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Entropy_2.getName();
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap2 = fdrControlled.getRecallHitsMap(targetLibraryId, decoyLibraryId, methodDO);
+        List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList = new ArrayList<>();
+        hitsMapList.add(hitsMap1);
+        hitsMapList.add(hitsMap2);
+        reporter.compareFDRGraph("compareFDRGraph", hitsMapList, 100);
 
         //simple identification process
 //        String queryLibraryId = "MassBank-MoNA-merged";
