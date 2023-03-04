@@ -20,8 +20,7 @@ public class SiriusParser {
     @Autowired
     SpectrumService spectrumService;
 
-    public void parse(String filePath) {
-        String libraryId = "sirius";
+    public void parse(String libraryId, String filePath) {
         File file = new File(filePath);
         File[] files = file.listFiles();
         assert files != null;
@@ -39,7 +38,6 @@ public class SiriusParser {
                             spectrumDO.setLibraryId(libraryId);
                             spectrumDOS.add(spectrumDO);
                         }
-                        log.info("finish parsing {}", subFile.getAbsolutePath());
                     }
                 }
             }
