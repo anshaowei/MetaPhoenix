@@ -29,8 +29,8 @@ public class Reporter {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export score graph : " + outputFileName);
         //header
-        List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "CTDC_FDR",
-                "BestSTDS_FDR", "STDS_FDR", "true_FDR", "standard_FDR", "pValue", "PIT", "true_Count", "false_Count");
+        List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "CTDC_FDR", "true_FDR",
+                "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "true_Count", "false_Count");
         List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
@@ -136,12 +136,12 @@ public class Reporter {
             row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
             //CTDC FDR
             row.add(CTDC_FDR);
+            //trueFDR
+            row.add(trueFDR);
             //BestSTDS FDR
             row.add(BestSTDS_FDR);
             //STDS FDR
             row.add(STDS_FDR);
-            //trueFDR
-            row.add(trueFDR);
             //standard FDR
             row.add(1 - finalMinScore);
             //pValue
@@ -182,7 +182,7 @@ public class Reporter {
         List<Double> decoyFrequencyList = new ArrayList<>();
         List<Double> totalFrequencyList = new ArrayList<>();
         for (int i = 0; i < scoreDataSheet.size(); i++) {
-            pValueArray[i] = (double) scoreDataSheet.get(i).get(6);
+            pValueArray[i] = (double) scoreDataSheet.get(i).get(10);
             targetFrequency += (double) scoreDataSheet.get(i).get(2);
             decoyFrequency += (double) scoreDataSheet.get(i).get(3);
             totalFrequency += (double) scoreDataSheet.get(i).get(4);
