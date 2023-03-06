@@ -68,7 +68,7 @@ public class TestController {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
 //        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
@@ -78,16 +78,17 @@ public class TestController {
 
     @RequestMapping("/filter")
     public void filter() {
-//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
+        //filter all the libraries
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
 //        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //filter on one library
-        String libraryId = "MassBank-MoNA";
-        noiseFilter.filter(libraryId);
+//        String libraryId = "MassBank-MoNA";
+//        noiseFilter.filter(libraryId);
 
         //basic filter on one library
 //        String libraryId = "MassBank-MoNA";
@@ -188,11 +189,11 @@ public class TestController {
 //        log.info("import success");
 
         //sirius data
-//        siriusParser.parse("sirius", "/Users/anshaowei/Documents/Metabolomics/library/ProjectSpace");
+        siriusParser.parse("sirius", "/Users/anshaowei/Downloads/ProjectSpace");
 
         //export data
-//        exporter.toMgf("ALL_GNPS-integrated", "ALL_GNPS-integrated");
-        exporter.toMgf("MassBank-MoNA-integrated", "MassBank-MoNA-integrated");
+//        exporter.toMsp("ALL_GNPS-integrated", "ALL_GNPS-integrated");
+//        exporter.toMsp("MassBank-MoNA", "MassBank-MoNA");
     }
 
     @RequestMapping("report")

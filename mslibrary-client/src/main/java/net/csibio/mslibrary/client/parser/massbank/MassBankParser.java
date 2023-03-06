@@ -41,6 +41,7 @@ public class MassBankParser {
             Result.Error("Create library failed");
             return;
         }
+        log.info("Create library success, library id: {}", libraryDO.getId());
 
         try {
             //fast read of spectra information
@@ -270,6 +271,7 @@ public class MassBankParser {
             log.error("Create library failed");
             return;
         }
+        log.info("Create library success, library id: {}", libraryDO.getId());
 
         try {
             //fast read of spectra information

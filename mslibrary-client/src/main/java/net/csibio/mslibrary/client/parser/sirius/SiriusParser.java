@@ -20,23 +20,25 @@ public class SiriusParser {
     @Autowired
     SpectrumService spectrumService;
 
-    public void parse(String libraryId, String filePath) {
-        File file = new File(filePath);
+    public void parse(String libraryId, String projectSpace) {
+        File file = new File(projectSpace);
         File[] files = file.listFiles();
         assert files != null;
         List<File> fileList = Arrays.asList(files);
         List<SpectrumDO> spectrumDOS = Collections.synchronizedList(new ArrayList<>());
         log.info("start parsing {} files", files.length);
         fileList.parallelStream().forEach(f -> {
-            if (!f.getName().equals(".compression") && !f.getName().equals(".version") && !f.getName().equals(".format")) {
+            if (!f.getName().equals(".compression") && !f.getName().equals(".version") && !f.getName().equals(".format") && !f.getName().equals(".DS_Store")) {
                 File[] subFiles = f.listFiles();
                 assert subFiles != null;
                 for (File subFile : subFiles) {
-                    if (subFile.getName().equals("spectrum.ms")) {
-                        SpectrumDO spectrumDO = parseSpectrum(subFile.getAbsolutePath());
-                        if (spectrumDO.getPrecursorMz() != null || spectrumDO.getMzs().length != 0) {
-                            spectrumDO.setLibraryId(libraryId);
-                            spectrumDOS.add(spectrumDO);
+                    if (subFile.getName().equals("decoys")) {
+                        File[] subSubFiles = subFile.listFiles();
+                        assert subSubFiles != null;
+                        for (File subSubFile : subSubFiles) {
+                            if (subSubFile.getName().endsWith(".tsv")) {
+                                spectrumDOS.add(parseDecoy(subSubFile.getAbsolutePath()));
+                            }
                         }
                     }
                 }
@@ -46,9 +48,10 @@ public class SiriusParser {
         log.info("Finish parsing sirius generated library");
     }
 
-    public SpectrumDO parseSpectrum(String decoySpectrumFile) {
+    //parse spectrum.ms in the sirius project space
+    private SpectrumDO parseSpectrum(String spectrumFile) {
         //read file use buffer
-        File file = new File(decoySpectrumFile);
+        File file = new File(spectrumFile);
         FileInputStream fis = null;
         SpectrumDO spectrumDO = new SpectrumDO();
         try {
@@ -86,9 +89,46 @@ public class SiriusParser {
             br.close();
             return spectrumDO;
         } catch (Exception e) {
-            log.error("error when parsing decoy spectrum file: {}", decoySpectrumFile);
+            log.error("error when parsing decoy spectrum file: {}", spectrumFile);
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    //parse decoy spectrum
+    private SpectrumDO parseDecoy(String decoyFilePath) {
+        //read file use buffer
+        File file = new File(decoyFilePath);
+        FileInputStream fis;
+        SpectrumDO spectrumDO = new SpectrumDO();
+        try {
+            fis = new FileInputStream(file);
+            BufferedReader br = new BufferedReader(new java.io.InputStreamReader(fis));
+            String line = br.readLine();
+            List<Double> mzList = new ArrayList<>();
+            List<Double> intensityList = new ArrayList<>();
+            while (line != null) {
+                if (!line.startsWith("mz")) {
+                    String[] items = line.split("\t");
+                    mzList.add(Double.parseDouble(items[0]));
+                    intensityList.add(Double.parseDouble(items[1]));
+                }
+                line = br.readLine();
+            }
+            double[] mzArray = new double[mzList.size()];
+            double[] intensityArray = new double[intensityList.size()];
+            for (int i = 0; i < mzList.size(); i++) {
+                mzArray[i] = mzList.get(i);
+                intensityArray[i] = intensityList.get(i);
+            }
+            spectrumDO.setMzs(mzArray);
+            spectrumDO.setInts(intensityArray);
+            return spectrumDO;
+        } catch (Exception e) {
+            log.error("error when parsing decoy spectrum file: {}", decoyFilePath);
             e.printStackTrace();
         }
         return null;
     }
 }
+
