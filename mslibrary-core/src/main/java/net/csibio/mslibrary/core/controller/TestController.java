@@ -137,13 +137,11 @@ public class TestController {
 
         //all the strategies on all the libraries
         for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-            if (decoyStrategy.equals(DecoyStrategy.Entropy_2) || decoyStrategy.equals(DecoyStrategy.XYMeta)) {
-                methodDO.setDecoyStrategy(decoyStrategy.getName());
-                List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-                for (LibraryDO libraryDO : libraryDOS) {
-                    for (int i = 0; i < repeat; i++) {
-                        spectrumGenerator.execute(libraryDO.getId(), methodDO);
-                    }
+            methodDO.setDecoyStrategy(decoyStrategy.getName());
+            List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+            for (LibraryDO libraryDO : libraryDOS) {
+                for (int i = 0; i < repeat; i++) {
+                    spectrumGenerator.execute(libraryDO.getId(), methodDO);
                 }
             }
         }
