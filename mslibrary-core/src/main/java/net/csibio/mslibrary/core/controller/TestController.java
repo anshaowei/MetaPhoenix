@@ -188,12 +188,12 @@ public class TestController {
 //        spectrumService.insert(spectrumDOS, "ST001794");
 //        log.info("import success");
 
-        //sirius data
-        siriusParser.parse("sirius", "/Users/anshaowei/Downloads/ProjectSpace");
-
         //export data
 //        exporter.toMsp("ALL_GNPS-integrated", "ALL_GNPS-integrated");
 //        exporter.toMsp("MassBank-MoNA", "MassBank-MoNA");
+
+        //sirius data
+        siriusParser.parse("sirius", "/Users/anshaowei/Downloads/ProjectSpace");
     }
 
     @RequestMapping("report")

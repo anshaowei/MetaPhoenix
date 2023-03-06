@@ -31,16 +31,33 @@ public class SiriusParser {
             if (!f.getName().equals(".compression") && !f.getName().equals(".version") && !f.getName().equals(".format") && !f.getName().equals(".DS_Store")) {
                 File[] subFiles = f.listFiles();
                 assert subFiles != null;
+                SpectrumDO spectrumDO = new SpectrumDO();
                 for (File subFile : subFiles) {
                     if (subFile.getName().equals("decoys")) {
                         File[] subSubFiles = subFile.listFiles();
                         assert subSubFiles != null;
                         for (File subSubFile : subSubFiles) {
                             if (subSubFile.getName().endsWith(".tsv")) {
-                                spectrumDOS.add(parseDecoy(subSubFile.getAbsolutePath()));
+                                spectrumDO = parseSpectrum(subSubFile.getAbsolutePath(), spectrumDO);
                             }
                         }
                     }
+                    if (subFile.getName().equals("compound.info")) {
+                        try {
+                            FileInputStream fis = new FileInputStream(subFile);
+                            BufferedReader br = new BufferedReader(new java.io.InputStreamReader(fis));
+                            String line = br.readLine();
+                            line = br.readLine();
+                            String[] split = line.split("\t");
+                            String[] comment = split[1].split("_");
+                            spectrumDO.setComment(comment[1]);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                if (spectrumDO.getComment() != null && spectrumDO.getMzs() != null) {
+                    spectrumDOS.add(spectrumDO);
                 }
             }
         });
@@ -49,11 +66,10 @@ public class SiriusParser {
     }
 
     //parse spectrum.ms in the sirius project space
-    private SpectrumDO parseSpectrum(String spectrumFile) {
+    private SpectrumDO parseSpectrum(String spectrumFile, SpectrumDO spectrumDO) {
         //read file use buffer
         File file = new File(spectrumFile);
         FileInputStream fis = null;
-        SpectrumDO spectrumDO = new SpectrumDO();
         try {
             fis = new FileInputStream(file);
             BufferedReader br = new BufferedReader(new java.io.InputStreamReader(fis));

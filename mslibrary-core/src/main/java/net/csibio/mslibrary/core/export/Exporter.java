@@ -39,8 +39,8 @@ public class Exporter {
             fileWriter = new FileWriter(outputFileName);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
             for (SpectrumDO spectrumDO : spectrumDOS) {
-                if (spectrumDO.getCompoundName() != null) {
-                    bufferedWriter.write("NAME: " + spectrumDO.getCompoundName());
+                if (spectrumDO.getId() != null) {
+                    bufferedWriter.write("NAME: " + spectrumDO.getId());
                     bufferedWriter.newLine();
                 }
                 //precursor m/z
