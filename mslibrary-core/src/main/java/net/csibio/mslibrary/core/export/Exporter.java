@@ -137,19 +137,19 @@ public class Exporter {
                 bufferedWriter.newLine();
                 //FEATURE_ID
                 if (spectrumDO.getId() != null) {
-                    bufferedWriter.write("FEATURE_ID: " + spectrumDO.getId());
+                    bufferedWriter.write("FEATURE_ID=" + spectrumDO.getId());
                     bufferedWriter.newLine();
                 }
                 //PEPMASS
                 if (spectrumDO.getPrecursorMz() != null) {
-                    bufferedWriter.write("PEPMASS: " + spectrumDO.getPrecursorMz());
+                    bufferedWriter.write("PEPMASS=" + spectrumDO.getPrecursorMz());
                     bufferedWriter.newLine();
                 }
                 //CHARGE
-                bufferedWriter.write("CHARGE: " + "1");
+                bufferedWriter.write("CHARGE=" + "1+");
                 bufferedWriter.newLine();
                 //MSLEVEL
-                bufferedWriter.write("MSLEVEL: " + "2");
+                bufferedWriter.write("MSLEVEL=" + "2");
                 bufferedWriter.newLine();
                 if (spectrumDO.getMzs() != null && spectrumDO.getInts() != null) {
                     for (int i = 0; i < spectrumDO.getMzs().length; i++) {
@@ -166,6 +166,6 @@ public class Exporter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        log.info("export msp file success : " + outputFileName);
+        log.info("export mgf file success : " + outputFileName);
     }
 }

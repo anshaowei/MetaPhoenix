@@ -78,12 +78,20 @@ public class TestController {
 
     @RequestMapping("/filter")
     public void filter() {
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
+//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
 //        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
+
+        //filter on one library
+        String libraryId = "MassBank-MoNA";
+        noiseFilter.filter(libraryId);
+
+        //basic filter on one library
+//        String libraryId = "MassBank-MoNA";
+//        noiseFilter.basicFilter(libraryId);
     }
 
     @RequestMapping("compound")
@@ -138,8 +146,8 @@ public class TestController {
 
     }
 
-    @RequestMapping("dataImport")
-    public void dataImport() throws Exception {
+    @RequestMapping("dataExchange")
+    public void dataExchange() throws Exception {
         //real data
 //        File file = new File("/Users/anshaowei/Downloads/ST001794/ST001794.xlsx");
 //        Workbook workbook = new XSSFWorkbook(file);
@@ -180,7 +188,11 @@ public class TestController {
 //        log.info("import success");
 
         //sirius data
-        siriusParser.parse("sirius", "/Users/anshaowei/Documents/Metabolomics/library/ProjectSpace");
+//        siriusParser.parse("sirius", "/Users/anshaowei/Documents/Metabolomics/library/ProjectSpace");
+
+        //export data
+//        exporter.toMgf("ALL_GNPS-integrated", "ALL_GNPS-integrated");
+        exporter.toMgf("MassBank-MoNA-integrated", "MassBank-MoNA-integrated");
     }
 
     @RequestMapping("report")
@@ -241,10 +253,6 @@ public class TestController {
 //            List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
 //            reporter.entropyDistributionGraph(libraryId, libraryId, 50);
 //        }
-
-        //export
-//        exporter.toMsp("ALL_GNPS-integrated", "ALL_GNPS-integrated");
-//        exporter.toMsp("MassBank-MoNA-integrated", "MassBank-MoNA-integrated");
     }
 
     @RequestMapping("integrate")
