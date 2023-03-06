@@ -74,6 +74,7 @@ public class Integrator {
                     spectrumDO.setInts(mergedSpectrum.getInts());
                     spectrumDO.setLibraryId(integratedLibraryId);
                     spectrumDO.setSmiles(spectrumDOList.get(0).getSmiles());
+                    spectrumDO.setFormula(spectrumDOList.get(0).getFormula());
                     spectrumDO.setPrecursorMz(spectrumDOList.get(0).getPrecursorMz());
                     integratedSpectrumDOS.add(spectrumDO);
                 }

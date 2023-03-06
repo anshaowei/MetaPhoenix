@@ -2,8 +2,10 @@ package net.csibio.mslibrary.client.parser.massbank;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.enums.MsLevel;
+import net.csibio.mslibrary.client.constants.AdductConst;
 import net.csibio.mslibrary.client.constants.enums.IonMode;
 import net.csibio.mslibrary.client.domain.Result;
+import net.csibio.mslibrary.client.domain.bean.adduct.Adduct;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.LibraryService;
@@ -333,7 +335,7 @@ public class MassBankParser {
                                 try {
                                     spectrumDO.setPrecursorMz(Double.valueOf(precursorMzItems[1]));
                                 } catch (NumberFormatException e) {
-                                    log.error("precursorMz is not a number: {}", precursorMzItems[1]);
+//                                    log.error("precursorMz is not a number: {}", precursorMzItems[1]);
                                 }
                             }
                         }
@@ -439,7 +441,19 @@ public class MassBankParser {
                         }
                         line = br.readLine();
                     }
-                    if (spectrumDO.getMsLevel() != null && spectrumDO.getPrecursorMz() != null) {
+                    if (spectrumDO.getMsLevel() != null) {
+                        if (spectrumDO.getPrecursorMz() == null) {
+                            if (spectrumDO.getExactMass() != null && spectrumDO.getPrecursorAdduct() != null && spectrumDO.getIonMode() != null) {
+                                String precursorAdduct = spectrumDO.getPrecursorAdduct();
+                                List<Adduct> adducts = (spectrumDO.getIonMode().equals(IonMode.Positive.getName())) ? AdductConst.ESIAdducts_Positive : AdductConst.ESIAdducts_Negative;
+                                for (Adduct adduct : adducts) {
+                                    if (adduct.getIonForm().contains(precursorAdduct)) {
+                                        spectrumDO.setPrecursorMz(adduct.getPrecursorMz(spectrumDO.getExactMass()));
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                         spectrumDO.setLibraryId(libraryDO.getId());
                         spectrumDOS.add(spectrumDO);
                         spectrumCount++;

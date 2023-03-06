@@ -497,7 +497,7 @@ public class GnpsParser {
             fis.close();
             br.close();
             spectrumService.insert(spectrumDOS, libraryDO.getId());
-            log.info("Finish GNPS-format msp file importing, inserted spectrum count: {}", spectrumCount);
+            log.info("Finish GNPS-format msp file importing, inserted spectrum count: {}", spectrumDOS.size());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {

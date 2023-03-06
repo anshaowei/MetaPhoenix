@@ -94,6 +94,10 @@ public class Adduct {
         return adduct;
     }
 
+    public double getPrecursorMz(double exactMass) {
+        return (exactMass + this.getMw()) / this.getCharge();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
