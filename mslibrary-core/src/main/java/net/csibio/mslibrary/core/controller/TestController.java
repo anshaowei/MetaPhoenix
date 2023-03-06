@@ -79,8 +79,8 @@ public class TestController {
     @RequestMapping("/filter")
     public void filter() {
         //filter all the libraries
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
+//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
@@ -93,6 +93,9 @@ public class TestController {
         //basic filter on one library
 //        String libraryId = "MassBank-MoNA";
 //        noiseFilter.basicFilter(libraryId);
+
+        //sirius filter
+        noiseFilter.siriusFilter("MassBank-MoNA", "sirius");
     }
 
     @RequestMapping("compound")

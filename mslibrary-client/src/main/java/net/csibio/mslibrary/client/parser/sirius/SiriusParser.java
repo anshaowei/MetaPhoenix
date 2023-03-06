@@ -38,7 +38,7 @@ public class SiriusParser {
                         assert subSubFiles != null;
                         for (File subSubFile : subSubFiles) {
                             if (subSubFile.getName().endsWith(".tsv")) {
-                                spectrumDO = parseSpectrum(subSubFile.getAbsolutePath(), spectrumDO);
+                                spectrumDO = parseDecoy(subSubFile.getAbsolutePath(), spectrumDO);
                             }
                         }
                     }
@@ -112,11 +112,10 @@ public class SiriusParser {
     }
 
     //parse decoy spectrum
-    private SpectrumDO parseDecoy(String decoyFilePath) {
+    private SpectrumDO parseDecoy(String decoyFilePath, SpectrumDO spectrumDO) {
         //read file use buffer
         File file = new File(decoyFilePath);
         FileInputStream fis;
-        SpectrumDO spectrumDO = new SpectrumDO();
         try {
             fis = new FileInputStream(file);
             BufferedReader br = new BufferedReader(new java.io.InputStreamReader(fis));

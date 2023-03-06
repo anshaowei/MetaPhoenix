@@ -139,4 +139,23 @@ public class NoiseFilter {
         spectrumService.insert(spectrumDOS, libraryId);
         log.info("finish noise filter on library: {}", libraryId);
     }
+
+    public void siriusFilter(String libraryId, String siriusLibraryId) {
+        List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
+        List<SpectrumDO> siriusSpectrumDOS = spectrumService.getAll(new SpectrumQuery(), siriusLibraryId);
+        List<String> remainIdList = new ArrayList<>();
+        List<String> removeIdList = new ArrayList<>();
+        for (SpectrumDO spectrumDO : siriusSpectrumDOS) {
+            remainIdList.add(spectrumDO.getComment());
+        }
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            if (!remainIdList.contains(spectrumDO.getId())) {
+                removeIdList.add(spectrumDO.getId());
+            }
+        }
+        SpectrumQuery spectrumQuery = new SpectrumQuery();
+        spectrumQuery.setIds(removeIdList);
+        spectrumService.remove(spectrumQuery, libraryId);
+        log.info("remove {} spectra from library: {}", removeIdList.size(), libraryId);
+    }
 }
