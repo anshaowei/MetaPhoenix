@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -141,18 +142,19 @@ public class NoiseFilter {
     }
 
     public void siriusFilter(String libraryId, String siriusLibraryId) {
+        log.info("start sirius filter on library: {}", libraryId);
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         List<SpectrumDO> siriusSpectrumDOS = spectrumService.getAll(new SpectrumQuery(), siriusLibraryId);
-        List<String> remainIdList = new ArrayList<>();
-        List<String> removeIdList = new ArrayList<>();
-        for (SpectrumDO spectrumDO : siriusSpectrumDOS) {
+        List<String> remainIdList = Collections.synchronizedList(new ArrayList<>());
+        List<String> removeIdList = Collections.synchronizedList(new ArrayList<>());
+        siriusSpectrumDOS.parallelStream().forEach(spectrumDO -> {
             remainIdList.add(spectrumDO.getComment());
-        }
-        for (SpectrumDO spectrumDO : spectrumDOS) {
+        });
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
             if (!remainIdList.contains(spectrumDO.getId())) {
                 removeIdList.add(spectrumDO.getId());
             }
-        }
+        });
         SpectrumQuery spectrumQuery = new SpectrumQuery();
         spectrumQuery.setIds(removeIdList);
         spectrumService.remove(spectrumQuery, libraryId);
