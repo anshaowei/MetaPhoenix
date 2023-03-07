@@ -42,21 +42,18 @@ public class SiriusParser {
                             }
                         }
                     }
-                    if (subFile.getName().equals("compound.info")) {
-                        try {
-                            FileInputStream fis = new FileInputStream(subFile);
-                            BufferedReader br = new BufferedReader(new java.io.InputStreamReader(fis));
-                            String line = br.readLine();
-                            line = br.readLine();
-                            String[] split = line.split("\t");
-                            String[] comment = split[1].split("_");
-                            spectrumDO.setComment(comment[1]);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                    if (subFile.getName().equals("spectrum.ms")) {
+                        SpectrumDO tempSpectrumDO = new SpectrumDO();
+                        tempSpectrumDO = parseSpectrum(subFile.getAbsolutePath(), tempSpectrumDO);
+                        if (tempSpectrumDO != null) {
+                            spectrumDO.setPrecursorMz(tempSpectrumDO.getPrecursorMz());
+                            spectrumDO.setSmiles(tempSpectrumDO.getSmiles());
+                            spectrumDO.setComment(tempSpectrumDO.getComment());
                         }
                     }
                 }
                 if (spectrumDO.getComment() != null && spectrumDO.getMzs() != null) {
+                    spectrumDO.setLibraryId(libraryId);
                     spectrumDOS.add(spectrumDO);
                 }
             }
@@ -84,6 +81,12 @@ public class SiriusParser {
                     String[] items = line.substring(2).split(" ");
                     if (items[0].equals("precursormz")) {
                         spectrumDO.setPrecursorMz(Double.parseDouble(items[1]));
+                    }
+                    if (items[0].equals("smiles")) {
+                        spectrumDO.setSmiles(items[1]);
+                    }
+                    if (items[0].equals("name")) {
+                        spectrumDO.setComment(items[1]);
                     }
                 }
                 if (label && !line.startsWith(" ") && !line.startsWith("##") && !line.startsWith(">") && !line.equals("")) {

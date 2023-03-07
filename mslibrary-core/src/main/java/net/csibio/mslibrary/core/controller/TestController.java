@@ -194,21 +194,22 @@ public class TestController {
 //        exporter.toMsp("MassBank-MoNA", "MassBank-MoNA");
 
         //sirius data
-        siriusParser.parse("sirius", "/Users/anshaowei/Downloads/ProjectSpace");
+        String libraryId = "MassBank-MoNA";
+        siriusParser.parse(libraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName(), "/Users/anshaowei/Downloads/ProjectSpace");
     }
 
     @RequestMapping("report")
     public void report() {
         //real score distribution sheet by the target-decoy strategy
-//        String queryLibraryId = "MassBank-MoNA-integrated";
-//        String targetLibraryId = "ALL_GNPS-integrated";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
-//        MethodDO methodDO = new MethodDO();
-//        methodDO.setMzTolerance(0.001);
-//        methodDO.setPpmForMzTolerance(false);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-//        reporter.scoreGraph("score1", hitsMap, 50);
+        String queryLibraryId = "MassBank-MoNA";
+        String targetLibraryId = "MassBank-MoNA";
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName();
+        MethodDO methodDO = new MethodDO();
+        methodDO.setMzTolerance(0.001);
+        methodDO.setPpmForMzTolerance(false);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+        reporter.scoreGraph("score", hitsMap, 50);
 
         //recall method
 //        String targetLibraryId = "ALL_GNPS-integrated";
@@ -237,16 +238,15 @@ public class TestController {
 //        reporter.compareFDRGraph("compareFDRGraph", hitsMapList, 100);
 
         //simple identification process
-        String queryLibraryId = "MassBank-MoNA-integrated";
-        String targetLibraryId = "MassBank-MoNA-integrated";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Entropy_2.getName();
-        String decoyLibraryId = "sirius";
-        MethodDO methodDO = new MethodDO();
-        methodDO.setMzTolerance(0.001);
-        methodDO.setPpmForMzTolerance(false);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-        reporter.simpleScoreGraph("simpleScoreGraph", hitsMap, 50, false, false, -30);
+//        String queryLibraryId = "MassBank-MoNA";
+//        String targetLibraryId = "MassBank-MoNA";
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName();
+//        MethodDO methodDO = new MethodDO();
+//        methodDO.setMzTolerance(0.001);
+//        methodDO.setPpmForMzTolerance(false);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+//        reporter.simpleScoreGraph("simpleScoreGraph", hitsMap, 50, false, false, -30);
 
         //entropy distribution graph
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
@@ -269,7 +269,6 @@ public class TestController {
     public void all() {
         importLibrary();
         filter();
-        integrate();
         decoy();
     }
 
