@@ -58,6 +58,10 @@ public class SiriusParser {
                 }
             }
         });
+        if (spectrumDOS.size() == 0) {
+            log.error("No decoy spectrum exists in the sirius project space: {}", projectSpace);
+            return;
+        }
         spectrumService.insert(spectrumDOS, libraryId);
         log.info("Finish parsing sirius generated library");
     }

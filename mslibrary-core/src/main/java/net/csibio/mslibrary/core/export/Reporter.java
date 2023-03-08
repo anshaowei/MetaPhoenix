@@ -29,8 +29,8 @@ public class Reporter {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export score graph : " + outputFileName);
         //header
-        List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "CTDC_FDR", "true_FDR",
-                "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "true_Count", "false_Count");
+        List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "TTDC_FDR", "CTDC_FDR",
+                "true_FDR", "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "true_Count", "false_Count");
         List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
@@ -55,13 +55,11 @@ public class Reporter {
             for (int j = 1; j < dataSheet.size(); j++) {
                 //trueFDR
                 Double trueFDR = (Double) dataSheet.get(j).get(6);
-                //Standard_FDR
-                Double standard_FDR = 0.5 * (scoreInterval - j + 1) / scoreInterval;
                 //BestSTDS_FDR
                 Double bestSTDS_FDR = (Double) dataSheet.get(j).get(7);
                 if (i == 0) {
                     compareSheet.get(j).add(trueFDR);
-                    compareSheet.get(j).add(standard_FDR);
+                    compareSheet.get(j).add(trueFDR);
                 }
                 compareSheet.get(j).add(bestSTDS_FDR);
             }
@@ -125,20 +123,24 @@ public class Reporter {
         for (int i = 0; i < scoreInterval; i++) {
             double finalMinScore = minScore + i * step;
             double finalMaxScore = minScore + (i + 1) * step;
-            int targetCount, decoyCount, rightCount, falseCount, bestTargetCount, bestDecoyCount;
             List<Object> row = new ArrayList<>();
 
             //concatenated target-decoy strategy calculation
-            double CTDC_FDR = (double) 2 * ctdcList.stream().filter(hit -> hit.getScore() > finalMinScore && hit.isDecoy()).toList().size()
-                    / ctdcList.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            int target, decoy;
+            List<LibraryHit> hitsAboveScore = ctdcList.stream().filter(hit -> hit.getScore() > finalMinScore).toList();
+            target = hitsAboveScore.stream().filter(hit -> !hit.isDecoy()).toList().size();
+            decoy = hitsAboveScore.stream().filter(LibraryHit::isDecoy).toList().size();
+            double CTDC_FDR = (double) 2 * decoy / (target + decoy);
+            double TTDC_FDR = (double) decoy / target;
 
             //separated target-decoy strategy calculation
+            int targetCount, decoyCount, rightCount, falseCount, bestTargetCount, bestDecoyCount;
             targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             bestTargetCount = bestTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             bestDecoyCount = bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             double PIT = (double) (targetCount - bestTargetCount) / targetCount;
-            double BestSTDS_FDR = (double) bestDecoyCount / (bestTargetCount + bestDecoyCount) * PIT;
+            double BestSTDS_FDR = (double) bestDecoyCount / bestTargetCount;
             double STDS_FDR = (double) decoyCount / targetCount;
             double pValue = (double) decoyCount / (targetCount);
 
@@ -169,6 +171,8 @@ public class Reporter {
             row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
             //CTDC FDR
             row.add(CTDC_FDR);
+            //TTDC FDR
+            row.add(TTDC_FDR);
             //trueFDR
             row.add(trueFDR);
             //BestSTDS FDR
@@ -176,7 +180,7 @@ public class Reporter {
             //STDS FDR
             row.add(STDS_FDR);
             //standard FDR
-            row.add(1 - finalMinScore);
+            row.add(trueFDR);
             //pValue
             row.add(pValue);
             //PIT
