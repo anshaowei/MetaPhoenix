@@ -240,7 +240,14 @@ public class MassBankParser {
                         }
                         line = br.readLine();
                     }
-                    if (spectrumDO.getMsLevel() != null && spectrumDO.getPrecursorMz() != null) {
+                    if (spectrumDO.getMsLevel() != null) {
+                        if (spectrumDO.getPrecursorMz() == null) {
+                            Double precursorMz = calculatePrecursorMz(spectrumDO.getPrecursorAdduct(), spectrumDO.getExactMass(), spectrumDO.getIonMode());
+                            if (precursorMz != null) {
+                                spectrumDO.setPrecursorMz(precursorMz);
+                                log.info("calculate precursor success: {}", precursorMz);
+                            }
+                        }
                         spectrumDO.setLibraryId(libraryDO.getId());
                         spectrumDOS.add(spectrumDO);
                     }
@@ -249,7 +256,7 @@ public class MassBankParser {
                 }
             }
             spectrumService.insert(spectrumDOS, libraryName);
-            log.info("Finish importing, inserted spectrum count: {}", spectrumCount);
+            log.info("Finish importing, inserted spectrum count: {}", spectrumDOS.size());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -445,15 +452,9 @@ public class MassBankParser {
                     }
                     if (spectrumDO.getMsLevel() != null) {
                         if (spectrumDO.getPrecursorMz() == null) {
-                            if (spectrumDO.getExactMass() != null && spectrumDO.getPrecursorAdduct() != null && spectrumDO.getIonMode() != null) {
-                                String precursorAdduct = spectrumDO.getPrecursorAdduct();
-                                List<Adduct> adducts = (spectrumDO.getIonMode().equals(IonMode.Positive.getName())) ? AdductConst.ESIAdducts_Positive : AdductConst.ESIAdducts_Negative;
-                                for (Adduct adduct : adducts) {
-                                    if (adduct.getIonForm().contains(precursorAdduct)) {
-                                        spectrumDO.setPrecursorMz(adduct.getPrecursorMz(spectrumDO.getExactMass()));
-                                        break;
-                                    }
-                                }
+                            Double precursorMz = calculatePrecursorMz(spectrumDO.getPrecursorAdduct(), spectrumDO.getExactMass(), spectrumDO.getIonMode());
+                            if (precursorMz != null) {
+                                spectrumDO.setPrecursorMz(precursorMz);
                             }
                         }
                         spectrumDO.setLibraryId(libraryDO.getId());
@@ -471,6 +472,24 @@ public class MassBankParser {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Double calculatePrecursorMz(String precursorAdduct, Double exactMass, String ionMode) {
+        if (precursorAdduct == null || exactMass == null || ionMode == null) {
+            return null;
+        }
+        if (!ionMode.equals(IonMode.Positive.getName()) || !ionMode.equals(IonMode.Negative.getName())) {
+            return null;
+        }
+        Double precursorMz = null;
+        List<Adduct> adducts = (ionMode.equals(IonMode.Positive.getName())) ? AdductConst.ESIAdducts_Positive : AdductConst.ESIAdducts_Negative;
+        for (Adduct adduct : adducts) {
+            if (adduct.getIonForm().contains(precursorAdduct)) {
+                precursorMz = adduct.getPrecursorMz(exactMass);
+                return precursorMz;
+            }
+        }
+        return precursorMz;
     }
 
 }
