@@ -95,7 +95,7 @@ public class FDRControlled {
                     case Entropy ->
                             Similarity.getEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
                     case Cosine ->
-                            Similarity.getDotProduct(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
+                            Similarity.getMetaProScore(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
                     case Unweighted_Entropy ->
                             Similarity.getUnWeightedEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
                 };
@@ -103,6 +103,7 @@ public class FDRControlled {
                 libraryHit.setScore(score);
                 libraryHit.setSpectrumId(libSpectrum.getId());
                 libraryHit.setSmiles(libSpectrum.getSmiles());
+                libraryHit.setCompoundName(libSpectrum.getCompoundName());
                 libraryHit.setPrecursorMz(libSpectrum.getPrecursorMz());
                 if (libSpectrum.getLibraryId().equals(targetLibraryId)) {
                     libraryHit.setDecoy(false);

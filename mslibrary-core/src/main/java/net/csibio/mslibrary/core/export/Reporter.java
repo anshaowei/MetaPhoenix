@@ -47,21 +47,15 @@ public class Reporter {
             List<Object> row = new ArrayList<>();
             compareSheet.add(row);
         }
-        List<Object> header = Arrays.asList("trueFDR", "standardFDR", "A", "B", "C");
+        List<Object> header = Arrays.asList("Cosine", "Entropy", "Unweighted");
         compareSheet.add(0, header);
 
         for (int i = 0; i < hitsMapList.size(); i++) {
             List<List<Object>> dataSheet = getDataSheet(hitsMapList.get(i), scoreInterval);
             for (int j = 1; j < dataSheet.size(); j++) {
                 //trueFDR
-                Double trueFDR = (Double) dataSheet.get(j).get(6);
-                //BestSTDS_FDR
-                Double bestSTDS_FDR = (Double) dataSheet.get(j).get(7);
-                if (i == 0) {
-                    compareSheet.get(j).add(trueFDR);
-                    compareSheet.get(j).add(trueFDR);
-                }
-                compareSheet.get(j).add(bestSTDS_FDR);
+                Double trueFDR = (Double) dataSheet.get(j).get(7);
+                compareSheet.get(j).add(trueFDR);
             }
         }
         EasyExcel.write(outputFileName).sheet("compareFDRGraph").doWrite(compareSheet);
@@ -100,7 +94,7 @@ public class Reporter {
                     bestTargetHits.add(targetHitsList.get(0));
                     targetHits.addAll(targetHitsList);
                     for (LibraryHit hit : targetHitsList) {
-                        if (hit.getSmiles().equals(k.getSmiles())) {
+                        if (hit.getSmiles().equals(k.getSmiles()) || hit.getCompoundName().equals(k.getCompoundName())) {
                             trueHits.add(hit);
                         } else {
                             falseHits.add(hit);
@@ -143,8 +137,8 @@ public class Reporter {
             decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             bestTargetCount = bestTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             bestDecoyCount = bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            double BestSTDS_FDR = (double) bestDecoyCount / bestTargetCount;
-            double STDS_FDR = (double) decoyCount / targetCount;
+            double BestSTDS_FDR = (double) bestDecoyCount / bestTargetCount * PIT;
+            double STDS_FDR = (double) decoyCount / targetCount * PIT;
             double pValue = (double) decoyCount / (targetCount);
 
             //real data calculation

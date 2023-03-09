@@ -6,7 +6,7 @@ import org.apache.commons.math3.stat.StatUtils;
 
 public class Similarity {
 
-    public static double getDotProduct(Spectrum runSpectrum, Spectrum libSpectrum, double mzTolerance) {
+    public static double getMetaProScore(Spectrum runSpectrum, Spectrum libSpectrum, double mzTolerance) {
         int expIndex = 0;
         double[] libMzArray = libSpectrum.getMzs();
         double[] libIntArray = libSpectrum.getInts();
