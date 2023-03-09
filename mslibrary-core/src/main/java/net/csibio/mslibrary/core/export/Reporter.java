@@ -120,6 +120,10 @@ public class Reporter {
         double maxScore = 1.0;
         double step = (maxScore - minScore) / scoreInterval;
 
+        //estimate PIT
+        double threshold = 0.5;
+        double PIT = (double) targetHits.stream().filter(hit -> hit.getScore() < threshold).toList().size() / decoyHits.stream().filter(hit -> hit.getScore() < threshold).toList().size();
+
         for (int i = 0; i < scoreInterval; i++) {
             double finalMinScore = minScore + i * step;
             double finalMaxScore = minScore + (i + 1) * step;
@@ -139,7 +143,6 @@ public class Reporter {
             decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             bestTargetCount = bestTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             bestDecoyCount = bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            double PIT = (double) (targetCount - bestTargetCount) / targetCount;
             double BestSTDS_FDR = (double) bestDecoyCount / bestTargetCount;
             double STDS_FDR = (double) decoyCount / targetCount;
             double pValue = (double) decoyCount / (targetCount);
