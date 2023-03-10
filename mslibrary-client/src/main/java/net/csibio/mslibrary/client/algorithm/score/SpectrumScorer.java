@@ -19,19 +19,19 @@ public class SpectrumScorer {
     IsotopeFinder isotopeFinder;
 
     public double ms1ForwardScore(Spectrum ms1Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return Similarity.getMetaProScore(ms1Spectrum, libSpectrum, mzTolerance);
+        return Similarity.getMetaProSimilarity(ms1Spectrum, libSpectrum, mzTolerance);
     }
 
     public double ms1ReverseScore(Spectrum ms1Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return Similarity.getMetaProScore(libSpectrum, ms1Spectrum, mzTolerance);
+        return Similarity.getMetaProSimilarity(libSpectrum, ms1Spectrum, mzTolerance);
     }
 
     public double ms2ForwardScore(Spectrum ms2Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return Similarity.getMetaProScore(ms2Spectrum, libSpectrum, mzTolerance);
+        return Similarity.getMetaProSimilarity(ms2Spectrum, libSpectrum, mzTolerance);
     }
 
     public double ms2ReverseScore(Spectrum ms2Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return Similarity.getMetaProScore(libSpectrum, ms2Spectrum, mzTolerance);
+        return Similarity.getMetaProSimilarity(libSpectrum, ms2Spectrum, mzTolerance);
     }
 
     public double ms1IsotopeScore(Spectrum ms1Spectrum, String formula, double monoMz, double mzTolerance, boolean isPpm) {

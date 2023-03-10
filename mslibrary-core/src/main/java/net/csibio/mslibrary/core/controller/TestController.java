@@ -67,8 +67,8 @@ public class TestController {
     public void importLibrary() {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
@@ -87,16 +87,16 @@ public class TestController {
 //        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //filter on one library
-//        String libraryId = "ALL_GNPS";
-//        noiseFilter.filter(libraryId);
+        String libraryId = "GNPS-NIST14-MATCHES";
+        noiseFilter.filter(libraryId);
 
         //basic filter on one library
 //        String libraryId = "MassBank-MoNA";
 //        noiseFilter.basicFilter(libraryId);
 
         //sirius filter
-        String libraryId = "ALL_GNPS";
-        noiseFilter.siriusFilter(libraryId, libraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName());
+//        String libraryId = "ALL_GNPS";
+//        noiseFilter.siriusFilter(libraryId, libraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName());
     }
 
     @RequestMapping("compound")
@@ -137,18 +137,24 @@ public class TestController {
         int repeat = 1;
 
         //all the strategies on all the libraries
-        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-            methodDO.setDecoyStrategy(decoyStrategy.getName());
-            List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-            for (LibraryDO libraryDO : libraryDOS) {
-                for (int i = 0; i < repeat; i++) {
-                    spectrumGenerator.execute(libraryDO.getId(), methodDO);
-                }
-            }
-        }
+//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+//            methodDO.setDecoyStrategy(decoyStrategy.getName());
+//            List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//            for (LibraryDO libraryDO : libraryDOS) {
+//                for (int i = 0; i < repeat; i++) {
+//                    spectrumGenerator.execute(libraryDO.getId(), methodDO);
+//                }
+//            }
+//        }
 
         //all the strategies on one library
-//        String libraryId = "ALL_GNPS";
+        String libraryId = "GNPS-NIST14-MATCHES";
+        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
+        spectrumGenerator.execute(libraryId, methodDO);
+        methodDO.setDecoyStrategy(DecoyStrategy.Entropy_2.getName());
+        spectrumGenerator.execute(libraryId, methodDO);
+        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
+        spectrumGenerator.execute(libraryId, methodDO);
 //        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
 //            methodDO.setDecoyStrategy(decoyStrategy.getName());
 //            for (int i = 0; i < repeat; i++) {
@@ -213,13 +219,13 @@ public class TestController {
         //real score distribution sheet by the target-decoy strategy
         String queryLibraryId = "MassBank-MoNA";
         String targetLibraryId = "ALL_GNPS";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName();
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
         MethodDO methodDO = new MethodDO();
         methodDO.setMzTolerance(0.001);
         methodDO.setPpmForMzTolerance(false);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-        reporter.scoreGraph("score", hitsMap, 50);
+        reporter.scoreGraph("score", hitsMap, 100);
 
         //recall method
 //        String targetLibraryId = "ALL_GNPS-integrated";
@@ -229,34 +235,37 @@ public class TestController {
 //        methodDO.setPpmForMzTolerance(false);
 //        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
 //        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getRecallHitsMap(targetLibraryId, decoyLibraryId, methodDO);
-//        reporter.scoreGraph("score4", hitsMap, 100);
-//        reporter.estimatedPValueGraph("estimatedPValueGraph", hitsMap, 20);
+//        reporter.scoreGraph("recallScore", hitsMap, 100);
 
         //compare
 //        MethodDO methodDO = new MethodDO();
 //        methodDO.setMzTolerance(0.001);
 //        methodDO.setPpmForMzTolerance(false);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+//        String queryLibraryId = "MassBank-MoNA-integrated";
+//        String targetLibraryId = "ALL_GNPS-integrated";
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap1 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
 //        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
-//        String targetLibraryId = "MassBank-MoNA-integrated";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap1 = fdrControlled.getRecallHitsMap(targetLibraryId, decoyLibraryId, methodDO);
-//        decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Entropy_2.getName();
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap2 = fdrControlled.getRecallHitsMap(targetLibraryId, decoyLibraryId, methodDO);
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap2 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Unweighted_Entropy.getName());
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap3 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
+//
 //        List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList = new ArrayList<>();
 //        hitsMapList.add(hitsMap1);
 //        hitsMapList.add(hitsMap2);
+//        hitsMapList.add(hitsMap3);
 //        reporter.compareFDRGraph("compareFDRGraph", hitsMapList, 100);
 
         //simple identification process
 //        String queryLibraryId = "MassBank-MoNA";
 //        String targetLibraryId = "ALL_GNPS";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName();
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Naive.getName();
 //        MethodDO methodDO = new MethodDO();
 //        methodDO.setMzTolerance(0.001);
 //        methodDO.setPpmForMzTolerance(false);
 //        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
 //        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
-//        reporter.simpleScoreGraph("simpleScoreGraph", hitsMap, 50, false, false, -30);
+//        reporter.simpleScoreGraph(queryLibraryId + "-TO-" + targetLibraryId + "simpleScoreGraph", hitsMap, 50, true, false, -30);
 
         //entropy distribution graph
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
