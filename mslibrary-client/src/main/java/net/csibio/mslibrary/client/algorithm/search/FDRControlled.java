@@ -95,7 +95,7 @@ public class FDRControlled {
                     case Entropy ->
                             Similarity.getEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
                     case Cosine ->
-                            Similarity.getMetaProScore(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
+                            Similarity.getCosineSimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
                     case Unweighted_Entropy ->
                             Similarity.getUnWeightedEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
                 };

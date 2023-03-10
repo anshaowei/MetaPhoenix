@@ -106,4 +106,41 @@ public class Similarity {
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
 
+    public static double getCosineSimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
+        double[] mzArray1 = spectrum1.getMzs();
+        double[] intensityArray1 = spectrum1.getInts();
+        double[] mzArray2 = spectrum2.getMzs();
+        double[] intensityArray2 = spectrum2.getInts();
+
+        double dotProduct = 0d, norm1 = 0d, norm2 = 0d;
+        int index1 = 0, index2 = 0;
+        while (index1 < mzArray1.length && index2 < mzArray2.length) {
+            if (mzArray1[index1] < mzArray2[index2] - mzTolerance) {
+                norm1 += intensityArray1[index1] * intensityArray1[index1];
+                index1++;
+            } else if (mzArray1[index1] > mzArray2[index2] + mzTolerance) {
+                norm2 += intensityArray2[index2] * intensityArray2[index2];
+                index2++;
+            } else {
+                dotProduct += intensityArray1[index1] * intensityArray2[index2];
+                norm1 += intensityArray1[index1] * intensityArray1[index1];
+                norm2 += intensityArray2[index2] * intensityArray2[index2];
+                index1++;
+                index2++;
+            }
+        }
+        while (index1 < mzArray1.length) {
+            norm1 += intensityArray1[index1] * intensityArray1[index1];
+            index1++;
+        }
+        while (index2 < mzArray2.length) {
+            norm2 += intensityArray2[index2] * intensityArray2[index2];
+            index2++;
+        }
+        if (norm1 == 0 || norm2 == 0) {
+            return 0;
+        }
+        return dotProduct / Math.sqrt(norm1) / Math.sqrt(norm2);
+    }
+
 }
