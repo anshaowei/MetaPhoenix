@@ -68,27 +68,27 @@ public class TestController {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
         gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
 //        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-//        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
     @RequestMapping("/filter")
     public void filter() {
         //filter all the libraries
-//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
 //        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //filter on one library
-        String libraryId = "GNPS-NIST14-MATCHES";
-        noiseFilter.filter(libraryId);
+//        String libraryId = "GNPS-NIST14-MATCHES";
+//        noiseFilter.filter(libraryId);
 
         //basic filter on one library
 //        String libraryId = "MassBank-MoNA";
@@ -137,24 +137,26 @@ public class TestController {
         int repeat = 1;
 
         //all the strategies on all the libraries
-//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-//            methodDO.setDecoyStrategy(decoyStrategy.getName());
-//            List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//            for (LibraryDO libraryDO : libraryDOS) {
-//                for (int i = 0; i < repeat; i++) {
-//                    spectrumGenerator.execute(libraryDO.getId(), methodDO);
-//                }
-//            }
-//        }
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            if (decoyStrategy.equals(DecoyStrategy.XYMeta) || decoyStrategy.equals(DecoyStrategy.Entropy_2) || decoyStrategy.equals(DecoyStrategy.Naive)) {
+                methodDO.setDecoyStrategy(decoyStrategy.getName());
+                List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+                for (LibraryDO libraryDO : libraryDOS) {
+                    for (int i = 0; i < repeat; i++) {
+                        spectrumGenerator.execute(libraryDO.getId(), methodDO);
+                    }
+                }
+            }
+        }
 
         //all the strategies on one library
-        String libraryId = "GNPS-NIST14-MATCHES";
-        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
-        spectrumGenerator.execute(libraryId, methodDO);
-        methodDO.setDecoyStrategy(DecoyStrategy.Entropy_2.getName());
-        spectrumGenerator.execute(libraryId, methodDO);
-        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
-        spectrumGenerator.execute(libraryId, methodDO);
+//        String libraryId = "GNPS-NIST14-MATCHES";
+//        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
+//        spectrumGenerator.execute(libraryId, methodDO);
+//        methodDO.setDecoyStrategy(DecoyStrategy.Entropy_2.getName());
+//        spectrumGenerator.execute(libraryId, methodDO);
+//        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
+//        spectrumGenerator.execute(libraryId, methodDO);
 //        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
 //            methodDO.setDecoyStrategy(decoyStrategy.getName());
 //            for (int i = 0; i < repeat; i++) {
