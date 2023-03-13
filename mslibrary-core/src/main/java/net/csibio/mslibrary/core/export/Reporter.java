@@ -47,7 +47,7 @@ public class Reporter {
             List<Object> row = new ArrayList<>();
             compareSheet.add(row);
         }
-        List<Object> header = Arrays.asList("Cosine", "Entropy", "Unweighted");
+        List<Object> header = Arrays.asList("Cosine", "Entropy", "Unweighted", "MetaPro");
         compareSheet.add(0, header);
 
         for (int i = 0; i < hitsMapList.size(); i++) {
@@ -94,7 +94,8 @@ public class Reporter {
                     bestTargetHits.add(targetHitsList.get(0));
                     targetHits.addAll(targetHitsList);
                     for (LibraryHit hit : targetHitsList) {
-                        if (hit.getSmiles().equals(k.getSmiles()) || hit.getCompoundName().equals(k.getCompoundName())) {
+                        String[] inChIKeyArray = hit.getInChIKey().split("-");
+                        if (inChIKeyArray[0].equals(k.getInChIKey().split("-")[0])) {
                             trueHits.add(hit);
                         } else {
                             falseHits.add(hit);

@@ -21,7 +21,7 @@ public class LibraryHit {
 
     String smiles;
 
-    String inChI;
+    String inChIKey;
 
     String url;
 

@@ -98,6 +98,7 @@ public class FDRControlled {
                 LibraryHit libraryHit = new LibraryHit();
                 libraryHit.setScore(score);
                 libraryHit.setSpectrumId(libSpectrum.getId());
+                libraryHit.setInChIKey(libSpectrum.getInChIKey());
                 libraryHit.setSmiles(libSpectrum.getSmiles());
                 libraryHit.setCompoundName(libSpectrum.getCompoundName());
                 libraryHit.setPrecursorMz(libSpectrum.getPrecursorMz());
