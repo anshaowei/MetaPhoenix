@@ -41,6 +41,8 @@ public class SpectrumDO {
     @Indexed
     String ionSource;
 
+    String inChIKey;
+
     String compoundName;
 
     String instrumentType;
@@ -85,8 +87,6 @@ public class SpectrumDO {
      * GNPS Item
      */
     String ontology;
-
-    String inChIKey;
 
     String sourceFile;
 
@@ -165,14 +165,14 @@ public class SpectrumDO {
         this.byteMzs = CompressUtil.encode(mzs);
     }
 
-    public void decode(){
+    public void decode() {
         this.ints = CompressUtil.decode(byteInts);
         this.mzs = CompressUtil.decode(byteMzs);
         this.byteInts = null;
         this.byteMzs = null;
     }
 
-    public void encode(){
+    public void encode() {
         this.byteMzs = CompressUtil.encode(mzs);
         this.byteInts = CompressUtil.encode(ints);
     }

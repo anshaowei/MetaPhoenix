@@ -30,9 +30,11 @@ public class NoiseFilter {
         int count = spectrumDOS.size();
 
         //1. remove spectra with empty key information
-        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getSmiles() == null || spectrumDO.getSmiles().equals("") || spectrumDO.getMzs() == null || spectrumDO.getInts() == null
-                || spectrumDO.getMzs().length == 0 || spectrumDO.getInts().length == 0 || spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0
-                || spectrumDO.getIonMode() == null || spectrumDO.getSmiles().equals("N/A"));
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs() == null || spectrumDO.getMzs().length == 0 ||
+                spectrumDO.getInts() == null || spectrumDO.getInts().length == 0 ||
+                spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 ||
+                spectrumDO.getIonMode() == null);
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getInChIKey() == null || spectrumDO.getInChIKey().equals("") || spectrumDO.getInChIKey().equals("N/A"));
         log.info("remove {} spectra with empty key information, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 

@@ -327,7 +327,7 @@ public class MassBankParser {
                         if (lowerLine.startsWith("inchikey")) {
                             String[] inchiKeyItems = line.split(" ");
                             if (inchiKeyItems.length > 1) {
-                                spectrumDO.setInchiKeyInchi(inchiKeyItems[1]);
+                                spectrumDO.setInChIKey(inchiKeyItems[1]);
                             }
                         }
                         //precursor_type
