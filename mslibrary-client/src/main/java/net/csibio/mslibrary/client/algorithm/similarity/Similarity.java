@@ -1,12 +1,40 @@
 package net.csibio.mslibrary.client.algorithm.similarity;
 
 import net.csibio.aird.bean.common.Spectrum;
+import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import org.apache.commons.math3.stat.StatUtils;
 
 public class Similarity {
 
-    public static double getMetaProSimilarity(Spectrum runSpectrum, Spectrum libSpectrum, double mzTolerance) {
+    public static double getScore(Spectrum querySpectrum, Spectrum libSpectrum, SpectrumMatchMethod spectrumMatchMethod, double mzTolerance) {
+        double score = 0;
+        switch (spectrumMatchMethod) {
+            case Cosine:
+                score = getCosineSimilarity(querySpectrum, libSpectrum, mzTolerance);
+                break;
+            case Entropy:
+                score = getEntropySimilarity(querySpectrum, libSpectrum, mzTolerance);
+                break;
+            case Unweighted_Entropy:
+                score = getUnWeightedEntropySimilarity(querySpectrum, libSpectrum, mzTolerance);
+                break;
+            case MetaPro:
+                score = getMetaProSimilarity(querySpectrum, libSpectrum, mzTolerance);
+                break;
+            default:
+                break;
+        }
+        if (score < 0) {
+            score = 0.0;
+        }
+        if (score > 1) {
+            score = 1.0;
+        }
+        return score;
+    }
+
+    private static double getMetaProSimilarity(Spectrum runSpectrum, Spectrum libSpectrum, double mzTolerance) {
         int expIndex = 0;
         double[] libMzArray = libSpectrum.getMzs();
         double[] libIntArray = libSpectrum.getInts();
@@ -59,7 +87,7 @@ public class Similarity {
         return dotProduct / Math.sqrt(libNorm) / Math.sqrt(expNorm) * expCounter / libCounter;
     }
 
-    public static double getUnWeightedEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
+    private static double getUnWeightedEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
 
         Spectrum spectrumA = SpectrumUtil.clone(spectrum1);
         Spectrum spectrumB = SpectrumUtil.clone(spectrum2);
@@ -75,7 +103,7 @@ public class Similarity {
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
 
-    public static double getEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
+    private static double getEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
         Spectrum spectrumA = SpectrumUtil.clone(spectrum1);
         Spectrum spectrumB = SpectrumUtil.clone(spectrum2);
         SpectrumUtil.normalize(spectrumA);
@@ -106,7 +134,7 @@ public class Similarity {
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
 
-    public static double getCosineSimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
+    private static double getCosineSimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
         double[] mzArray1 = spectrum1.getMzs();
         double[] intensityArray1 = spectrum1.getInts();
         double[] mzArray2 = spectrum2.getMzs();

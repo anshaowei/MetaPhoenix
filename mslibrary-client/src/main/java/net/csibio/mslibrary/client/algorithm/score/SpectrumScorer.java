@@ -2,6 +2,7 @@ package net.csibio.mslibrary.client.algorithm.score;
 
 import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.algorithm.similarity.Similarity;
+import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.utils.ArrayUtil;
 import org.apache.commons.math3.util.FastMath;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,19 +20,19 @@ public class SpectrumScorer {
     IsotopeFinder isotopeFinder;
 
     public double ms1ForwardScore(Spectrum ms1Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return Similarity.getMetaProSimilarity(ms1Spectrum, libSpectrum, mzTolerance);
+        return Similarity.getScore(ms1Spectrum, libSpectrum, SpectrumMatchMethod.MetaPro, mzTolerance);
     }
 
     public double ms1ReverseScore(Spectrum ms1Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return Similarity.getMetaProSimilarity(libSpectrum, ms1Spectrum, mzTolerance);
+        return Similarity.getScore(libSpectrum, ms1Spectrum, SpectrumMatchMethod.MetaPro, mzTolerance);
     }
 
     public double ms2ForwardScore(Spectrum ms2Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return Similarity.getMetaProSimilarity(ms2Spectrum, libSpectrum, mzTolerance);
+        return Similarity.getScore(ms2Spectrum, libSpectrum, SpectrumMatchMethod.MetaPro, mzTolerance);
     }
 
     public double ms2ReverseScore(Spectrum ms2Spectrum, Spectrum libSpectrum, double mzTolerance) {
-        return Similarity.getMetaProSimilarity(libSpectrum, ms2Spectrum, mzTolerance);
+        return Similarity.getScore(libSpectrum, ms2Spectrum, SpectrumMatchMethod.MetaPro, mzTolerance);
     }
 
     public double ms1IsotopeScore(Spectrum ms1Spectrum, String formula, double monoMz, double mzTolerance, boolean isPpm) {

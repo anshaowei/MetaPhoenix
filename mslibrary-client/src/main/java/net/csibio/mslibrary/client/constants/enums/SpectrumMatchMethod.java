@@ -4,7 +4,8 @@ public enum SpectrumMatchMethod {
 
     Cosine("Cosine"),
     Entropy("Entropy"),
-    Unweighted_Entropy("Unweighted_Entropy");
+    Unweighted_Entropy("Unweighted_Entropy"),
+    MetaPro("MetaPro");
 
     final String name;
 

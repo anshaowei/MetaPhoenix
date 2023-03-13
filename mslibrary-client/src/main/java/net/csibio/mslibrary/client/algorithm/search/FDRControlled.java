@@ -71,12 +71,6 @@ public class FDRControlled {
         return getAllHitsMap(spectrumDOS, targetLibraryId, decoyLibraryId, method);
     }
 
-    public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getRecallHitsMap(String targetLibraryId, String decoyLibraryId, MethodDO method) {
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(targetLibraryId);
-        spectrumDOS = spectrumDOS.subList(1000, 3000);
-        return getAllHitsMap(spectrumDOS, targetLibraryId, decoyLibraryId, method);
-    }
-
     public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getAllHitsMap(List<SpectrumDO> spectrumDOS, String targetLibraryId, String decoyLibraryId, MethodDO method) {
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> allHitsMap = new ConcurrentHashMap<>();
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
@@ -93,11 +87,13 @@ public class FDRControlled {
                 SpectrumMatchMethod spectrumMatchMethod = SpectrumMatchMethod.valueOf(method.getSpectrumMatchMethod());
                 double score = switch (spectrumMatchMethod) {
                     case Entropy ->
-                            Similarity.getEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
+                            Similarity.getScore(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), SpectrumMatchMethod.Entropy, mzTolerance);
                     case Cosine ->
-                            Similarity.getCosineSimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
+                            Similarity.getScore(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), SpectrumMatchMethod.Cosine, mzTolerance);
                     case Unweighted_Entropy ->
-                            Similarity.getUnWeightedEntropySimilarity(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), mzTolerance);
+                            Similarity.getScore(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), SpectrumMatchMethod.Unweighted_Entropy, mzTolerance);
+                    case MetaPro ->
+                            Similarity.getScore(spectrumDO.getSpectrum(), libSpectrum.getSpectrum(), SpectrumMatchMethod.MetaPro, mzTolerance);
                 };
                 LibraryHit libraryHit = new LibraryHit();
                 libraryHit.setScore(score);
