@@ -68,28 +68,28 @@ public class TestController {
     public void importLibrary() {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
 //        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+//        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
     @RequestMapping("/filter")
     public void filter() {
         //filter all the libraries
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
+//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
 //        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //filter on one library
-//        String libraryId = "MassBank-MoNA";
-//        noiseFilter.filter(libraryId);
+        String libraryId = "GNPS-NIST14-MATCHES";
+        noiseFilter.filter(libraryId);
 
         //basic filter on one library
 //        String libraryId = "MassBank-MoNA";
@@ -151,7 +151,7 @@ public class TestController {
 //        }
 
         //all the strategies on one library
-        String libraryId = "ALL_GNPS";
+        String libraryId = "MassBank-MoNA";
         methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
         spectrumGenerator.execute(libraryId, methodDO);
         methodDO.setDecoyStrategy(DecoyStrategy.Entropy_2.getName());
@@ -220,8 +220,8 @@ public class TestController {
     @RequestMapping("report")
     public void report() {
         //real score distribution sheet by the target-decoy strategy
-        String queryLibraryId = "MassBank-MoNA";
-        String targetLibraryId = "ALL_GNPS";
+        String queryLibraryId = "GNPS-NIST14-MATCHES";
+        String targetLibraryId = "MassBank-MoNA";
         String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
         MethodDO methodDO = new MethodDO();
         methodDO.setPpmForMzTolerance(true);
