@@ -145,7 +145,10 @@ public class Reporter {
             //real data calculation
             rightCount = trueHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             falseCount = falseHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            double trueFDR = (double) falseCount / (rightCount + falseCount);
+            double trueFDR = 0d;
+            if (rightCount + falseCount != 0) {
+                trueFDR = (double) falseCount / (rightCount + falseCount);
+            }
 
             //hits distribution
             if (i == 0) {
