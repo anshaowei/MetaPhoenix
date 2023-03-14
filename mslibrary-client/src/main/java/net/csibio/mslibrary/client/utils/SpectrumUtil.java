@@ -17,7 +17,7 @@ public class SpectrumUtil {
     }
 
     /**
-     * mix two spectrum by the given weight
+     * mix two spectrum by the given weight, mixIntensity = intensity1 * weight1 + intensity2 * weight2
      */
     public static Spectrum mixByWeight(Spectrum spectrum1, Spectrum spectrum2, double weight1, double weight2, double mzTolerance) {
 

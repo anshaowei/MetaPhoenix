@@ -28,6 +28,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -219,34 +220,15 @@ public class TestController {
     @RequestMapping("report")
     public void report() {
         //real score distribution sheet by the target-decoy strategy
-        String queryLibraryId = "ALL_GNPS";
+        String queryLibraryId = "MassBank-MoNA";
         String targetLibraryId = "ALL_GNPS";
         String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
         MethodDO methodDO = new MethodDO();
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
         reporter.scoreGraph("score", hitsMap, 50);
-
-        //compare
-//        MethodDO methodDO = new MethodDO();
-//        methodDO.setPpmForMzTolerance(true);
-//        methodDO.setPpm(10);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
-//        String queryLibraryId = "MassBank-MoNA-integrated";
-//        String targetLibraryId = "ALL_GNPS-integrated";
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap1 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap2 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Unweighted_Entropy.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap3 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
-//
-//        List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList = new ArrayList<>();
-//        hitsMapList.add(hitsMap1);
-//        hitsMapList.add(hitsMap2);
-//        hitsMapList.add(hitsMap3);
-//        reporter.compareFDRGraph("compareFDRGraph", hitsMapList, 100);
 
         //simple identification process
 //        String queryLibraryId = "MassBank-MoNA";
@@ -266,6 +248,30 @@ public class TestController {
 //            List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
 //            reporter.entropyDistributionGraph(libraryId, libraryId, 50);
 //        }
+    }
+
+    @RequestMapping("compare")
+    public void compare() {
+        MethodDO methodDO = new MethodDO();
+        methodDO.setPpmForMzTolerance(true);
+        methodDO.setPpm(10);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
+        String queryLibraryId = "MassBank-MoNA";
+        String targetLibraryId = "ALL_GNPS";
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap1 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap2 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Unweighted_Entropy.getName());
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap3 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.MetaPro.getName());
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap4 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
+
+        List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList = new ArrayList<>();
+        hitsMapList.add(hitsMap1);
+//        hitsMapList.add(hitsMap2);
+//        hitsMapList.add(hitsMap3);
+//        hitsMapList.add(hitsMap4);
+        reporter.compareFDRGraph("compareFDRGraph", hitsMapList, 100);
     }
 
     @RequestMapping("integrate")

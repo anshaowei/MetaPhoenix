@@ -34,12 +34,12 @@ public class Similarity {
         return score;
     }
 
-    private static double getMetaProSimilarity(Spectrum runSpectrum, Spectrum libSpectrum, double mzTolerance) {
+    private static double getMetaProSimilarity(Spectrum querySpectrum, Spectrum libSpectrum, double mzTolerance) {
         int expIndex = 0;
         double[] libMzArray = libSpectrum.getMzs();
         double[] libIntArray = libSpectrum.getInts();
-        double[] expMzArray = runSpectrum.getMzs();
-        double[] expIntArray = runSpectrum.getInts();
+        double[] expMzArray = querySpectrum.getMzs();
+        double[] expIntArray = querySpectrum.getInts();
 
         //librarySpectrum的最大值
         double maxLibIntensity = StatUtils.max(libIntArray);
@@ -87,10 +87,9 @@ public class Similarity {
         return dotProduct / Math.sqrt(libNorm) / Math.sqrt(expNorm) * expCounter / libCounter;
     }
 
-    private static double getUnWeightedEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
-
-        Spectrum spectrumA = SpectrumUtil.clone(spectrum1);
-        Spectrum spectrumB = SpectrumUtil.clone(spectrum2);
+    private static double getUnWeightedEntropySimilarity(Spectrum querySpectrum, Spectrum libSpectrum, double mzTolerance) {
+        Spectrum spectrumA = SpectrumUtil.clone(querySpectrum);
+        Spectrum spectrumB = SpectrumUtil.clone(libSpectrum);
         SpectrumUtil.normalize(spectrumA);
         SpectrumUtil.normalize(spectrumB);
         double entropyA = Entropy.getEntropy(spectrumA);
@@ -103,9 +102,9 @@ public class Similarity {
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
 
-    private static double getEntropySimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
-        Spectrum spectrumA = SpectrumUtil.clone(spectrum1);
-        Spectrum spectrumB = SpectrumUtil.clone(spectrum2);
+    private static double getEntropySimilarity(Spectrum querySpectrum, Spectrum libSpectrum, double mzTolerance) {
+        Spectrum spectrumA = SpectrumUtil.clone(querySpectrum);
+        Spectrum spectrumB = SpectrumUtil.clone(libSpectrum);
         SpectrumUtil.normalize(spectrumA);
         SpectrumUtil.normalize(spectrumB);
 
@@ -134,17 +133,16 @@ public class Similarity {
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
 
-    private static double getCosineSimilarity(Spectrum spectrum1, Spectrum spectrum2, double mzTolerance) {
-        double[] mzArray1 = spectrum1.getMzs();
-        double[] intensityArray1 = spectrum1.getInts();
-        double[] mzArray2 = spectrum2.getMzs();
-        double[] intensityArray2 = spectrum2.getInts();
+    private static double getCosineSimilarity(Spectrum querySpectrum, Spectrum libSpectrum, double mzTolerance) {
+        double[] mzArray1 = querySpectrum.getMzs();
+        double[] intensityArray1 = querySpectrum.getInts();
+        double[] mzArray2 = libSpectrum.getMzs();
+        double[] intensityArray2 = libSpectrum.getInts();
 
+        int index1 = 0, index2 = 0, queryMatchCount = 0;
         double dotProduct = 0d, norm1 = 0d, norm2 = 0d;
-        int index1 = 0, index2 = 0;
         while (index1 < mzArray1.length && index2 < mzArray2.length) {
             if (mzArray1[index1] < mzArray2[index2] - mzTolerance) {
-                norm1 += intensityArray1[index1] * intensityArray1[index1];
                 index1++;
             } else if (mzArray1[index1] > mzArray2[index2] + mzTolerance) {
                 norm2 += intensityArray2[index2] * intensityArray2[index2];
@@ -155,11 +153,8 @@ public class Similarity {
                 norm2 += intensityArray2[index2] * intensityArray2[index2];
                 index1++;
                 index2++;
+                queryMatchCount++;
             }
-        }
-        while (index1 < mzArray1.length) {
-            norm1 += intensityArray1[index1] * intensityArray1[index1];
-            index1++;
         }
         while (index2 < mzArray2.length) {
             norm2 += intensityArray2[index2] * intensityArray2[index2];
