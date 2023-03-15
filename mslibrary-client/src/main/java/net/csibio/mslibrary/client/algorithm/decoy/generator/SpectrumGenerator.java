@@ -35,7 +35,7 @@ public class SpectrumGenerator {
             case Naive -> naive(spectrumDOS, decoySpectrumDOS);
             case XYMeta -> xymeta(spectrumDOS, decoySpectrumDOS, method);
             case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
-            case Entropy_1 -> entropy_1(spectrumDOS, decoySpectrumDOS, method);
+            case EntropyNaive -> entropyNaive(spectrumDOS, decoySpectrumDOS, method);
             case Entropy_2 -> entropy_2(spectrumDOS, decoySpectrumDOS, method);
             default -> log.error("Decoy procedure {} is not supported", method.getDecoyStrategy());
         }
@@ -82,7 +82,7 @@ public class SpectrumGenerator {
     /**
      * only keep the entropy of the target and decoy same compared to naive method
      */
-    private void entropy_1(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO method) {
+    private void entropyNaive(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO method) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //add precursor ion peak
             TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();

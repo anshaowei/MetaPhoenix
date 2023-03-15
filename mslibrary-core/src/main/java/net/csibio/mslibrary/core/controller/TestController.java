@@ -134,25 +134,21 @@ public class TestController {
         int repeat = 1;
 
         //all the strategies on all the libraries
-//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-//            if (decoyStrategy.equals(DecoyStrategy.XYMeta) || decoyStrategy.equals(DecoyStrategy.Entropy_2) || decoyStrategy.equals(DecoyStrategy.Naive)) {
-//                methodDO.setDecoyStrategy(decoyStrategy.getName());
-//                List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//                for (LibraryDO libraryDO : libraryDOS) {
-//                    for (int i = 0; i < repeat; i++) {
-//                        spectrumGenerator.execute(libraryDO.getId(), methodDO);
-//                    }
-//                }
-//            }
-//        }
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            if (decoyStrategy.equals(DecoyStrategy.EntropyNaive)) {
+                methodDO.setDecoyStrategy(decoyStrategy.getName());
+                List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+                for (LibraryDO libraryDO : libraryDOS) {
+                    for (int i = 0; i < repeat; i++) {
+                        spectrumGenerator.execute(libraryDO.getId(), methodDO);
+                    }
+                }
+            }
+        }
 
         //all the strategies on one library
-        String libraryId = "MassBank-MoNA";
-        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
-        spectrumGenerator.execute(libraryId, methodDO);
-        methodDO.setDecoyStrategy(DecoyStrategy.Entropy_2.getName());
-        spectrumGenerator.execute(libraryId, methodDO);
-//        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
+//        String libraryId = "MassBank-MoNA";
+//        methodDO.setDecoyStrategy(DecoyStrategy.EntropyNaive.getName());
 //        spectrumGenerator.execute(libraryId, methodDO);
 //        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
 //            methodDO.setDecoyStrategy(decoyStrategy.getName());
