@@ -13,7 +13,7 @@ public enum DecoyProcedure {
     //mix-max
     Mix_Max("Mix_Max");
 
-    final String name;
+    private final String name;
 
     DecoyProcedure(String name) {
         this.name = name;

@@ -10,9 +10,9 @@ public enum FragMode {
     HCD("HCD", Lists.newArrayList(ResidueType.BIon, ResidueType.YIon)),
     ETD("ETD", Lists.newArrayList(ResidueType.BIon, ResidueType.YIon, ResidueType.CIon, ResidueType.ZIon));
 
-    String name;
+    private final String name;
 
-    List<String> ionTypes;
+    private final List<String> ionTypes;
 
     FragMode(String name, List<String> ionTypes) {
         this.name = name;

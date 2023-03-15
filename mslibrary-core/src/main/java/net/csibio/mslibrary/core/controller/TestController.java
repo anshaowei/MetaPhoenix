@@ -258,7 +258,7 @@ public class TestController {
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
         String queryLibraryId = "GNPS-NIST14-MATCHES";
         List<SpectrumDO> querySpectrumDOS = spectrumService.getAllByLibraryId(queryLibraryId);
-        String targetLibraryId = "MassBank-MoNA";
+        String targetLibraryId = "MassBank-Europe";
 
         //compare different spectrum match method
 //        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());

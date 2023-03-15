@@ -8,7 +8,7 @@ public enum StatDim {
     Year("Year"),
     ;
 
-    String dim;
+    private final String dim;
 
     StatDim(String dim) {
         this.dim = dim;

@@ -7,7 +7,7 @@ public enum SpectrumMatchMethod {
     Unweighted_Entropy("Unweighted_Entropy"),
     MetaPro("MetaPro");
 
-    final String name;
+    private final String name;
 
     SpectrumMatchMethod(String name) {
         this.name = name;

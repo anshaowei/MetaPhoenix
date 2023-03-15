@@ -6,7 +6,7 @@ public enum IonMode {
     Negative("Negative"),
     ;
 
-    String name;
+    private final String name;
 
     IonMode(String name) {
         this.name = name;

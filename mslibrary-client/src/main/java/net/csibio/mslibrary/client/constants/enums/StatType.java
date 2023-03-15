@@ -5,7 +5,7 @@ public enum StatType {
     Global_Total("Global_Total"),
     Library("Library");
 
-    String name;
+    private final String name;
 
     StatType(String name) {
         this.name = name;

@@ -7,7 +7,7 @@ public enum MigrationStrategy {
     Combine("Combine"),
     ;
 
-    String name;
+    private final String name;
 
     MigrationStrategy(String name) {
         this.name = name;
@@ -18,7 +18,7 @@ public enum MigrationStrategy {
     }
 
     public static MigrationStrategy getByName(String name, MigrationStrategy defaultStrategy) {
-        for (MigrationStrategy strategy: values()) {
+        for (MigrationStrategy strategy : values()) {
             if (strategy.getName().equals(name)) {
                 return strategy;
             }

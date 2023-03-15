@@ -86,9 +86,9 @@ public enum ElementType {
     Form(44.9971, "Form", "Form"),
     ;
 
-    Double monoMw;
-    String symbol;
-    String name;
+    private final Double monoMw;
+    private final String symbol;
+    private final String name;
 
     ElementType(Double monoMw, String symbol, String name) {
         this.monoMw = monoMw;

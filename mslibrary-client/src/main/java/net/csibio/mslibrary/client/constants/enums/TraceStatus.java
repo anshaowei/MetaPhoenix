@@ -10,7 +10,7 @@ public enum TraceStatus {
     EXCEPTION("EXCEPTION"),
     ;
 
-    String name;
+    private final String name;
 
     TraceStatus(String name) {
         this.name = name;

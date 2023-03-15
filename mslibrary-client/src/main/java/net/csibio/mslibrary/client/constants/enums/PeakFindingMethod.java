@@ -7,7 +7,7 @@ public enum PeakFindingMethod {
     LOCAL_MINIMUM("LOCAL_MINIMUM"),
     SAVITZKY_GOLAY("SAVITZKY_GOLAY");
 
-    String name;
+    private final String name;
 
     PeakFindingMethod(String name) {
         this.name = name;

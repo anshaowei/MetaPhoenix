@@ -9,7 +9,7 @@ public enum TraceOuterType {
     Library("Library"),
     ;
 
-    String name;
+    private final String name;
 
 
     TraceOuterType(String name) {

@@ -117,9 +117,9 @@ public enum ResultCode implements Serializable {
     /**
      * Stat
      */
-    STAT_DIM_CANNOT_BE_EMPTY("STAT_DIM_CANNOT_BE_EMPTY","统计维度不能为空"),
-    STAT_TYPE_CANNOT_BE_EMPTY("STAT_TYPE_CANNOT_BE_EMPTY","统计类型不能为空"),
-    DATE_TIME_FORMAT_ERROR("DATE_TIME_FORMAT_ERROR","时间格式错误,请按照yyyyMMdd-HHmmss的格式传入数据"),
+    STAT_DIM_CANNOT_BE_EMPTY("STAT_DIM_CANNOT_BE_EMPTY", "统计维度不能为空"),
+    STAT_TYPE_CANNOT_BE_EMPTY("STAT_TYPE_CANNOT_BE_EMPTY", "统计类型不能为空"),
+    DATE_TIME_FORMAT_ERROR("DATE_TIME_FORMAT_ERROR", "时间格式错误,请按照yyyyMMdd-HHmmss的格式传入数据"),
 
     /**
      * ******

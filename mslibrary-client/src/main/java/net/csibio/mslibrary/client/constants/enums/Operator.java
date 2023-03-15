@@ -7,7 +7,7 @@ public enum Operator {
 
     ;
 
-    String symbol;
+    private final String symbol;
 
     Operator(String symbol) {
         this.symbol = symbol;

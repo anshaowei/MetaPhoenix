@@ -9,7 +9,7 @@ public enum DecoyStrategy {
     Entropy_2("Entropy_2"),
     FragmentationTree("FragmentationTree");
 
-    final String name;
+    private final String name;
 
     DecoyStrategy(String name) {
         this.name = name;

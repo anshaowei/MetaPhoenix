@@ -74,7 +74,7 @@ public class Reporter {
         }
         List<Object> header = new ArrayList<>();
         header.add("tureFDR");
-        header.add("STDS_FDR");
+        header.add("StandardFDR");
 
         boolean first = true;
         for (String decoyStrategy : hitsMapMap.keySet()) {
@@ -83,13 +83,15 @@ public class Reporter {
             for (int j = 0; j < dataSheet.size(); j++) {
                 //trueFDR
                 Double trueFDR = (Double) dataSheet.get(j).get(7);
+                //bestSTDS_FDR
+                Double bestSTDSFDR = (Double) dataSheet.get(j).get(8);
                 //STDS_FDR
                 Double stdsFDR = (Double) dataSheet.get(j).get(9);
                 if (first) {
                     compareSheet.get(j).add(trueFDR);
                     compareSheet.get(j).add(trueFDR);
                 }
-                compareSheet.get(j).add(stdsFDR);
+                compareSheet.get(j).add(bestSTDSFDR);
             }
             first = false;
         }
