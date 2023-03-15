@@ -37,7 +37,7 @@ public class Reporter {
         log.info("export score graph success : " + outputFileName);
     }
 
-    public void compareFDRGraph(String fileName, List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList, int scoreInterval) {
+    public void compareSpectrumMatchMethods(String fileName, List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList, int scoreInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export compareFDRGraph : " + outputFileName);
 
@@ -61,6 +61,38 @@ public class Reporter {
         EasyExcel.write(outputFileName).sheet("compareFDRGraph").doWrite(compareSheet);
         log.info("export compare success : " + outputFileName);
     }
+
+    public void compareDecoyStrategy(String fileName, List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList, int scoreInterval) {
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        log.info("start export compareDecoyStrategy : " + outputFileName);
+
+        //init
+        List<List<Object>> compareSheet = new ArrayList<>();
+        for (int i = 0; i < scoreInterval; i++) {
+            List<Object> row = new ArrayList<>();
+            compareSheet.add(row);
+        }
+
+        for (int i = 0; i < hitsMapList.size(); i++) {
+            List<List<Object>> dataSheet = getDataSheet(hitsMapList.get(i), scoreInterval);
+            for (int j = 0; j < dataSheet.size(); j++) {
+                //trueFDR
+                Double trueFDR = (Double) dataSheet.get(j).get(7);
+                //STDS_FDR
+                Double stdsFDR = (Double) dataSheet.get(j).get(9);
+                if (i == 0) {
+                    compareSheet.get(j).add(trueFDR);
+                    compareSheet.get(j).add(trueFDR);
+                }
+                compareSheet.get(j).add(stdsFDR);
+            }
+        }
+        List<Object> header = Arrays.asList("tureFDR", "standardFDR", "XYMeta", "Entropy_2", "Naive");
+        compareSheet.add(0, header);
+        EasyExcel.write(outputFileName).sheet("compareDecoyStrategy").doWrite(compareSheet);
+        log.info("export compare success : " + outputFileName);
+    }
+
 
     private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
         List<List<Object>> dataSheet = new ArrayList<>();
@@ -138,16 +170,20 @@ public class Reporter {
             decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             bestTargetCount = bestTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             bestDecoyCount = bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            double BestSTDS_FDR = (double) bestDecoyCount / bestTargetCount * PIT;
-            double STDS_FDR = (double) decoyCount / targetCount * PIT;
-            double pValue = (double) decoyCount / (targetCount);
 
             //real data calculation
             rightCount = trueHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             falseCount = falseHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            double trueFDR = 0d;
+            double trueFDR = 0d, BestSTDS_FDR = 0d, STDS_FDR = 0d, pValue = 0d;
             if (rightCount + falseCount != 0) {
                 trueFDR = (double) falseCount / (rightCount + falseCount);
+            }
+            if (bestTargetCount != 0) {
+                BestSTDS_FDR = (double) bestDecoyCount / bestTargetCount * PIT;
+            }
+            if (targetCount != 0) {
+                STDS_FDR = (double) decoyCount / targetCount * PIT;
+                pValue = (double) decoyCount / (targetCount);
             }
 
             //hits distribution
