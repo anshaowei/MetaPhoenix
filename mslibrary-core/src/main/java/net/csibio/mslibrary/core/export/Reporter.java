@@ -315,35 +315,56 @@ public class Reporter {
         log.info("export estimatedPValue graph success: " + outputFileName);
     }
 
-    public void entropyDistributionGraph(String fileName, String libraryId, int interval) {
+    public void entropyDistributionGraph(String fileName, HashMap<String, List<SpectrumDO>> idSpectraMap, int interval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export entropy distribution graph : " + outputFileName);
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+
+        //init
         List<List<Object>> dataSheet = new ArrayList<>();
-        if (spectrumDOS.size() != 0) {
-            List<Double> entropyList = new ArrayList<>();
-            for (SpectrumDO spectrumDO : spectrumDOS) {
-                entropyList.add(Entropy.getEntropy(spectrumDO.getSpectrum()));
-            }
-            Collections.sort(entropyList);
-            double minValue = entropyList.get(0);
-            double maxValue = entropyList.get(entropyList.size() - 1);
-            double step = (maxValue - minValue) / interval;
-            for (int i = 0; i < interval; i++) {
-                List<Object> data = new ArrayList<>();
-                double minThreshold = minValue + i * step;
-                double maxThreshold = minValue + (i + 1) * step;
-                double fraction = (double) entropyList.stream().filter(entropy -> entropy > minThreshold && entropy <= maxThreshold).toList().size() / entropyList.size();
-                data.add(minThreshold);
-                data.add(maxThreshold);
-                data.add(fraction);
-                dataSheet.add(data);
-            }
-            EasyExcel.write(outputFileName).sheet("entropyDistributionGraph").doWrite(dataSheet);
-            log.info("export entropyDistributionGraph graph success: " + outputFileName);
-        } else {
-            log.error("No spectra in library: {}", libraryId);
+        List<Object> header = new ArrayList<>();
+        for (int i = 0; i < interval; i++) {
+            dataSheet.add(new ArrayList<>());
         }
+        header.add("Entropy");
+
+        for (int i = 0; i < interval; i++) {
+            boolean first = true;
+            for (Map.Entry<String, List<SpectrumDO>> entry : idSpectraMap.entrySet()) {
+                List<SpectrumDO> spectrumDOS = entry.getValue();
+                if (spectrumDOS.size() != 0) {
+                    List<Double> entropyList = new ArrayList<>();
+                    for (SpectrumDO spectrumDO : spectrumDOS) {
+                        entropyList.add(Entropy.getEntropy(spectrumDO.getSpectrum()));
+                    }
+                    Collections.sort(entropyList);
+                    double minValue = 0d;
+                    double maxValue = 10d;
+                    double step = (maxValue - minValue) / interval;
+                    double lowerBound = minValue + step * i;
+                    double upperBound = minValue + step * (i + 1);
+                    int count = 0;
+                    for (double entropy : entropyList) {
+                        if (entropy >= lowerBound && entropy < upperBound) {
+                            count++;
+                        }
+                    }
+                    if (i == 0) {
+                        header.add(entry.getKey());
+                    }
+                    if (first) {
+                        dataSheet.get(i).add(upperBound);
+                        first = false;
+                    }
+                    double frequency = (double) count / spectrumDOS.size();
+                    dataSheet.get(i).add(frequency);
+                } else {
+                    dataSheet.get(i).add(0d);
+                }
+            }
+        }
+        dataSheet.add(0, header);
+        EasyExcel.write(outputFileName).sheet("entropyDistributionGraph").doWrite(dataSheet);
+        log.info("export entropy distribution graph success: " + outputFileName);
     }
 
     public void simpleScoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {
