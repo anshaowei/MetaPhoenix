@@ -62,7 +62,7 @@ public class Reporter {
         log.info("export compare success : " + outputFileName);
     }
 
-    public void compareDecoyStrategy(String fileName, List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList, int scoreInterval) {
+    public void compareDecoyStrategy(String fileName, HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap, int scoreInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export compareDecoyStrategy : " + outputFileName);
 
@@ -72,22 +72,27 @@ public class Reporter {
             List<Object> row = new ArrayList<>();
             compareSheet.add(row);
         }
+        List<Object> header = new ArrayList<>();
+        header.add("tureFDR");
+        header.add("STDS_FDR");
 
-        for (int i = 0; i < hitsMapList.size(); i++) {
-            List<List<Object>> dataSheet = getDataSheet(hitsMapList.get(i), scoreInterval);
+        boolean first = true;
+        for (String decoyStrategy : hitsMapMap.keySet()) {
+            List<List<Object>> dataSheet = getDataSheet(hitsMapMap.get(decoyStrategy), scoreInterval);
+            header.add(decoyStrategy);
             for (int j = 0; j < dataSheet.size(); j++) {
                 //trueFDR
                 Double trueFDR = (Double) dataSheet.get(j).get(7);
                 //STDS_FDR
                 Double stdsFDR = (Double) dataSheet.get(j).get(9);
-                if (i == 0) {
+                if (first) {
                     compareSheet.get(j).add(trueFDR);
                     compareSheet.get(j).add(trueFDR);
                 }
                 compareSheet.get(j).add(stdsFDR);
             }
+            first = false;
         }
-        List<Object> header = Arrays.asList("tureFDR", "standardFDR", "XYMeta", "Entropy_2", "Naive");
         compareSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("compareDecoyStrategy").doWrite(compareSheet);
         log.info("export compare success : " + outputFileName);

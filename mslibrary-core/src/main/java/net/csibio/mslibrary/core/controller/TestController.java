@@ -28,7 +28,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -257,9 +256,9 @@ public class TestController {
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-        String queryLibraryId = "MassBank-MoNA";
+        String queryLibraryId = "GNPS-NIST14-MATCHES";
         List<SpectrumDO> querySpectrumDOS = spectrumService.getAllByLibraryId(queryLibraryId);
-        String targetLibraryId = "ALL_GNPS";
+        String targetLibraryId = "MassBank-MoNA";
 
         //compare different spectrum match method
 //        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
@@ -278,19 +277,16 @@ public class TestController {
 //        reporter.compareSpectrumMatchMethods("compareSpectrumMatchMethods", hitsMapList, 50);
 
         //compare different decoy strategy
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap1 = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
-        decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Entropy_2.getName();
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap2 = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
-        decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Naive.getName();
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap3 = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
-        decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.EntropyNaive.getName();
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap4 = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
-        List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList = new ArrayList<>();
-        hitsMapList.add(hitsMap1);
-        hitsMapList.add(hitsMap2);
-        hitsMapList.add(hitsMap3);
-        reporter.compareDecoyStrategy("compareDecoyStrategy", hitsMapList, 100);
+        HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap = new HashMap<>();
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + decoyStrategy.getName();
+            if (!mongoTemplate.collectionExists("spectrum" + SymbolConst.DELIMITER + decoyLibraryId)) {
+                continue;
+            }
+            ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
+            hitsMapMap.put(decoyStrategy.getName(), hitsMap);
+        }
+        reporter.compareDecoyStrategy("compareDecoyStrategy", hitsMapMap, 100);
     }
 
     @RequestMapping("integrate")
