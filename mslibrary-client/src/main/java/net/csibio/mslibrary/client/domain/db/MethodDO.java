@@ -49,7 +49,7 @@ public class MethodDO {
     /**
      * @see SpectrumMatchMethod
      */
-    String spectrumMatchMethod;
+    SpectrumMatchMethod spectrumMatchMethod;
 
     Date createDate;
 

@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.integrate.Integrator;
-import net.csibio.mslibrary.client.algorithm.search.FDRControlled;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
@@ -19,6 +18,7 @@ import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
 import net.csibio.mslibrary.client.parser.massbank.MassBankParser;
 import net.csibio.mslibrary.client.parser.sirius.SiriusParser;
+import net.csibio.mslibrary.client.service.LibraryHitService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.core.export.Exporter;
@@ -54,8 +54,6 @@ public class TestController {
     @Autowired
     NoiseFilter noiseFilter;
     @Autowired
-    FDRControlled fdrControlled;
-    @Autowired
     GnpsParser gnpsParser;
     @Autowired
     MongoTemplate mongoTemplate;
@@ -65,6 +63,8 @@ public class TestController {
     SiriusParser siriusParser;
     @Autowired
     Integrator integrator;
+    @Autowired
+    LibraryHitService libraryHitService;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
@@ -256,8 +256,9 @@ public class TestController {
         MethodDO methodDO = new MethodDO();
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
         String queryLibraryId = "MassBank-MoNA";
+        List<SpectrumDO> querySpectrumDOS = spectrumService.getAllByLibraryId(queryLibraryId);
         String targetLibraryId = "ALL_GNPS";
 
         //compare different spectrum match method
@@ -278,11 +279,13 @@ public class TestController {
 
         //compare different decoy strategy
         String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap1 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap1 = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
         decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Entropy_2.getName();
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap2 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap2 = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
         decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.Naive.getName();
-        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap3 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap3 = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
+        decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.EntropyNaive.getName();
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap4 = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
         List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList = new ArrayList<>();
         hitsMapList.add(hitsMap1);
         hitsMapList.add(hitsMap2);

@@ -5,15 +5,15 @@ import lombok.Data;
 @Data
 public class LibraryHit {
 
-    String compoundId;
+    String querySpectrumId;
 
-    String spectrumId;
+    String libSpectrumId;
 
     String compoundName;
 
-    String libraryName;
+    String libraryId;
 
-    boolean decoy = false;
+    boolean isDecoy = false;
 
     String precursorAdduct;
 
@@ -23,9 +23,6 @@ public class LibraryHit {
 
     String inChIKey;
 
-    String url;
-
-    //打分
     Double score;
 
 }
