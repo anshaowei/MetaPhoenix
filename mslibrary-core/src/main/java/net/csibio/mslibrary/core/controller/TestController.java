@@ -206,12 +206,12 @@ public class TestController {
 //        log.info("import success");
 
         //export data
-//        String libraryId = "ALL_GNPS";
+//        String libraryId = "GNPS-NIST14-MATCHES";
 //        exporter.toMsp(libraryId, libraryId);
 
         //sirius data
-        String libraryId = "ALL_GNPS";
-        siriusParser.parse(libraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName(), "/Users/anshaowei/Documents/ProjectSpace/" + libraryId);
+        String libraryId = "GNPS-NIST14-MATCHES";
+        siriusParser.execute(libraryId, "/Users/anshaowei/Documents/ProjectSpace/" + libraryId);
     }
 
     @RequestMapping("report")
