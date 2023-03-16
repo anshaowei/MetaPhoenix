@@ -69,7 +69,7 @@ public class TestController {
     public void importLibrary() {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
 //        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
@@ -81,16 +81,16 @@ public class TestController {
     @RequestMapping("/filter")
     public void filter() {
         //filter all the libraries
-//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
 //        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //filter on one library
-        String libraryId = "MassBank-Europe";
-        noiseFilter.filter(libraryId);
+//        String libraryId = "MassBank-Europe";
+//        noiseFilter.filter(libraryId);
 
         //basic filter on one library
 //        String libraryId = "MassBank-MoNA";
@@ -133,22 +133,28 @@ public class TestController {
         int repeat = 1;
 
         //all the strategies on all the libraries
-        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-            if (decoyStrategy.equals(DecoyStrategy.EntropyNaive)) {
-                methodDO.setDecoyStrategy(decoyStrategy.getName());
-                List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-                for (LibraryDO libraryDO : libraryDOS) {
-                    for (int i = 0; i < repeat; i++) {
-                        spectrumGenerator.execute(libraryDO.getId(), methodDO);
-                    }
-                }
-            }
-        }
+//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+//            if (decoyStrategy.equals(DecoyStrategy.EntropyNaive)) {
+//                methodDO.setDecoyStrategy(decoyStrategy.getName());
+//                List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//                for (LibraryDO libraryDO : libraryDOS) {
+//                    for (int i = 0; i < repeat; i++) {
+//                        spectrumGenerator.execute(libraryDO.getId(), methodDO);
+//                    }
+//                }
+//            }
+//        }
 
         //all the strategies on one library
-//        String libraryId = "MassBank-MoNA";
-//        methodDO.setDecoyStrategy(DecoyStrategy.EntropyNaive.getName());
-//        spectrumGenerator.execute(libraryId, methodDO);
+        String libraryId = "MassBank-Europe";
+        methodDO.setDecoyStrategy(DecoyStrategy.EntropyNaive.getName());
+        spectrumGenerator.execute(libraryId, methodDO);
+        methodDO.setDecoyStrategy(DecoyStrategy.Entropy_2.getName());
+        spectrumGenerator.execute(libraryId, methodDO);
+        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
+        spectrumGenerator.execute(libraryId, methodDO);
+        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
+        spectrumGenerator.execute(libraryId, methodDO);
 //        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
 //            methodDO.setDecoyStrategy(decoyStrategy.getName());
 //            for (int i = 0; i < repeat; i++) {
@@ -217,8 +223,9 @@ public class TestController {
 //        MethodDO methodDO = new MethodDO();
 //        methodDO.setPpmForMzTolerance(true);
 //        methodDO.setPpm(10);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+//        List<SpectrumDO> querySpectrumDOS = spectrumService.getAll(new SpectrumQuery(), queryLibraryId);
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
 //        reporter.scoreGraph("score", hitsMap, 50);
 
         //simple identification process
@@ -227,8 +234,9 @@ public class TestController {
 //        MethodDO methodDO = new MethodDO();
 //        methodDO.setPpmForMzTolerance(true);
 //        methodDO.setPpm(10);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine);
+//        List<SpectrumDO> querySpectrumDOS = spectrumService.getAll(new SpectrumQuery(), queryLibraryId);
+//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, null, methodDO);
 //        reporter.simpleScoreGraph("simpleScoreGraph", hitsMap, 50, true, false, -30);
 
         //entropy distribution graph
@@ -298,14 +306,24 @@ public class TestController {
 //        }
 
         //integrate one library
-        String libraryId = "MassBank-Europe";
-        integrator.integrate(libraryId);
+//        String libraryId = "MassBank-Europe";
+//        integrator.integrate(libraryId);
+
+        //test InChIKey combination
+//        for (LibraryDO libraryDO : libraryService.getAll(new LibraryQuery())) {
+//            String libraryId = libraryDO.getId();
+//            List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+//            int k = spectrumDOS.stream().collect(Collectors.groupingBy(spectrumDO -> spectrumDO.getInChIKey().split(SymbolConst.DELIMITER)[0])).keySet().size();
+//            log.info("libraryId: {}, size: {}, k: {}", libraryId, spectrumDOS.size(), k);
+//        }
     }
 
     @RequestMapping("all")
     public void all() {
         importLibrary();
         filter();
+        decoy();
+        compare();
     }
 
 }
