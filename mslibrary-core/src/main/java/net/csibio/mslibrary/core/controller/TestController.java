@@ -28,6 +28,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -74,26 +75,26 @@ public class TestController {
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
-        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+//        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
 //        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
     @RequestMapping("/filter")
     public void filter() {
         //filter all the libraries
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
+//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter
-//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //filter on one library
 //        String libraryId = "MassBank-Europe";
 //        noiseFilter.filter(libraryId);
 
         //basic filter on one library
-//        String libraryId = "MassBank-MoNA";
+//        String libraryId = "GNPS-NIST14-MATCHES";
 //        noiseFilter.basicFilter(libraryId);
 
         //sirius filter
@@ -165,7 +166,7 @@ public class TestController {
     }
 
     @RequestMapping("dataExchange")
-    public void dataExchange() throws Exception {
+    public void dataExchange() {
         //real data
 //        File file = new File("/Users/anshaowei/Downloads/ST001794/ST001794.xlsx");
 //        Workbook workbook = new XSSFWorkbook(file);
@@ -205,13 +206,18 @@ public class TestController {
 //        spectrumService.insert(spectrumDOS, "ST001794");
 //        log.info("import success");
 
-        //export data
-//        String libraryId = "GNPS-NIST14-MATCHES";
-//        exporter.toMsp(libraryId, libraryId);
-
         //sirius data
         String libraryId = "GNPS-NIST14-MATCHES";
         siriusParser.execute(libraryId, "/Users/anshaowei/Documents/ProjectSpace/" + libraryId);
+    }
+
+    @RequestMapping("export")
+    public void export() {
+        //export all the libraries
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        for (LibraryDO libraryDO : libraryDOS) {
+            exporter.toMsp(libraryDO.getId(), libraryDO.getId());
+        }
     }
 
     @RequestMapping("report")
@@ -319,11 +325,9 @@ public class TestController {
     }
 
     @RequestMapping("all")
-    public void all() {
+    public void all() throws IOException, InterruptedException {
         importLibrary();
         filter();
-        decoy();
-        compare();
+        export();
     }
-
 }

@@ -13,7 +13,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Component("siriusParser")
 @Slf4j
@@ -26,7 +25,7 @@ public class SiriusParser {
 
         log.info("start parsing sirius library: {}", libraryId);
         String decoyLibraryId = libraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName();
-        int rawDataPoints = 0;
+        int rawDataPoints = 0, rawSpectraCount = 0;
         List<SpectrumDO> rawSpectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = Collections.synchronizedList(new ArrayList<>());
         List<SpectrumDO> filteredSpectrumDOS = Collections.synchronizedList(new ArrayList<>());
@@ -35,81 +34,74 @@ public class SiriusParser {
             rawSpectraMap.put(spectrumDO.getId(), spectrumDO);
             rawDataPoints += spectrumDO.getMzs().length;
         }
+        rawSpectraCount = rawSpectrumDOS.size();
 
         File file = new File(projectSpace);
         File[] files = file.listFiles();
         assert files != null;
         List<File> fileList = Arrays.asList(files);
-        AtomicInteger filteredDataPoints = new AtomicInteger(0);
-        fileList.parallelStream().forEach(f -> {
+        int leftDataPoints = 0, leftSpectraCount = 0;
+        for (File f : fileList) {
             if (!f.getName().equals(".compression") && !f.getName().equals(".version") && !f.getName().equals(".format") && !f.getName().equals(".DS_Store")) {
                 File[] subFiles = f.listFiles();
                 assert subFiles != null;
-                SpectrumDO decoySpectrumDO = new SpectrumDO();
-                SpectrumDO filteredSpectrumDO = new SpectrumDO();
-                String rawSpectrumId = null;
+                String[] infos = f.getName().split(SymbolConst.UNDERLINE);
+                String rawSpectrumId = infos[infos.length - 1];
+                SpectrumDO rawSpectrumDO = rawSpectraMap.get(rawSpectrumId);
+                if (rawSpectrumDO == null) {
+                    log.error("raw spectrum not found: {}", rawSpectrumId);
+                    continue;
+                }
+                SpectrumDO decoySpectrumDO = null;
+                SpectrumDO filteredSpectrumDO = null;
                 for (File subFile : subFiles) {
-                    //decoy spectra by FragmentationTree method
-                    if (subFile.getName().equals("decoys")) {
-                        File[] subSubFiles = subFile.listFiles();
-                        assert subSubFiles != null;
-                        for (File subSubFile : subSubFiles) {
-                            if (subSubFile.getName().endsWith(".tsv")) {
-                                decoySpectrumDO = parseTsvFile(subSubFile.getAbsolutePath(), decoySpectrumDO);
-                            }
-                        }
-                    }
                     //noise filtered raw spectra by FragmentationTree annotation
                     if (subFile.getName().equals("spectra")) {
                         File[] subSubFiles = subFile.listFiles();
                         assert subSubFiles != null;
                         for (File subSubFile : subSubFiles) {
                             if (subSubFile.getName().endsWith(".tsv")) {
-                                filteredSpectrumDO = parseSpectrum(subSubFile.getAbsolutePath(), filteredSpectrumDO);
+                                filteredSpectrumDO = parseTsvFile(subSubFile.getAbsolutePath());
                             }
                         }
                     }
-                    //exact same spectrum as the raw spectrum
-                    //used to retrieve the raw spectrum
-                    if (subFile.getName().equals("spectrum.ms")) {
-                        SpectrumDO tempSpectrumDO = new SpectrumDO();
-                        tempSpectrumDO = parseSpectrum(subFile.getAbsolutePath(), tempSpectrumDO);
-                        rawSpectrumId = tempSpectrumDO.getComment();
+                    //decoy spectra by FragmentationTree method
+                    if (subFile.getName().equals("decoys")) {
+                        File[] subSubFiles = subFile.listFiles();
+                        assert subSubFiles != null;
+                        for (File subSubFile : subSubFiles) {
+                            if (subSubFile.getName().endsWith(".tsv")) {
+                                decoySpectrumDO = parseTsvFile(subSubFile.getAbsolutePath());
+                            }
+                        }
                     }
                 }
-                if (rawSpectrumId != null && decoySpectrumDO.getMzs() != null && filteredSpectrumDO.getMzs() != null) {
-                    SpectrumDO rawSpectrumDO = rawSpectraMap.get(rawSpectrumId);
-                    double[] filteredMzs = new double[filteredSpectrumDO.getMzs().length];
-                    double[] filteredIntensities = new double[filteredSpectrumDO.getInts().length];
-                    for (int i = 0; i < filteredSpectrumDO.getMzs().length; i++) {
-                        filteredMzs[i] = filteredSpectrumDO.getMzs()[i];
-                        filteredIntensities[i] = filteredSpectrumDO.getInts()[i];
-                    }
-                    filteredSpectrumDO = rawSpectrumDO;
-                    filteredSpectrumDO.setMzs(filteredMzs);
-                    filteredSpectrumDO.setInts(filteredIntensities);
-                    filteredDataPoints.addAndGet(filteredSpectrumDO.getMzs().length);
-                    filteredSpectrumDOS.add(filteredSpectrumDO);
+                if (filteredSpectrumDO == null || decoySpectrumDO == null) {
+                    log.error("No filtered or decoy spectrum in {}", f.getName());
+                    continue;
+                }
+                double[] filteredMzs = new double[filteredSpectrumDO.getMzs().length];
+                double[] filteredIntensities = new double[filteredSpectrumDO.getInts().length];
+                for (int i = 0; i < filteredSpectrumDO.getMzs().length; i++) {
+                    filteredMzs[i] = filteredSpectrumDO.getMzs()[i];
+                    filteredIntensities[i] = filteredSpectrumDO.getInts()[i];
+                }
+                rawSpectrumDO.setMzs(filteredMzs);
+                rawSpectrumDO.setInts(filteredIntensities);
+                filteredSpectrumDOS.add(rawSpectrumDO);
+                leftDataPoints += filteredMzs.length;
+                leftSpectraCount++;
 
-                    decoySpectrumDO.setLibraryId(decoyLibraryId);
-                    decoySpectrumDO.setPrecursorMz(rawSpectrumDO.getPrecursorMz());
-                    decoySpectrumDOS.add(decoySpectrumDO);
-                }
+                decoySpectrumDO.setLibraryId(decoyLibraryId);
+                decoySpectrumDO.setPrecursorMz(rawSpectrumDO.getPrecursorMz());
+                decoySpectrumDOS.add(decoySpectrumDO);
             }
-        });
-        if (decoySpectrumDOS.size() == 0) {
-            log.error("No decoy spectrum exists in the sirius project space: {}", projectSpace);
-            return;
-        }
-        if (filteredSpectrumDOS.size() == 0) {
-            log.error("No filtered spectrum exists in the sirius project space: {}", projectSpace);
-            return;
         }
         spectrumService.remove(new SpectrumQuery(), libraryId);
+        spectrumService.remove(new SpectrumQuery(), decoyLibraryId);
         spectrumService.insert(filteredSpectrumDOS, libraryId);
         spectrumService.insert(decoySpectrumDOS, decoyLibraryId);
-        int leftDataPoints = filteredDataPoints.get();
-        log.info("Remove {}% data points in the library: {}", (double) (rawDataPoints - leftDataPoints) / rawDataPoints, libraryId);
+        log.info("Remove {}% data points and {}% in the library: {}", (double) (rawDataPoints - leftDataPoints) / rawDataPoints * 100, (double) (rawSpectraCount - leftSpectraCount) / rawSpectraCount, libraryId);
         log.info("Finish parsing sirius project space: {}", projectSpace);
     }
 
@@ -166,7 +158,8 @@ public class SiriusParser {
     }
 
     //parse tsv format spectrum in the sirius project space
-    private SpectrumDO parseTsvFile(String tsvFilePath, SpectrumDO spectrumDO) {
+    private SpectrumDO parseTsvFile(String tsvFilePath) {
+        SpectrumDO spectrumDO = new SpectrumDO();
         //read file use buffer
         File file = new File(tsvFilePath);
         FileInputStream fis;
@@ -183,6 +176,10 @@ public class SiriusParser {
                     intensityList.add(Double.parseDouble(items[1]));
                 }
                 line = br.readLine();
+            }
+            if (mzList.size() == 0 || intensityList.size() == 0) {
+                log.error("No data in the tsv file: {}", tsvFilePath);
+                return null;
             }
             double[] mzArray = new double[mzList.size()];
             double[] intensityArray = new double[intensityList.size()];
