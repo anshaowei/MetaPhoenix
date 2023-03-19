@@ -28,7 +28,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -326,8 +328,24 @@ public class TestController {
 
     @RequestMapping("all")
     public void all() throws IOException, InterruptedException {
-        importLibrary();
-        filter();
-        export();
+//        importLibrary();
+//        filter();
+//        export();
+        String libraryId = "GNPS-NIST14-MATCHES";
+        String projectSpace = "/Users/anshaowei/Documents/ProjectSpace/" + libraryId;
+        String siriusPath = "/Applications/sirius.app/Contents/MacOS/sirius";
+        String[] commands = {siriusPath, "-i", projectSpace, "-o", projectSpace, "passatutto"};
+        Process process = Runtime.getRuntime().exec(commands);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+        int exitCode = process.waitFor();
+        if (exitCode == 0) {
+            System.out.println("Success");
+        } else {
+            System.out.println("Fail");
+        }
     }
 }
