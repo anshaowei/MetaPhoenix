@@ -2,6 +2,7 @@ package net.csibio.mslibrary.core.export;
 
 import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -23,17 +24,17 @@ public class Exporter {
     @Autowired
     SpectrumService spectrumService;
 
-    public void toExcel(String fileName, List<LibraryHit> libraryHits) {
+    public Result toExcel(String fileName, List<LibraryHit> libraryHits) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         EasyExcel.write(outputFileName, LibraryHit.class).sheet("result").doWrite(libraryHits);
+        return new Result(true);
     }
 
-    public void toMsp(String fileName, String libraryId) {
+    public Result toMsp(String outputFileName, String libraryId) {
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         if (spectrumDOS.size() == 0) {
             log.error("no spectra found in {}", libraryId);
         }
-        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".msp";
         FileWriter fileWriter;
         try {
             fileWriter = new FileWriter(outputFileName);
@@ -120,9 +121,15 @@ public class Exporter {
             throw new RuntimeException(e);
         }
         log.info("export msp file success : " + outputFileName);
+        return new Result(true);
     }
 
-    public void toMgf(String fileName, String libraryId) {
+    public void toMsp(String libraryId) {
+        String outputFileName = vmProperties.getRepository() + File.separator + libraryId + ".msp";
+        toMsp(outputFileName, libraryId);
+    }
+
+    public Result toMgf(String fileName, String libraryId) {
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         if (spectrumDOS.size() == 0) {
             log.error("no spectra found in {}", libraryId);
@@ -167,5 +174,6 @@ public class Exporter {
             throw new RuntimeException(e);
         }
         log.info("export mgf file success : " + outputFileName);
+        return new Result(true);
     }
 }

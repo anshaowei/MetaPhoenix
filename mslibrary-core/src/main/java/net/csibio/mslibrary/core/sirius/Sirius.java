@@ -3,6 +3,7 @@ package net.csibio.mslibrary.core.sirius;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
+import net.csibio.mslibrary.client.domain.Result;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -11,17 +12,14 @@ import net.csibio.mslibrary.core.export.Exporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-@Component
+@Component("sirius")
 @Slf4j
-public class Executor {
+public class Sirius {
     @Autowired
     SpectrumService spectrumService;
     @Autowired
@@ -30,18 +28,52 @@ public class Executor {
     Exporter exporter;
 
     public void execute(String libraryId) {
-        try {
-            String[] commands = {};
-            String libraryProjectSpace = vmProperties.getSiriusProjectSpace() + SymbolConst.LEFT_SLASH + libraryId;
+        String libraryProjectSpace = vmProperties.getSiriusProjectSpace() + SymbolConst.LEFT_SLASH + libraryId;
+        String siriusPath = vmProperties.getSiriusPath();
 
-            //export library as standard msp file for sirius
-
-            Process process = Runtime.getRuntime().exec(commands);
-
-            process.waitFor();
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+        //export library as standard msp file for sirius
+        String outputFileName = vmProperties.getSiriusProjectSpace() + File.separator + libraryId + ".msp";
+        Result result = exporter.toMsp(outputFileName, libraryId);
+        if (result.isFailed()) {
+            log.error("Export library as standard msp file for sirius failed");
+            return;
         }
+
+        //create library project space
+        File dir = new File(libraryProjectSpace);
+        if (!dir.exists()) {
+            dir.mkdir();
+            log.info("Created sirius project space：" + dir.getName());
+        } else {
+            deleteDir(dir);
+            dir.mkdir();
+            log.info("Sirius project space already exists: Removed and recreated");
+        }
+
+        //run sirius import and fragmentation tree
+        String[] commands = {siriusPath, "-i", outputFileName, "-o", libraryProjectSpace, "tree"};
+        if (runCommands(commands) == 0) {
+            log.info("Sirius import and calculate fragmentation tree finished");
+        } else {
+            log.error("Sirius import and calculate fragmentation tree failed");
+            return;
+        }
+
+        //delete msp file
+        File mspFile = new File(outputFileName);
+        if (mspFile.exists()) {
+            mspFile.delete();
+        }
+
+        //generate decoys by FragmentationTree annotation
+        commands = new String[]{siriusPath, "-i", libraryProjectSpace, "-o", libraryProjectSpace, "passatutto"};
+        if (runCommands(commands) == 0) {
+            log.info("Sirius generate decoy spectra finished");
+        } else {
+            log.error("Sirius generate decoy spectra failed");
+            return;
+        }
+        log.info("Sirius import and generate fragmentation tree decoys finished");
     }
 
     public void getFilteredSpectra(String libraryId, String projectSpace) {
@@ -251,5 +283,30 @@ public class Executor {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private void deleteDir(File dir) {
+        if (dir.isDirectory()) {
+            File[] files = dir.listFiles();
+            for (File file : files) {
+                deleteDir(file);
+            }
+        }
+        dir.delete();
+    }
+
+    private int runCommands(String[] commands) {
+        try {
+            Process process = Runtime.getRuntime().exec(commands);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+            return process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return 1;
     }
 }

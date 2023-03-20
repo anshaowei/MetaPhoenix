@@ -23,6 +23,7 @@ import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.core.export.Exporter;
 import net.csibio.mslibrary.core.export.Reporter;
+import net.csibio.mslibrary.core.sirius.Sirius;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -67,6 +68,8 @@ public class TestController {
     Integrator integrator;
     @Autowired
     LibraryHitService libraryHitService;
+    @Autowired
+    Sirius sirius;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
@@ -210,7 +213,9 @@ public class TestController {
 
         //sirius data
         String libraryId = "GNPS-NIST14-MATCHES";
-        siriusParser.execute(libraryId, "/Users/anshaowei/Documents/ProjectSpace/" + libraryId);
+//        siriusParser.execute(libraryId, "/Users/anshaowei/Documents/ProjectSpace/" + libraryId);
+
+        sirius.execute(libraryId);
     }
 
     @RequestMapping("export")
@@ -218,7 +223,7 @@ public class TestController {
         //export all the libraries
         List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
         for (LibraryDO libraryDO : libraryDOS) {
-            exporter.toMsp(libraryDO.getId(), libraryDO.getId());
+            exporter.toMsp(libraryDO.getId());
         }
     }
 
