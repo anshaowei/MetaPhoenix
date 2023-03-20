@@ -74,6 +74,10 @@ public class Sirius {
             return;
         }
         log.info("Sirius import and generate fragmentation tree decoys finished");
+
+        //get filtered spectra and decoys
+        getFilteredSpectra(libraryId, libraryProjectSpace);
+        getDecoySpectra(libraryId, libraryProjectSpace);
     }
 
     public void getFilteredSpectra(String libraryId, String projectSpace) {
@@ -143,6 +147,7 @@ public class Sirius {
         String decoyLibraryId = libraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree;
         List<SpectrumDO> rawSpectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
+        List<String> deleteIds = new ArrayList<>();
         HashMap<String, SpectrumDO> rawSpectraMap = new HashMap<>();
         for (SpectrumDO spectrumDO : rawSpectrumDOS) {
             rawSpectraMap.put(spectrumDO.getId(), spectrumDO);
@@ -175,6 +180,7 @@ public class Sirius {
                     }
                 }
                 if (decoySpectrumDO == null) {
+                    deleteIds.add(rawSpectrumDO.getId());
                     log.info("No decoy spectrum in: {}", f.getName());
                     continue;
                 }
@@ -184,11 +190,10 @@ public class Sirius {
                 decoySpectrumDOS.add(decoySpectrumDO);
             }
         }
-        if (rawSpectrumDOS.size() != decoySpectrumDOS.size()) {
-            log.error("The number of decoy spectra is not equal to the number of raw spectra");
-            return;
-        }
         spectrumService.remove(new SpectrumQuery(), decoyLibraryId);
+        SpectrumQuery spectrumQuery = new SpectrumQuery();
+        spectrumQuery.setIds(deleteIds);
+        spectrumService.remove(spectrumQuery, libraryId);
         spectrumService.insert(decoySpectrumDOS, decoyLibraryId);
         log.info("Finish insert decoy library: {} by FragmentationTree method", libraryId);
     }
