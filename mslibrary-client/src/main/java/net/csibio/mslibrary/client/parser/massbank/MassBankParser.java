@@ -136,7 +136,7 @@ public class MassBankParser {
                                 try {
                                     precursorMz = Double.parseDouble(precursorMzItems[1]);
                                 } catch (Exception e) {
-                                    log.error("Parse precursorMz failed, precursorMz: {} is not number", precursorMzItems[1]);
+//                                    log.error("Parse precursorMz failed, precursorMz: {} is not number", precursorMzItems[1]);
                                 }
                                 spectrumDO.setPrecursorMz(precursorMz);
                             }

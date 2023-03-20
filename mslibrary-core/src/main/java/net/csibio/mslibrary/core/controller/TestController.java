@@ -28,7 +28,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -75,19 +74,19 @@ public class TestController {
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
-//        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-//        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
     @RequestMapping("/filter")
     public void filter() {
         //filter all the libraries
-//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
+//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //filter on one library
 //        String libraryId = "MassBank-Europe";
@@ -96,10 +95,6 @@ public class TestController {
         //basic filter on one library
 //        String libraryId = "GNPS-NIST14-MATCHES";
 //        noiseFilter.basicFilter(libraryId);
-
-        //sirius filter
-//        String libraryId = "ALL_GNPS";
-//        noiseFilter.siriusFilter(libraryId, libraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName());
     }
 
     @RequestMapping("/remove")
@@ -134,29 +129,25 @@ public class TestController {
         int repeat = 1;
 
         //all the strategies on all the libraries
-//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-//            if (decoyStrategy.equals(DecoyStrategy.EntropyNaive)) {
-//                methodDO.setDecoyStrategy(decoyStrategy.getName());
-//                List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//                for (LibraryDO libraryDO : libraryDOS) {
-//                    for (int i = 0; i < repeat; i++) {
-//                        spectrumGenerator.execute(libraryDO.getId(), methodDO);
-//                    }
-//                }
-//            }
-//        }
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            if (decoyStrategy.equals(DecoyStrategy.FragmentationTree)) {
+                continue;
+            }
+            methodDO.setDecoyStrategy(decoyStrategy.getName());
+            List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+            for (LibraryDO libraryDO : libraryDOS) {
+                for (int i = 0; i < repeat; i++) {
+                    spectrumGenerator.execute(libraryDO.getId(), methodDO);
+                }
+            }
+        }
 
         //all the strategies on one library
-        String libraryId = "MassBank-Europe";
-        methodDO.setDecoyStrategy(DecoyStrategy.EntropyNaive.getName());
-        spectrumGenerator.execute(libraryId, methodDO);
-        methodDO.setDecoyStrategy(DecoyStrategy.Entropy_2.getName());
-        spectrumGenerator.execute(libraryId, methodDO);
-        methodDO.setDecoyStrategy(DecoyStrategy.XYMeta.getName());
-        spectrumGenerator.execute(libraryId, methodDO);
-        methodDO.setDecoyStrategy(DecoyStrategy.Naive.getName());
-        spectrumGenerator.execute(libraryId, methodDO);
+//        String libraryId = "MassBank-Europe";
 //        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+//            if (decoyStrategy.equals(DecoyStrategy.FragmentationTree)) {
+//                continue;
+//            }
 //            methodDO.setDecoyStrategy(decoyStrategy.getName());
 //            for (int i = 0; i < repeat; i++) {
 //                spectrumGenerator.execute(libraryId, methodDO);
@@ -206,9 +197,11 @@ public class TestController {
 //        spectrumService.insert(spectrumDOS, "ST001794");
 //        log.info("import success");
 
-        //sirius data
-        String libraryId = "GNPS-NIST14-MATCHES";
-        sirius.execute(libraryId);
+        //sirius process
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        for (LibraryDO libraryDO : libraryDOS) {
+            sirius.execute(libraryDO.getId());
+        }
     }
 
     @RequestMapping("export")
@@ -325,9 +318,10 @@ public class TestController {
     }
 
     @RequestMapping("all")
-    public void all() throws IOException, InterruptedException {
+    public void all() {
         importLibrary();
         filter();
         dataExchange();
+        decoy();
     }
 }

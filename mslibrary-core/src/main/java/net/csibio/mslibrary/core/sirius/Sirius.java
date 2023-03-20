@@ -28,7 +28,7 @@ public class Sirius {
     Exporter exporter;
 
     public void execute(String libraryId) {
-        String libraryProjectSpace = vmProperties.getSiriusProjectSpace() + SymbolConst.LEFT_SLASH + libraryId;
+        String libraryProjectSpace = vmProperties.getSiriusProjectSpace() + File.separator + libraryId;
         String siriusPath = vmProperties.getSiriusPath();
 
         //export library as standard msp file for sirius
