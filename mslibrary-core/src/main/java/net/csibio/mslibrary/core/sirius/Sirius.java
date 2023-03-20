@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -308,7 +309,11 @@ public class Sirius {
             while ((line = reader.readLine()) != null) {
                 System.out.println(line);
             }
-            return process.waitFor();
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                System.out.println("Error when running command: " + Arrays.toString(commands));
+            }
+            return exitCode;
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
