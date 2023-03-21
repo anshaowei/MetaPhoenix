@@ -23,11 +23,20 @@ import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.core.export.Exporter;
 import net.csibio.mslibrary.core.export.Reporter;
 import net.csibio.mslibrary.core.sirius.Sirius;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -69,13 +78,13 @@ public class TestController {
     public void importLibrary() {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
 //        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
         massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-//        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
     @RequestMapping("/filter")
@@ -157,46 +166,49 @@ public class TestController {
     }
 
     @RequestMapping("dataExchange")
-    public void dataExchange() {
+    public void dataExchange() throws IOException, InvalidFormatException {
         //real data
-//        File file = new File("/Users/anshaowei/Downloads/ST001794/ST001794.xlsx");
-//        Workbook workbook = new XSSFWorkbook(file);
-//        Sheet sheet = workbook.getSheetAt(4);
-//        List<SpectrumDO> spectrumDOS = new ArrayList<>();
-//        for (int i = 1; i < sheet.getLastRowNum(); i++) {
-//            if (i == 1 || i == 831 || i == 54) {
-//                continue;
-//            }
-//            Row row = sheet.getRow(i);
-//            if (row.getCell(1).getStringCellValue().contains("lvl 1")) {
-//                SpectrumDO spectrumDO = new SpectrumDO();
-//                spectrumDO.setLibraryId("ST001794");
-//                for (Cell cell : row) {
-//                    switch (cell.getColumnIndex()) {
-//                        case 0 -> spectrumDO.setCompoundName(cell.getStringCellValue());
-//                        case 3 -> spectrumDO.setPrecursorMz(cell.getNumericCellValue());
-//                        case 10 -> spectrumDO.setSmiles(cell.getStringCellValue());
-//                        case 12 -> {
-//                            String values = cell.getStringCellValue();
-//                            String[] valueArray = values.split(" ");
-//                            double[] mzArray = new double[valueArray.length];
-//                            double[] intensityArray = new double[valueArray.length];
-//                            for (int j = 0; j < valueArray.length; j++) {
-//                                String[] mzAndIntensity = valueArray[j].split(":");
-//                                mzArray[j] = Double.parseDouble(mzAndIntensity[0]);
-//                                intensityArray[j] = Double.parseDouble(mzAndIntensity[1]);
-//                            }
-//                            spectrumDO.setMzs(mzArray);
-//                            spectrumDO.setInts(intensityArray);
-//                        }
-//                    }
-//                }
-//                spectrumDOS.add(spectrumDO);
-//            }
-//        }
-//        spectrumService.insert(spectrumDOS, "ST001794");
-//        log.info("import success");
+        File file = new File("/Users/anshaowei/Downloads/ST001794/ST001794.xlsx");
+        Workbook workbook = new XSSFWorkbook(file);
+        Sheet sheet = workbook.getSheetAt(4);
+        List<SpectrumDO> spectrumDOS = new ArrayList<>();
+        for (int i = 1; i < sheet.getLastRowNum(); i++) {
+            if (i == 1 || i == 831 || i == 54) {
+                continue;
+            }
+            Row row = sheet.getRow(i);
+            if (row.getCell(1).getStringCellValue().contains("lvl 1")) {
+                SpectrumDO spectrumDO = new SpectrumDO();
+                spectrumDO.setLibraryId("ST001794");
+                for (Cell cell : row) {
+                    switch (cell.getColumnIndex()) {
+                        case 0 -> spectrumDO.setCompoundName(cell.getStringCellValue());
+                        case 3 -> spectrumDO.setPrecursorMz(cell.getNumericCellValue());
+                        case 10 -> spectrumDO.setSmiles(cell.getStringCellValue());
+                        case 12 -> {
+                            String values = cell.getStringCellValue();
+                            String[] valueArray = values.split(" ");
+                            double[] mzArray = new double[valueArray.length];
+                            double[] intensityArray = new double[valueArray.length];
+                            for (int j = 0; j < valueArray.length; j++) {
+                                String[] mzAndIntensity = valueArray[j].split(":");
+                                mzArray[j] = Double.parseDouble(mzAndIntensity[0]);
+                                intensityArray[j] = Double.parseDouble(mzAndIntensity[1]);
+                            }
+                            spectrumDO.setMzs(mzArray);
+                            spectrumDO.setInts(intensityArray);
+                        }
+                    }
+                }
+                spectrumDOS.add(spectrumDO);
+            }
+        }
+        spectrumService.insert(spectrumDOS, "ST001794");
+        log.info("import success");
+    }
 
+    @RequestMapping("sirius")
+    public void sirius() {
         //sirius process
         List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
         for (LibraryDO libraryDO : libraryDOS) {
@@ -321,7 +333,7 @@ public class TestController {
     public void all() {
         importLibrary();
         filter();
-        dataExchange();
+//        sirius();
 //        decoy();
     }
 }
