@@ -78,13 +78,13 @@ public class TestController {
     public void importLibrary() {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
-        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+//        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+//        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
     @RequestMapping("/filter")
@@ -277,35 +277,28 @@ public class TestController {
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
         String queryLibraryId = "GNPS-NIST14-MATCHES";
         List<SpectrumDO> querySpectrumDOS = spectrumService.getAllByLibraryId(queryLibraryId);
-        String targetLibraryId = "MassBank-Europe";
+        String targetLibraryId = "MassBank-MoNA";
 
         //compare different spectrum match method
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap1 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap2 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Unweighted_Entropy.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap3 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.MetaPro.getName());
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap4 = fdrControlled.getAllHitsMap(queryLibraryId, targetLibraryId, null, methodDO);
-//        List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList = new ArrayList<>();
-//        hitsMapList.add(hitsMap1);
-//        hitsMapList.add(hitsMap2);
-//        hitsMapList.add(hitsMap3);
-//        hitsMapList.add(hitsMap4);
-//        reporter.compareSpectrumMatchMethods("compareSpectrumMatchMethods", hitsMapList, 50);
+        HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap = new HashMap<>();
+        for (SpectrumMatchMethod spectrumMatchMethod : SpectrumMatchMethod.values()) {
+            methodDO.setSpectrumMatchMethod(spectrumMatchMethod);
+            ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, null, methodDO);
+            hitsMapMap.put(spectrumMatchMethod.getName(), hitsMap);
+        }
+        reporter.compareSpectrumMatchMethods("compareSpectrumMatchMethods", hitsMapMap, 100);
 
         //compare different decoy strategy
-        HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap = new HashMap<>();
-        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-            String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + decoyStrategy.getName();
-            if (!mongoTemplate.collectionExists("spectrum" + SymbolConst.DELIMITER + decoyLibraryId)) {
-                continue;
-            }
-            ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
-            hitsMapMap.put(decoyStrategy.getName(), hitsMap);
-        }
-        reporter.compareDecoyStrategy("compareDecoyStrategy", hitsMapMap, 100);
+//        HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap = new HashMap<>();
+//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+//            String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + decoyStrategy.getName();
+//            if (!mongoTemplate.collectionExists("spectrum" + SymbolConst.DELIMITER + decoyLibraryId)) {
+//                continue;
+//            }
+//            ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
+//            hitsMapMap.put(decoyStrategy.getName(), hitsMap);
+//        }
+//        reporter.compareDecoyStrategy("compareDecoyStrategy", hitsMapMap, 100);
     }
 
     @RequestMapping("integrate")

@@ -37,7 +37,7 @@ public class Reporter {
         log.info("export score graph success : " + outputFileName);
     }
 
-    public void compareSpectrumMatchMethods(String fileName, List<ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapList, int scoreInterval) {
+    public void compareSpectrumMatchMethods(String fileName, HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap, int scoreInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export compareFDRGraph : " + outputFileName);
 
@@ -47,17 +47,17 @@ public class Reporter {
             List<Object> row = new ArrayList<>();
             compareSheet.add(row);
         }
-        List<Object> header = Arrays.asList("Cosine", "Entropy", "Unweighted", "MetaPro");
-        compareSheet.add(0, header);
-
-        for (int i = 0; i < hitsMapList.size(); i++) {
-            List<List<Object>> dataSheet = getDataSheet(hitsMapList.get(i), scoreInterval);
-            for (int j = 1; j < dataSheet.size(); j++) {
+        List<Object> header = new ArrayList<>();
+        for (String spectrumMatchMethod : hitsMapMap.keySet()) {
+            header.add(spectrumMatchMethod);
+            List<List<Object>> dataSheet = getDataSheet(hitsMapMap.get(spectrumMatchMethod), scoreInterval);
+            for (int j = 0; j < dataSheet.size(); j++) {
                 //trueFDR
                 Double trueFDR = (Double) dataSheet.get(j).get(7);
                 compareSheet.get(j).add(trueFDR);
             }
         }
+        compareSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("compareFDRGraph").doWrite(compareSheet);
         log.info("export compare success : " + outputFileName);
     }
@@ -128,7 +128,7 @@ public class Reporter {
                 Map<Boolean, List<LibraryHit>> decoyTargetMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
                 List<LibraryHit> targetHitsList = decoyTargetMap.get(false);
                 List<LibraryHit> decoyHitsList = decoyTargetMap.get(true);
-                if (targetHitsList.size() != 0) {
+                if (targetHitsList != null && targetHitsList.size() != 0) {
                     targetHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
                     bestTargetHits.add(targetHitsList.get(0));
                     targetHits.addAll(targetHitsList);
