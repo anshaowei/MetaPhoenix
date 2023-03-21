@@ -30,7 +30,7 @@ public class MassBankParser {
 
         //read file use buffer
         File file = new File(filePath);
-        FileInputStream fis = null;
+        FileInputStream fis;
 
         //create library
         String libraryName = "MassBank-Europe";
@@ -241,13 +241,13 @@ public class MassBankParser {
                         line = br.readLine();
                     }
                     if (spectrumDO.getMsLevel() != null) {
-                        if (spectrumDO.getPrecursorMz() == null) {
-                            Double precursorMz = calculatePrecursorMz(spectrumDO.getPrecursorAdduct(), spectrumDO.getExactMass(), spectrumDO.getIonMode());
-                            if (precursorMz != null) {
-                                spectrumDO.setPrecursorMz(precursorMz);
-                                log.info("calculate precursor success: {}", precursorMz);
-                            }
-                        }
+//                        if (spectrumDO.getPrecursorMz() == null) {
+//                            Double precursorMz = calculatePrecursorMz(spectrumDO.getPrecursorAdduct(), spectrumDO.getExactMass(), spectrumDO.getIonMode());
+//                            if (precursorMz != null) {
+//                                spectrumDO.setPrecursorMz(precursorMz);
+//                                log.info("calculate precursor success: {}", precursorMz);
+//                            }
+//                        }
                         spectrumDO.setLibraryId(libraryDO.getId());
                         spectrumDOS.add(spectrumDO);
                     }
@@ -451,12 +451,12 @@ public class MassBankParser {
                         line = br.readLine();
                     }
                     if (spectrumDO.getMsLevel() != null) {
-                        if (spectrumDO.getPrecursorMz() == null) {
-                            Double precursorMz = calculatePrecursorMz(spectrumDO.getPrecursorAdduct(), spectrumDO.getExactMass(), spectrumDO.getIonMode());
-                            if (precursorMz != null) {
-                                spectrumDO.setPrecursorMz(precursorMz);
-                            }
-                        }
+//                        if (spectrumDO.getPrecursorMz() == null) {
+//                            Double precursorMz = calculatePrecursorMz(spectrumDO.getPrecursorAdduct(), spectrumDO.getExactMass(), spectrumDO.getIonMode());
+//                            if (precursorMz != null) {
+//                                spectrumDO.setPrecursorMz(precursorMz);
+//                            }
+//                        }
                         spectrumDO.setLibraryId(libraryDO.getId());
                         spectrumDOS.add(spectrumDO);
                         spectrumCount++;

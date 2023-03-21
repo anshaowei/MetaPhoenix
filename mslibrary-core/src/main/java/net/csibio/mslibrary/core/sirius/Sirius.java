@@ -160,11 +160,14 @@ public class Sirius {
         for (File f : files) {
             if (!f.getName().equals(".compression") && !f.getName().equals(".version") && !f.getName().equals(".format") && !f.getName().equals(".DS_Store")) {
                 File[] subFiles = f.listFiles();
-                assert subFiles != null;
                 String[] infos = f.getName().split(SymbolConst.UNDERLINE);
                 String rawSpectrumId = infos[infos.length - 1];
                 SpectrumDO rawSpectrumDO = rawSpectraMap.get(rawSpectrumId);
                 if (rawSpectrumDO == null) {
+                    continue;
+                }
+                if (subFiles == null) {
+                    deleteIds.add(rawSpectrumDO.getId());
                     continue;
                 }
                 SpectrumDO decoySpectrumDO = null;
@@ -323,6 +326,7 @@ public class Sirius {
             });
             thread.start();
             int exitCode = p.waitFor();
+            p.destroy();
             if (exitCode != 0) {
                 System.out.println("Error when running command: " + Arrays.toString(commands));
             }
