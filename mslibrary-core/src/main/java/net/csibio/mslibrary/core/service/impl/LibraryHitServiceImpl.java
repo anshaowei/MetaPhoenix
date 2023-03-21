@@ -133,6 +133,8 @@ public class LibraryHitServiceImpl implements LibraryHitService {
                     Similarity.getScore(querySpectrumDO.getSpectrum(), libSpectrumDO.getSpectrum(), SpectrumMatchMethod.Unweighted_Entropy, mzTolerance);
             case MetaPro ->
                     Similarity.getScore(querySpectrumDO.getSpectrum(), libSpectrumDO.getSpectrum(), SpectrumMatchMethod.MetaPro, mzTolerance);
+            case Weighted_Cosine ->
+                    Similarity.getScore(querySpectrumDO.getSpectrum(), libSpectrumDO.getSpectrum(), SpectrumMatchMethod.Weighted_Cosine, mzTolerance);
         };
     }
 
