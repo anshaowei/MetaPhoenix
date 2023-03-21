@@ -303,18 +303,31 @@ public class Sirius {
 
     private int runCommands(String[] commands) {
         try {
-            Process process = Runtime.getRuntime().exec(commands);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
-            }
-            int exitCode = process.waitFor();
+            ProcessBuilder pb = new ProcessBuilder(commands);
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+            InputStream is = p.getInputStream();
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            System.out.println(line);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            thread.start();
+            int exitCode = p.waitFor();
             if (exitCode != 0) {
                 System.out.println("Error when running command: " + Arrays.toString(commands));
             }
             return exitCode;
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
         return 1;
