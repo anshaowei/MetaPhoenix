@@ -11,7 +11,7 @@ public class Similarity {
         double score = 0;
         switch (spectrumMatchMethod) {
             case Cosine:
-                score = getCosineSimilarity(querySpectrum, libSpectrum, mzTolerance);
+                score = getCosineSimilarity(querySpectrum, libSpectrum, mzTolerance, false);
                 break;
             case Entropy:
                 score = getEntropySimilarity(querySpectrum, libSpectrum, mzTolerance);
@@ -21,6 +21,9 @@ public class Similarity {
                 break;
             case MetaPro:
                 score = getMetaProSimilarity(querySpectrum, libSpectrum, mzTolerance);
+                break;
+            case Weighted_Cosine:
+                score = getCosineSimilarity(querySpectrum, libSpectrum, mzTolerance, true);
                 break;
             default:
                 break;
@@ -133,37 +136,50 @@ public class Similarity {
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
 
-    private static double getCosineSimilarity(Spectrum querySpectrum, Spectrum libSpectrum, double mzTolerance) {
-        double[] mzArray1 = querySpectrum.getMzs();
-        double[] intensityArray1 = querySpectrum.getInts();
-        double[] mzArray2 = libSpectrum.getMzs();
-        double[] intensityArray2 = libSpectrum.getInts();
+    private static double getCosineSimilarity(Spectrum querySpectrum, Spectrum libSpectrum, double mzTolerance, boolean isWeighted) {
+        double[] libMzArray = libSpectrum.getMzs();
+        double[] libIntArray = libSpectrum.getInts();
+        double[] expMzArray = querySpectrum.getMzs();
+        double[] expIntArray = querySpectrum.getInts();
 
-        int index1 = 0, index2 = 0, queryMatchCount = 0;
-        double dotProduct = 0d, norm1 = 0d, norm2 = 0d;
-        while (index1 < mzArray1.length && index2 < mzArray2.length) {
-            if (mzArray1[index1] < mzArray2[index2] - mzTolerance) {
-                index1++;
-            } else if (mzArray1[index1] > mzArray2[index2] + mzTolerance) {
-                norm2 += intensityArray2[index2] * intensityArray2[index2];
-                index2++;
+        int expIndex = 0, libIndex = 0;
+        double dotProduct = 0d, expNorm = 0d, libNorm = 0d;
+        while (expIndex < expMzArray.length && libIndex < libMzArray.length) {
+            if (expMzArray[expIndex] < libMzArray[libIndex] - mzTolerance) {
+                expIndex++;
+            } else if (expMzArray[expIndex] > libMzArray[libIndex] + mzTolerance) {
+                libNorm += libIntArray[libIndex] * libIntArray[libIndex];
+                libIndex++;
             } else {
-                dotProduct += intensityArray1[index1] * intensityArray2[index2];
-                norm1 += intensityArray1[index1] * intensityArray1[index1];
-                norm2 += intensityArray2[index2] * intensityArray2[index2];
-                index1++;
-                index2++;
-                queryMatchCount++;
+                if (isWeighted) {
+                    dotProduct += weightedDotProduct(expMzArray[expIndex], expIntArray[expIndex]) * weightedDotProduct(libMzArray[libIndex], libIntArray[libIndex]);
+                    expNorm += weightedDotProduct(expMzArray[expIndex], expIntArray[expIndex]) * weightedDotProduct(expMzArray[expIndex], expIntArray[expIndex]);
+                    libNorm += weightedDotProduct(libMzArray[libIndex], libIntArray[libIndex]) * weightedDotProduct(libMzArray[libIndex], libIntArray[libIndex]);
+                } else {
+                    dotProduct += expIntArray[expIndex] * libIntArray[libIndex];
+                    expNorm += expIntArray[expIndex] * expIntArray[expIndex];
+                    libNorm += libIntArray[libIndex] * libIntArray[libIndex];
+                }
+                expIndex++;
+                libIndex++;
             }
         }
-        while (index2 < mzArray2.length) {
-            norm2 += intensityArray2[index2] * intensityArray2[index2];
-            index2++;
+        while (libIndex < libMzArray.length) {
+            if (isWeighted) {
+                libNorm += weightedDotProduct(libMzArray[libIndex], libIntArray[libIndex]) * weightedDotProduct(libMzArray[libIndex], libIntArray[libIndex]);
+            } else {
+                libNorm += libIntArray[libIndex] * libIntArray[libIndex];
+            }
+            libIndex++;
         }
-        if (norm1 == 0 || norm2 == 0) {
+        if (expNorm == 0 || libNorm == 0) {
             return 0;
         }
-        return dotProduct / Math.sqrt(norm1) / Math.sqrt(norm2);
+        return dotProduct / Math.sqrt(expNorm) / Math.sqrt(libNorm);
+    }
+
+    private static double weightedDotProduct(double mz, double intensity) {
+        return Math.pow(mz, 3d) * Math.pow(intensity, 0.6);
     }
 
 }

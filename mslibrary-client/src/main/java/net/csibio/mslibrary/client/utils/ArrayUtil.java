@@ -12,6 +12,10 @@ public class ArrayUtil {
         return sum;
     }
 
+    public static double average(double[] array) {
+        return sum(array) / array.length;
+    }
+
     public static double[] toArray(List<Double> list) {
         double[] target = new double[list.size()];
         for (int i = 0; i < list.size(); i++) {

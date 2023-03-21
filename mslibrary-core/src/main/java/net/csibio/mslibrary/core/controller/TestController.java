@@ -274,10 +274,11 @@ public class TestController {
         MethodDO methodDO = new MethodDO();
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine);
         String queryLibraryId = "GNPS-NIST14-MATCHES";
         List<SpectrumDO> querySpectrumDOS = spectrumService.getAllByLibraryId(queryLibraryId);
-        String targetLibraryId = "MassBank-MoNA";
+        querySpectrumDOS.removeIf(spectrumDO -> !spectrumDO.getPrecursorAdduct().equals("[M+H]+"));
+        String targetLibraryId = "ALL_GNPS";
 
         //compare different spectrum match method
         HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap = new HashMap<>();
@@ -286,7 +287,7 @@ public class TestController {
             ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, null, methodDO);
             hitsMapMap.put(spectrumMatchMethod.getName(), hitsMap);
         }
-        reporter.compareSpectrumMatchMethods("compareSpectrumMatchMethods", hitsMapMap, 100);
+        reporter.compareSpectrumMatchMethods("SpectrumMatchMethods", hitsMapMap, 100);
 
         //compare different decoy strategy
 //        HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap = new HashMap<>();
@@ -298,7 +299,7 @@ public class TestController {
 //            ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
 //            hitsMapMap.put(decoyStrategy.getName(), hitsMap);
 //        }
-//        reporter.compareDecoyStrategy("compareDecoyStrategy", hitsMapMap, 100);
+//        reporter.compareDecoyStrategy("DecoyStrategies", hitsMapMap, 100);
     }
 
     @RequestMapping("integrate")
