@@ -257,19 +257,10 @@ public class TestController {
         String targetLibraryId = "MassBank-MoNA";
 
         //compare different spectrum match method
-        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
+//        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
 
         //compare different decoy strategy
-//        HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap = new HashMap<>();
-//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-//            String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + decoyStrategy.getName();
-//            if (!mongoTemplate.collectionExists("spectrum" + SymbolConst.DELIMITER + decoyLibraryId)) {
-//                continue;
-//            }
-//            ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
-//            hitsMapMap.put(decoyStrategy.getName(), hitsMap);
-//        }
-//        reporter.compareDecoyStrategy("DecoyStrategyComparison", hitsMapMap, 100);
+        reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 100);
     }
 
     @RequestMapping("integrate")

@@ -4,6 +4,7 @@ import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.algorithm.similarity.Entropy;
+import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.MethodDO;
@@ -44,12 +45,12 @@ public class Reporter {
                 "true_FDR", "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "true_Count", "false_Count");
         List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval);
         dataSheet.add(0, header);
-        EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
-        log.info("export {} success" + fileName);
+        EasyExcel.write(outputFileName).sheet(fileName).doWrite(dataSheet);
+        log.info("export {} success", fileName);
     }
 
     public void compareSpectrumMatchMethods(String queryLibraryId, String targetLibraryId, MethodDO methodDO, int scoreInterval) {
-        String fileName = "compareSpectrumMatchMethods";
+        String fileName = "SpectrumMatchMethodComparison";
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export {} to {}", fileName, outputFileName);
 
@@ -71,13 +72,14 @@ public class Reporter {
             }
         }
         compareSheet.add(0, header);
-        EasyExcel.write(outputFileName).sheet("compareFDRGraph").doWrite(compareSheet);
-        log.info("export {} success" + fileName);
+        EasyExcel.write(outputFileName).sheet(fileName).doWrite(compareSheet);
+        log.info("export {} success", fileName);
     }
 
-    public void compareDecoyStrategy(String fileName, HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap, int scoreInterval) {
+    public void compareDecoyStrategy(String queryLibraryId, String targetLibraryId, MethodDO methodDO, int scoreInterval) {
+        String fileName = "DecoyStrategyComparison";
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
-        log.info("start export compareDecoyStrategy : " + outputFileName);
+        log.info("start export {} to {}", fileName, outputFileName);
 
         //init
         List<List<Object>> compareSheet = new ArrayList<>();
@@ -89,28 +91,29 @@ public class Reporter {
         header.add("tureFDR");
         header.add("StandardFDR");
 
-//        boolean first = true;
-//        for (String decoyStrategy : hitsMapMap.keySet()) {
-//            List<List<Object>> dataSheet = getDataSheet(hitsMapMap.get(decoyStrategy), scoreInterval);
-//            header.add(decoyStrategy);
-//            for (int j = 0; j < dataSheet.size(); j++) {
-//                //trueFDR
-//                Double trueFDR = (Double) dataSheet.get(j).get(7);
-//                //bestSTDS_FDR
-//                Double bestSTDSFDR = (Double) dataSheet.get(j).get(8);
-//                //STDS_FDR
-//                Double stdsFDR = (Double) dataSheet.get(j).get(9);
-//                if (first) {
-//                    compareSheet.get(j).add(trueFDR);
-//                    compareSheet.get(j).add(trueFDR);
-//                }
-//                compareSheet.get(j).add(bestSTDSFDR);
-//            }
-//            first = false;
-//        }
-//        compareSheet.add(0, header);
-//        EasyExcel.write(outputFileName).sheet("compareDecoyStrategy").doWrite(compareSheet);
-//        log.info("export compare success : " + outputFileName);
+        boolean first = true;
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + decoyStrategy.getName();
+            List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval);
+            header.add(decoyStrategy.getName());
+            for (int j = 0; j < dataSheet.size(); j++) {
+                //trueFDR
+                Double trueFDR = (Double) dataSheet.get(j).get(7);
+                //bestSTDS_FDR
+                Double bestSTDSFDR = (Double) dataSheet.get(j).get(8);
+                //STDS_FDR
+                Double stdsFDR = (Double) dataSheet.get(j).get(9);
+                if (first) {
+                    compareSheet.get(j).add(trueFDR);
+                    compareSheet.get(j).add(trueFDR);
+                }
+                compareSheet.get(j).add(bestSTDSFDR);
+            }
+            first = false;
+        }
+        compareSheet.add(0, header);
+        EasyExcel.write(outputFileName).sheet(fileName).doWrite(compareSheet);
+        log.info("export {} success", fileName);
     }
 
 
@@ -401,7 +404,7 @@ public class Reporter {
         }
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("entropyDistributionGraph").doWrite(dataSheet);
-        log.info("export entropy distribution graph success: " + outputFileName);
+        log.info("export {} success", fileName);
     }
 
     public void simpleScoreGraph(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {
@@ -414,7 +417,7 @@ public class Reporter {
         List<List<Object>> dataSheet = getSimpleDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval, bestHit, logScale, minLogScore);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
-        log.info("export simple identification graph success : " + outputFileName);
+        log.info("export {} success", fileName);
     }
 
     private List<List<Object>> getSimpleDataSheet(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {
