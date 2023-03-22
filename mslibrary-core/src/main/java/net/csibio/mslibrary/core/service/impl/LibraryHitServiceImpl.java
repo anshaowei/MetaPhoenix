@@ -70,6 +70,11 @@ public class LibraryHitServiceImpl implements LibraryHitService {
     }
 
     @Override
+    public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getAllHitsMap(String queryLibraryId, String libraryId, Double mzTolerance, boolean isDecoy, SpectrumMatchMethod spectrumMatchMethod) {
+        return getAllHitsMap(spectrumService.getAllByLibraryId(queryLibraryId), libraryId, mzTolerance, isDecoy, spectrumMatchMethod);
+    }
+
+    @Override
     public ConcurrentHashMap<SpectrumDO, LibraryHit> getBestHitsMap(List<SpectrumDO> querySpectrumDOS, String libraryId, Double mzTolerance, boolean isDecoy, SpectrumMatchMethod spectrumMatchMethod) {
         ConcurrentHashMap<SpectrumDO, LibraryHit> hitsMap = new ConcurrentHashMap<>();
         querySpectrumDOS.parallelStream().forEach(spectrumDO -> {
@@ -77,6 +82,11 @@ public class LibraryHitServiceImpl implements LibraryHitService {
             hitsMap.put(spectrumDO, libraryHit);
         });
         return hitsMap;
+    }
+
+    @Override
+    public ConcurrentHashMap<SpectrumDO, LibraryHit> getBestHitsMap(String queryLibraryId, String libraryId, Double mzTolerance, boolean isDecoy, SpectrumMatchMethod spectrumMatchMethod) {
+        return getBestHitsMap(spectrumService.getAllByLibraryId(queryLibraryId), libraryId, mzTolerance, isDecoy, spectrumMatchMethod);
     }
 
     @Override
@@ -95,6 +105,11 @@ public class LibraryHitServiceImpl implements LibraryHitService {
     }
 
     @Override
+    public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getTargetDecoyHitsMap(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO) {
+        return getTargetDecoyHitsMap(spectrumService.getAllByLibraryId(queryLibraryId), targetLibraryId, decoyLibraryId, methodDO);
+    }
+
+    @Override
     public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getTargetDecoyBestHitsMap(List<SpectrumDO> querySpectrumDOS, String targetLibraryId, String decoyLibraryId, MethodDO methodDO) {
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = new ConcurrentHashMap<>();
         querySpectrumDOS.parallelStream().forEach(spectrumDO -> {
@@ -107,6 +122,11 @@ public class LibraryHitServiceImpl implements LibraryHitService {
             hitsMap.put(spectrumDO, bestTargetDecoyHits);
         });
         return hitsMap;
+    }
+
+    @Override
+    public ConcurrentHashMap<SpectrumDO, List<LibraryHit>> getTargetDecoyBestHitsMap(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO) {
+        return getTargetDecoyBestHitsMap(spectrumService.getAllByLibraryId(queryLibraryId), targetLibraryId, decoyLibraryId, methodDO);
     }
 
     private LibraryHit init(SpectrumDO querySpectrumDO, SpectrumDO libSpectrumDO, boolean isDecoy) {
