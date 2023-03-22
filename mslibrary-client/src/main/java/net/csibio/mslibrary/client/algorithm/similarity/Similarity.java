@@ -142,13 +142,17 @@ public class Similarity {
         double[] expMzArray = querySpectrum.getMzs();
         double[] expIntArray = querySpectrum.getInts();
 
-        int expIndex = 0, libIndex = 0;
+        int expIndex = 0, libIndex = 0, matchCount = 0;
         double dotProduct = 0d, expNorm = 0d, libNorm = 0d;
         while (expIndex < expMzArray.length && libIndex < libMzArray.length) {
             if (expMzArray[expIndex] < libMzArray[libIndex] - mzTolerance) {
                 expIndex++;
             } else if (expMzArray[expIndex] > libMzArray[libIndex] + mzTolerance) {
-                libNorm += libIntArray[libIndex] * libIntArray[libIndex];
+                if (isWeighted) {
+                    libNorm += weightedDotProduct(libMzArray[libIndex], libIntArray[libIndex]) * weightedDotProduct(libMzArray[libIndex], libIntArray[libIndex]);
+                } else {
+                    libNorm += libIntArray[libIndex] * libIntArray[libIndex];
+                }
                 libIndex++;
             } else {
                 if (isWeighted) {
@@ -160,6 +164,7 @@ public class Similarity {
                     expNorm += expIntArray[expIndex] * expIntArray[expIndex];
                     libNorm += libIntArray[libIndex] * libIntArray[libIndex];
                 }
+                matchCount++;
                 expIndex++;
                 libIndex++;
             }
