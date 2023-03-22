@@ -107,7 +107,7 @@ public class Reporter {
                     compareSheet.get(j).add(trueFDR);
                     compareSheet.get(j).add(trueFDR);
                 }
-                compareSheet.get(j).add(bestSTDSFDR);
+                compareSheet.get(j).add(stdsFDR);
             }
             first = false;
         }
@@ -203,10 +203,10 @@ public class Reporter {
                 trueFDR = (double) falseCount / (rightCount + falseCount);
             }
             if (bestTargetCount != 0) {
-                BestSTDS_FDR = (double) bestDecoyCount / bestTargetCount * PIT;
+                BestSTDS_FDR = (double) bestDecoyCount / (bestTargetCount + bestDecoyCount);
             }
             if (targetCount != 0) {
-                STDS_FDR = (double) decoyCount / targetCount * PIT;
+                STDS_FDR = (double) decoyCount / (targetCount + decoyCount);
                 pValue = (double) decoyCount / (targetCount);
             }
 

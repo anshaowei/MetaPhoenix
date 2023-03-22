@@ -74,12 +74,12 @@ public class TestController {
     public void importLibrary() {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
-//        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
 //        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
@@ -134,31 +134,30 @@ public class TestController {
         int repeat = 1;
 
         //all the strategies on all the libraries
-        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-            if (decoyStrategy.equals(DecoyStrategy.FragmentationTree)) {
-                continue;
-            }
-            methodDO.setDecoyStrategy(decoyStrategy.getName());
-            List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-            for (LibraryDO libraryDO : libraryDOS) {
-                for (int i = 0; i < repeat; i++) {
-                    spectrumGenerator.execute(libraryDO.getId(), methodDO);
-                }
-            }
-        }
-
-        //all the strategies on one library
-//        String libraryId = "MassBank-Europe";
 //        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
 //            if (decoyStrategy.equals(DecoyStrategy.FragmentationTree)) {
 //                continue;
 //            }
 //            methodDO.setDecoyStrategy(decoyStrategy.getName());
-//            for (int i = 0; i < repeat; i++) {
-//                spectrumGenerator.execute(libraryId, methodDO);
+//            List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//            for (LibraryDO libraryDO : libraryDOS) {
+//                for (int i = 0; i < repeat; i++) {
+//                    spectrumGenerator.execute(libraryDO.getId(), methodDO);
+//                }
 //            }
 //        }
 
+        //all the strategies on one library
+        String libraryId = "MassBank-Europe";
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            if (decoyStrategy.equals(DecoyStrategy.FragmentationTree)) {
+                continue;
+            }
+            methodDO.setDecoyStrategy(decoyStrategy.getName());
+            for (int i = 0; i < repeat; i++) {
+                spectrumGenerator.execute(libraryId, methodDO);
+            }
+        }
     }
 
     @RequestMapping("dataExchange")
@@ -205,11 +204,15 @@ public class TestController {
 
     @RequestMapping("sirius")
     public void sirius() {
-        //sirius process
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        for (LibraryDO libraryDO : libraryDOS) {
-            sirius.execute(libraryDO.getId());
-        }
+        //sirius process on all the library
+//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//        for (LibraryDO libraryDO : libraryDOS) {
+//            sirius.execute(libraryDO.getId());
+//        }
+
+        //sirius process on one library
+        String libraryId = "MassBank-Europe";
+        sirius.execute(libraryId);
     }
 
     @RequestMapping("export")
@@ -254,7 +257,7 @@ public class TestController {
         methodDO.setPpm(10);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
         String queryLibraryId = "GNPS-NIST14-MATCHES";
-        String targetLibraryId = "MassBank-MoNA";
+        String targetLibraryId = "MassBank-Europe";
 
         //compare different spectrum match method
 //        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
@@ -288,7 +291,7 @@ public class TestController {
     public void all() {
         importLibrary();
         filter();
-//        sirius();
+        sirius();
 //        decoy();
     }
 }
