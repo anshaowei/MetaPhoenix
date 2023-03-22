@@ -2,13 +2,18 @@ package net.csibio.mslibrary.core.export;
 
 import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.algorithm.similarity.Entropy;
+import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
+import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
+import net.csibio.mslibrary.client.service.LibraryHitService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.client.utils.ArrayUtil;
 import net.csibio.mslibrary.core.config.VMProperties;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -24,22 +29,29 @@ public class Reporter {
     VMProperties vmProperties;
     @Autowired
     SpectrumService spectrumService;
+    @Autowired
+    LibraryHitService libraryHitService;
+    @Autowired
+    MongoTemplate mongoTemplate;
 
-    public void scoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+    public void scoreGraph(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int scoreInterval) {
+        String fileName = "scoreGraph";
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
-        log.info("start export score graph : " + outputFileName);
+        log.info("start export {} to {}", fileName, outputFileName);
+
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "TTDC_FDR", "CTDC_FDR",
                 "true_FDR", "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "true_Count", "false_Count");
-        List<List<Object>> dataSheet = getDataSheet(hitsMap, scoreInterval);
+        List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
-        log.info("export score graph success : " + outputFileName);
+        log.info("export {} success" + fileName);
     }
 
-    public void compareSpectrumMatchMethods(String fileName, HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap, int scoreInterval) {
+    public void compareSpectrumMatchMethods(String queryLibraryId, String targetLibraryId, MethodDO methodDO, int scoreInterval) {
+        String fileName = "compareSpectrumMatchMethods";
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
-        log.info("start export compareFDRGraph : " + outputFileName);
+        log.info("start export {} to {}", fileName, outputFileName);
 
         //init
         List<List<Object>> compareSheet = new ArrayList<>();
@@ -48,9 +60,10 @@ public class Reporter {
             compareSheet.add(row);
         }
         List<Object> header = new ArrayList<>();
-        for (String spectrumMatchMethod : hitsMapMap.keySet()) {
-            header.add(spectrumMatchMethod);
-            List<List<Object>> dataSheet = getDataSheet(hitsMapMap.get(spectrumMatchMethod), scoreInterval);
+        for (SpectrumMatchMethod spectrumMatchMethod : SpectrumMatchMethod.values()) {
+            header.add(spectrumMatchMethod.getName());
+            methodDO.setSpectrumMatchMethod(spectrumMatchMethod);
+            List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, null, methodDO, scoreInterval);
             for (int j = 0; j < dataSheet.size(); j++) {
                 //trueFDR
                 Double trueFDR = (Double) dataSheet.get(j).get(7);
@@ -59,7 +72,7 @@ public class Reporter {
         }
         compareSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("compareFDRGraph").doWrite(compareSheet);
-        log.info("export compare success : " + outputFileName);
+        log.info("export {} success" + fileName);
     }
 
     public void compareDecoyStrategy(String fileName, HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap, int scoreInterval) {
@@ -76,32 +89,33 @@ public class Reporter {
         header.add("tureFDR");
         header.add("StandardFDR");
 
-        boolean first = true;
-        for (String decoyStrategy : hitsMapMap.keySet()) {
-            List<List<Object>> dataSheet = getDataSheet(hitsMapMap.get(decoyStrategy), scoreInterval);
-            header.add(decoyStrategy);
-            for (int j = 0; j < dataSheet.size(); j++) {
-                //trueFDR
-                Double trueFDR = (Double) dataSheet.get(j).get(7);
-                //bestSTDS_FDR
-                Double bestSTDSFDR = (Double) dataSheet.get(j).get(8);
-                //STDS_FDR
-                Double stdsFDR = (Double) dataSheet.get(j).get(9);
-                if (first) {
-                    compareSheet.get(j).add(trueFDR);
-                    compareSheet.get(j).add(trueFDR);
-                }
-                compareSheet.get(j).add(bestSTDSFDR);
-            }
-            first = false;
-        }
-        compareSheet.add(0, header);
-        EasyExcel.write(outputFileName).sheet("compareDecoyStrategy").doWrite(compareSheet);
-        log.info("export compare success : " + outputFileName);
+//        boolean first = true;
+//        for (String decoyStrategy : hitsMapMap.keySet()) {
+//            List<List<Object>> dataSheet = getDataSheet(hitsMapMap.get(decoyStrategy), scoreInterval);
+//            header.add(decoyStrategy);
+//            for (int j = 0; j < dataSheet.size(); j++) {
+//                //trueFDR
+//                Double trueFDR = (Double) dataSheet.get(j).get(7);
+//                //bestSTDS_FDR
+//                Double bestSTDSFDR = (Double) dataSheet.get(j).get(8);
+//                //STDS_FDR
+//                Double stdsFDR = (Double) dataSheet.get(j).get(9);
+//                if (first) {
+//                    compareSheet.get(j).add(trueFDR);
+//                    compareSheet.get(j).add(trueFDR);
+//                }
+//                compareSheet.get(j).add(bestSTDSFDR);
+//            }
+//            first = false;
+//        }
+//        compareSheet.add(0, header);
+//        EasyExcel.write(outputFileName).sheet("compareDecoyStrategy").doWrite(compareSheet);
+//        log.info("export compare success : " + outputFileName);
     }
 
 
-    private List<List<Object>> getDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval) {
+    private List<List<Object>> getDataSheet(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int scoreInterval) {
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
         List<List<Object>> dataSheet = new ArrayList<>();
 
         //all hits above a score threshold for the target-decoy strategy
@@ -241,7 +255,7 @@ public class Reporter {
     public void estimatedPValueGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int pInterval) {
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export estimatedPValue graph : " + outputFileName);
-        List<List<Object>> scoreDataSheet = getDataSheet(hitsMap, 100 * pInterval);
+        List<List<Object>> scoreDataSheet = null;
 
         //reverse score data sheet to make pValue ascending
         Collections.reverse(scoreDataSheet);
@@ -322,9 +336,25 @@ public class Reporter {
         log.info("export estimatedPValue graph success: " + outputFileName);
     }
 
-    public void entropyDistributionGraph(String fileName, HashMap<String, List<SpectrumDO>> idSpectraMap, int interval) {
+    public void entropyDistributionGraph(String libraryId, int interval) {
+        String fileName = "entropyDistributionGraph";
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
-        log.info("start export entropy distribution graph : " + outputFileName);
+        log.info("Start export {} to {}", fileName, outputFileName);
+
+        Set<String> names = mongoTemplate.getCollectionNames();
+        HashMap<String, List<SpectrumDO>> idSpectraMap = new HashMap<>();
+        for (String name : names) {
+            if (!name.contains(libraryId)) {
+                continue;
+            }
+            List<SpectrumDO> spectrumDOS = mongoTemplate.findAll(SpectrumDO.class, name);
+            if (name.equals("spectrum" + SymbolConst.DELIMITER + libraryId)) {
+                idSpectraMap.put("raw", spectrumDOS);
+            } else {
+                name = name.replace("spectrum-" + libraryId + SymbolConst.DELIMITER, "");
+                idSpectraMap.put(name, spectrumDOS);
+            }
+        }
 
         //init
         List<List<Object>> dataSheet = new ArrayList<>();
@@ -374,18 +404,22 @@ public class Reporter {
         log.info("export entropy distribution graph success: " + outputFileName);
     }
 
-    public void simpleScoreGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {
+    public void simpleScoreGraph(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {
+        String fileName = "simpleScoreGraph";
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
-        log.info("start export fake identification graph : " + outputFileName);
+        log.info("Start export {} to {}", fileName, outputFileName);
+
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "Target", "Decoy");
-        List<List<Object>> dataSheet = getSimpleDataSheet(hitsMap, scoreInterval, bestHit, logScale, minLogScore);
+        List<List<Object>> dataSheet = getSimpleDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval, bestHit, logScale, minLogScore);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("scoreGraph").doWrite(dataSheet);
         log.info("export simple identification graph success : " + outputFileName);
     }
 
-    private List<List<Object>> getSimpleDataSheet(ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {
+    private List<List<Object>> getSimpleDataSheet(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int scoreInterval, boolean bestHit, boolean logScale, int minLogScore) {
+        List<SpectrumDO> querySpectrumDOS = spectrumService.getAllByLibraryId(queryLibraryId);
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
         List<List<Object>> dataSheet = new ArrayList<>();
         List<LibraryHit> decoyHits = new ArrayList<>();
         List<LibraryHit> targetHits = new ArrayList<>();

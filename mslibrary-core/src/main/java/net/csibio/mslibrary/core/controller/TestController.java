@@ -7,7 +7,6 @@ import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.integrate.Integrator;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
-import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -37,10 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("test")
@@ -228,16 +224,14 @@ public class TestController {
     @RequestMapping("report")
     public void report() {
         //real score distribution sheet by the target-decoy strategy
-//        String queryLibraryId = "MassBank-MoNA";
-//        String targetLibraryId = "ALL_GNPS";
+//        String queryLibraryId = "GNPS-NIST14-MATCHES";
+//        String targetLibraryId = "MassBank-MoNA";
 //        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
 //        MethodDO methodDO = new MethodDO();
 //        methodDO.setPpmForMzTolerance(true);
 //        methodDO.setPpm(10);
 //        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-//        List<SpectrumDO> querySpectrumDOS = spectrumService.getAll(new SpectrumQuery(), queryLibraryId);
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
-//        reporter.scoreGraph("score", hitsMap, 50);
+//        reporter.scoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 50);
 
         //simple identification process
 //        String queryLibraryId = "GNPS-NIST14-MATCHES";
@@ -245,28 +239,12 @@ public class TestController {
 //        MethodDO methodDO = new MethodDO();
 //        methodDO.setPpmForMzTolerance(true);
 //        methodDO.setPpm(10);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine);
-//        List<SpectrumDO> querySpectrumDOS = spectrumService.getAll(new SpectrumQuery(), queryLibraryId);
-//        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, null, methodDO);
-//        reporter.simpleScoreGraph("simpleScoreGraph", hitsMap, 50, true, false, -30);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+//        reporter.simpleScoreGraph(queryLibraryId, targetLibraryId, null, methodDO, 100, false, true, -30);
 
         //entropy distribution graph
         String libraryId = "MassBank-MoNA";
-        Set<String> names = mongoTemplate.getCollectionNames();
-        HashMap<String, List<SpectrumDO>> idSpectraMap = new HashMap<>();
-        for (String name : names) {
-            if (!name.contains(libraryId)) {
-                continue;
-            }
-            List<SpectrumDO> spectrumDOS = mongoTemplate.findAll(SpectrumDO.class, name);
-            if (name.equals("spectrum" + SymbolConst.DELIMITER + libraryId)) {
-                idSpectraMap.put("raw", spectrumDOS);
-            } else {
-                name = name.replace("spectrum-" + libraryId + SymbolConst.DELIMITER, "");
-                idSpectraMap.put(name, spectrumDOS);
-            }
-        }
-        reporter.entropyDistributionGraph("entropyDistributionGraph", idSpectraMap, 50);
+        reporter.entropyDistributionGraph(libraryId, 50);
     }
 
     @RequestMapping("compare")
@@ -274,20 +252,12 @@ public class TestController {
         MethodDO methodDO = new MethodDO();
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
         String queryLibraryId = "GNPS-NIST14-MATCHES";
-        List<SpectrumDO> querySpectrumDOS = spectrumService.getAllByLibraryId(queryLibraryId);
-        querySpectrumDOS.removeIf(spectrumDO -> !spectrumDO.getPrecursorAdduct().equals("[M+H]+"));
-        String targetLibraryId = "ALL_GNPS";
+        String targetLibraryId = "MassBank-MoNA";
 
         //compare different spectrum match method
-        HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap = new HashMap<>();
-        for (SpectrumMatchMethod spectrumMatchMethod : SpectrumMatchMethod.values()) {
-            methodDO.setSpectrumMatchMethod(spectrumMatchMethod);
-            ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, null, methodDO);
-            hitsMapMap.put(spectrumMatchMethod.getName(), hitsMap);
-        }
-        reporter.compareSpectrumMatchMethods("SpectrumMatchMethods", hitsMapMap, 100);
+        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
 
         //compare different decoy strategy
 //        HashMap<String, ConcurrentHashMap<SpectrumDO, List<LibraryHit>>> hitsMapMap = new HashMap<>();
@@ -299,7 +269,7 @@ public class TestController {
 //            ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
 //            hitsMapMap.put(decoyStrategy.getName(), hitsMap);
 //        }
-//        reporter.compareDecoyStrategy("DecoyStrategies", hitsMapMap, 100);
+//        reporter.compareDecoyStrategy("DecoyStrategyComparison", hitsMapMap, 100);
     }
 
     @RequestMapping("integrate")
