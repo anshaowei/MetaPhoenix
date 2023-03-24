@@ -14,7 +14,6 @@ import net.csibio.mslibrary.client.domain.query.LibraryQuery;
 import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.filter.NoiseFilter;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
-import net.csibio.mslibrary.client.parser.hmdb.SpectrumParser;
 import net.csibio.mslibrary.client.parser.massbank.MassBankParser;
 import net.csibio.mslibrary.client.service.LibraryHitService;
 import net.csibio.mslibrary.client.service.LibraryService;
@@ -47,8 +46,6 @@ public class TestController {
     SpectrumService spectrumService;
     @Autowired
     LibraryService libraryService;
-    @Autowired
-    SpectrumParser spectrumParser;
     @Autowired
     MassBankParser massBankParser;
     @Autowired
@@ -155,7 +152,7 @@ public class TestController {
             }
             methodDO.setDecoyStrategy(decoyStrategy.getName());
             for (int i = 0; i < repeat; i++) {
-                spectrumGenerator.execute(libraryId, methodDO);
+                spectrumGenerator.execute(libraryId, methodDO, false);
             }
         }
     }
@@ -246,7 +243,7 @@ public class TestController {
 //        reporter.simpleScoreGraph(queryLibraryId, targetLibraryId, null, methodDO, 100, false, true, -30);
 
         //entropy distribution graph
-        String libraryId = "MassBank-MoNA";
+        String libraryId = "MassBank-Europe";
         reporter.entropyDistributionGraph(libraryId, 50);
     }
 
@@ -292,6 +289,8 @@ public class TestController {
         importLibrary();
         filter();
         sirius();
-//        decoy();
+        decoy();
+        report();
+        compare();
     }
 }

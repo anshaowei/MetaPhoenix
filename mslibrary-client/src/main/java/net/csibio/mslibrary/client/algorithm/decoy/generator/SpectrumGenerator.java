@@ -21,7 +21,7 @@ public class SpectrumGenerator {
     @Autowired
     SpectrumService spectrumService;
 
-    public void execute(String libraryId, MethodDO method) {
+    public void execute(String libraryId, MethodDO method, boolean entropyControl) {
         long start = System.currentTimeMillis();
         log.info("Start to generate decoy spectra on library: {} by {} method", libraryId, method.getDecoyStrategy());
 
@@ -35,11 +35,10 @@ public class SpectrumGenerator {
             case Naive -> naive(spectrumDOS, decoySpectrumDOS);
             case XYMeta -> xyMeta(spectrumDOS, decoySpectrumDOS, method);
             case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
-            case EntropyNaive -> entropyNaive(spectrumDOS, decoySpectrumDOS, method);
-            case Entropy_2 -> entropy_2(spectrumDOS, decoySpectrumDOS, method);
+            case Test -> test(spectrumDOS, decoySpectrumDOS, method);
             default -> log.error("Decoy procedure {} is not supported", method.getDecoyStrategy());
         }
-        entropyControl(spectrumDOS, decoySpectrumDOS);
+        if (entropyControl) entropyControl(spectrumDOS, decoySpectrumDOS);
 
         //insert decoy spectra into database
         decoySpectrumDOS.parallelStream().forEach(spectrumDO -> spectrumDO.setLibraryId(libraryId + SymbolConst.DELIMITER + method.getDecoyStrategy()));
@@ -81,50 +80,10 @@ public class SpectrumGenerator {
     }
 
     /**
-     * only keep the entropy of the target and decoy same compared to naive method
-     */
-    private void entropyNaive(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO method) {
-        spectrumDOS.parallelStream().forEach(spectrumDO -> {
-            //add precursor ion peak
-            TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
-            List<IonPeak> ionPeaks = new ArrayList<>();
-            double diff = Double.MAX_VALUE;
-            int precursorIndex = -1;
-            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
-                if (Math.abs(ionPeak.getMz() - spectrumDO.getPrecursorMz()) < diff) {
-                    diff = Math.abs(ionPeak.getMz() - spectrumDO.getPrecursorMz());
-                    precursorIndex = i;
-                }
-                ionPeaks.add(ionPeak);
-            }
-            decoyIonPeaks.add(new IonPeak(spectrumDO.getMzs()[precursorIndex], spectrumDO.getInts()[precursorIndex]));
-
-            //randomly select ions from other spectra
-            while (decoyIonPeaks.size() < spectrumDO.getMzs().length) {
-                int randomIndex = new Random().nextInt(spectrumDOS.size());
-                SpectrumDO randomSpectrumDO = spectrumDOS.get(randomIndex);
-                int randomIonIndex = new Random().nextInt(randomSpectrumDO.getMzs().length);
-                IonPeak ionPeak = new IonPeak(randomSpectrumDO.getMzs()[randomIonIndex], randomSpectrumDO.getInts()[randomIonIndex]);
-                decoyIonPeaks.add(ionPeak);
-            }
-
-            //keep the entropy same in the target and decoy
-            for (IonPeak decoyIonPeak : decoyIonPeaks) {
-                int randomIndex = new Random().nextInt(ionPeaks.size());
-                IonPeak ionPeak = ionPeaks.get(randomIndex);
-                decoyIonPeak.setIntensity(ionPeak.getIntensity());
-                ionPeaks.remove(randomIndex);
-            }
-            decoySpectrumDOS.add(convertIonPeaksToDecoy(new ArrayList<>(decoyIonPeaks), spectrumDO));
-        });
-    }
-
-    /**
      * mz generation considered the spectrum correlation rather than random
      * keep the entropy of the target and decoy same compared to naive method
      */
-    private void entropy_2(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
+    private void test(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             //1. add precursor ion peak
             TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
