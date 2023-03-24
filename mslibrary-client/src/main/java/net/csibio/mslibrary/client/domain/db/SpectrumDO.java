@@ -23,6 +23,11 @@ public class SpectrumDO {
     @Id
     String id;
 
+    boolean isDecoy = false;
+
+    @Indexed
+    String rawSpectrumId;
+
     @Indexed
     String compoundId;
 
