@@ -345,12 +345,14 @@ public class SpectrumGenerator {
         decoySpectrumDOS.parallelStream().forEach(decoySpectrum -> {
             SpectrumDO rawSpectrumDO = spectrumMap.get(decoySpectrum.getRawSpectrumId());
             List<Double> rawSpectrumInts = new ArrayList<>(Arrays.stream(rawSpectrumDO.getInts()).boxed().toList());
+            double[] decoySpectrumInts = new double[decoySpectrum.getInts().length];
             //randomly set intensity in decoy spectrum same to raw spectrum
-            for (int i = 0; i < decoySpectrum.getInts().length; i++) {
+            for (int i = 0; i < decoySpectrumInts.length; i++) {
                 int randomIndex = new Random().nextInt(rawSpectrumInts.size());
-                decoySpectrum.getInts()[i] = rawSpectrumInts.get(randomIndex);
+                decoySpectrumInts[i] = rawSpectrumInts.get(randomIndex);
                 rawSpectrumInts.remove(randomIndex);
             }
+            decoySpectrum.setInts(decoySpectrumInts);
         });
     }
 
