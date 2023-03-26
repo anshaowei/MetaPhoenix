@@ -146,15 +146,17 @@ public class TestController {
 
         //all the strategies on one library
         String libraryId = "MassBank-Europe";
-        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-            if (decoyStrategy.equals(DecoyStrategy.FragmentationTree)) {
-                continue;
-            }
-            methodDO.setDecoyStrategy(decoyStrategy.getName());
-            for (int i = 0; i < repeat; i++) {
-                spectrumGenerator.execute(libraryId, methodDO, false);
-            }
-        }
+//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+//            if (decoyStrategy.equals(DecoyStrategy.FragmentationTree)) {
+//                continue;
+//            }
+//            methodDO.setDecoyStrategy(decoyStrategy.getName());
+//            for (int i = 0; i < repeat; i++) {
+//                spectrumGenerator.execute(libraryId, methodDO, true);
+//            }
+//        }
+        methodDO.setDecoyStrategy(DecoyStrategy.SameMz.getName());
+        spectrumGenerator.execute(libraryId, methodDO, true);
     }
 
     @RequestMapping("dataExchange")
@@ -288,7 +290,7 @@ public class TestController {
     public void all() {
         importLibrary();
         filter();
-        sirius();
+//        sirius();
         decoy();
         report();
         compare();

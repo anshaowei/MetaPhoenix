@@ -5,6 +5,7 @@ public enum DecoyStrategy {
     Naive("Naive"),
     XYMeta("XYMeta"),
     SpectrumBased("SpectrumBased"),
+    SameMz("SameMz"),
     Test("Test"),
     FragmentationTree("FragmentationTree");
 
