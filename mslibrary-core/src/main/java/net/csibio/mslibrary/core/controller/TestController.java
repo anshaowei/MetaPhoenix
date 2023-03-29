@@ -226,14 +226,14 @@ public class TestController {
     @RequestMapping("report")
     public void report() {
         //real score distribution sheet by the target-decoy strategy
-//        String queryLibraryId = "GNPS-NIST14-MATCHES";
-//        String targetLibraryId = "MassBank-MoNA";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
-//        MethodDO methodDO = new MethodDO();
-//        methodDO.setPpmForMzTolerance(true);
-//        methodDO.setPpm(10);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-//        reporter.scoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 50);
+        String queryLibraryId = "GNPS-NIST14-MATCHES";
+        String targetLibraryId = "MassBank-Europe";
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.SameMz.getName();
+        MethodDO methodDO = new MethodDO();
+        methodDO.setPpmForMzTolerance(true);
+        methodDO.setPpm(10);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+        reporter.scoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 50);
 
         //simple identification process
 //        String queryLibraryId = "GNPS-NIST14-MATCHES";
@@ -245,8 +245,8 @@ public class TestController {
 //        reporter.simpleScoreGraph(queryLibraryId, targetLibraryId, null, methodDO, 100, false, true, -30);
 
         //entropy distribution graph
-        String libraryId = "MassBank-Europe";
-        reporter.entropyDistributionGraph(libraryId, 50);
+//        String libraryId = "MassBank-Europe";
+//        reporter.entropyDistributionGraph(libraryId, 50);
     }
 
     @RequestMapping("compare")
