@@ -34,7 +34,7 @@ public class SpectrumGenerator {
         switch (strategy) {
             case Naive -> naive(spectrumDOS, decoySpectrumDOS);
             case XYMeta -> xyMeta(spectrumDOS, decoySpectrumDOS, method);
-            case SameMz -> sameMz(spectrumDOS, decoySpectrumDOS, method);
+            case SameMz -> sameMz(spectrumDOS, decoySpectrumDOS);
             case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
             case Test -> test(spectrumDOS, decoySpectrumDOS, method);
             default -> log.error("Decoy procedure {} is currently not supported", method.getDecoyStrategy());
@@ -47,14 +47,14 @@ public class SpectrumGenerator {
         log.info("Decoy spectra generation finished, cost {} ms", System.currentTimeMillis() - start);
     }
 
-    private void sameMz(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
+    private void sameMz(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             SpectrumDO decoySpectrumDO = new SpectrumDO();
             decoySpectrumDO.setRawSpectrumId(spectrumDO.getId());
             decoySpectrumDO.setMzs(spectrumDO.getMzs());
             decoySpectrumDO.setInts(spectrumDO.getInts());
-            spectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz());
-            spectrumDO.setDecoy(true);
+            decoySpectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz());
+            decoySpectrumDO.setDecoy(true);
             decoySpectrumDOS.add(decoySpectrumDO);
         });
     }
