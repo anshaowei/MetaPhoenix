@@ -43,7 +43,7 @@ public class Reporter {
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "TTDC_FDR", "CTDC_FDR",
                 "true_FDR", "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "true_Count", "false_Count");
-        List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval);
+        List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval, 1);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet(fileName).doWrite(dataSheet);
         log.info("export {} success", fileName);
@@ -64,7 +64,7 @@ public class Reporter {
         for (SpectrumMatchMethod spectrumMatchMethod : SpectrumMatchMethod.values()) {
             header.add(spectrumMatchMethod.getName());
             methodDO.setSpectrumMatchMethod(spectrumMatchMethod);
-            List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, null, methodDO, scoreInterval);
+            List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, null, methodDO, scoreInterval, 1);
             for (int j = 0; j < dataSheet.size(); j++) {
                 //trueFDR
                 Double trueFDR = (Double) dataSheet.get(j).get(7);
@@ -94,7 +94,7 @@ public class Reporter {
         boolean first = true;
         for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
             String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + decoyStrategy.getName();
-            List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval);
+            List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval, 1);
             header.add(decoyStrategy.getName());
             for (int j = 0; j < dataSheet.size(); j++) {
                 //trueFDR
@@ -117,7 +117,7 @@ public class Reporter {
     }
 
 
-    private List<List<Object>> getDataSheet(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int scoreInterval) {
+    private List<List<Object>> getDataSheet(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int scoreInterval, int decoyMultiplier) {
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
         List<List<Object>> dataSheet = new ArrayList<>();
 
@@ -173,7 +173,7 @@ public class Reporter {
 
         //estimate PIT
         double threshold = 0.5;
-        double PIT = (double) targetHits.stream().filter(hit -> hit.getScore() < threshold).toList().size() / decoyHits.stream().filter(hit -> hit.getScore() < threshold).toList().size();
+        double PIT = (double) targetHits.stream().filter(hit -> hit.getScore() < threshold).toList().size() / decoyHits.stream().filter(hit -> hit.getScore() < threshold).toList().size() / decoyMultiplier;
 
         for (int i = 0; i < scoreInterval; i++) {
             double finalMinScore = minScore + i * step;
@@ -181,19 +181,21 @@ public class Reporter {
             List<Object> row = new ArrayList<>();
 
             //concatenated target-decoy strategy calculation
-            int target, decoy;
+            int target;
+            double decoy;
             List<LibraryHit> hitsAboveScore = ctdcList.stream().filter(hit -> hit.getScore() > finalMinScore).toList();
             target = hitsAboveScore.stream().filter(hit -> !hit.isDecoy()).toList().size();
-            decoy = hitsAboveScore.stream().filter(LibraryHit::isDecoy).toList().size();
+            decoy = (double) hitsAboveScore.stream().filter(LibraryHit::isDecoy).toList().size() / decoyMultiplier;
             double CTDC_FDR = (target + decoy == 0) ? 0d : (double) 2 * decoy / (target + decoy);
-            double TTDC_FDR = (target == 0) ? 0d : (double) decoy / target;
+            double TTDC_FDR = (target == 0) ? 0d : decoy / target;
 
             //separated target-decoy strategy calculation
-            int targetCount, decoyCount, rightCount, falseCount, bestTargetCount, bestDecoyCount;
+            int targetCount, rightCount, falseCount, bestTargetCount;
+            double decoyCount, bestDecoyCount;
             targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            decoyCount = (double) decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size() / decoyMultiplier;
             bestTargetCount = bestTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            bestDecoyCount = bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            bestDecoyCount = (double) bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size() / decoyMultiplier;
 
             //real data calculation
             rightCount = trueHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
@@ -203,20 +205,20 @@ public class Reporter {
                 trueFDR = (double) falseCount / (rightCount + falseCount);
             }
             if (bestTargetCount != 0) {
-                BestSTDS_FDR = (double) bestDecoyCount / (bestTargetCount + bestDecoyCount);
+                BestSTDS_FDR = bestDecoyCount / (bestTargetCount + bestDecoyCount);
             }
             if (targetCount != 0) {
-                STDS_FDR = (double) decoyCount / (targetCount + decoyCount);
-                pValue = (double) decoyCount / (targetCount);
+                STDS_FDR = decoyCount / (targetCount + decoyCount);
+                pValue = decoyCount / (targetCount);
             }
 
             //hits distribution
             if (i == 0) {
                 targetCount = targetHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
-                decoyCount = decoyHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+                decoyCount = (double) decoyHits.stream().filter(hit -> hit.getScore() >= finalMinScore && hit.getScore() <= finalMaxScore).toList().size() / decoyMultiplier;
             } else {
                 targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
-                decoyCount = decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size();
+                decoyCount = (double) decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore && hit.getScore() <= finalMaxScore).toList().size() / decoyMultiplier;
             }
 
             //write data sheet
