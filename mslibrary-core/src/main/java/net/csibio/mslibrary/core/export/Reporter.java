@@ -185,8 +185,8 @@ public class Reporter {
             List<LibraryHit> hitsAboveScore = ctdcList.stream().filter(hit -> hit.getScore() > finalMinScore).toList();
             target = hitsAboveScore.stream().filter(hit -> !hit.isDecoy()).toList().size();
             decoy = hitsAboveScore.stream().filter(LibraryHit::isDecoy).toList().size();
-            double CTDC_FDR = (double) 2 * decoy / (target + decoy);
-            double TTDC_FDR = (double) decoy / target;
+            double CTDC_FDR = (target + decoy == 0) ? 0d : (double) 2 * decoy / (target + decoy);
+            double TTDC_FDR = (target == 0) ? 0d : (double) decoy / target;
 
             //separated target-decoy strategy calculation
             int targetCount, decoyCount, rightCount, falseCount, bestTargetCount, bestDecoyCount;
