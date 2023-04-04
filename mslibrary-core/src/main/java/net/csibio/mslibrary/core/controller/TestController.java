@@ -104,6 +104,9 @@ public class TestController {
         //remove all the decoy libraries
         List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
         for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            if (decoyStrategy.equals(DecoyStrategy.FragmentationTree)) {
+                continue;
+            }
             for (LibraryDO libraryDO : libraryDOS) {
                 spectrumService.remove(new SpectrumQuery(), libraryDO.getId() + SymbolConst.DELIMITER + decoyStrategy.getName());
                 mongoTemplate.dropCollection("spectrum" + SymbolConst.DELIMITER + libraryDO.getId() + SymbolConst.DELIMITER + decoyStrategy.getName());
@@ -112,15 +115,15 @@ public class TestController {
         }
 
         //only remain specific libraries
-        for (LibraryDO libraryDO : libraryDOS) {
-            if (libraryDO.getId().equals("ALL_GNPS") || libraryDO.getId().equals("MassBank-MoNA")) {
-                continue;
-            }
-            spectrumService.remove(new SpectrumQuery(), libraryDO.getId());
-            libraryService.remove(libraryDO.getId());
-            mongoTemplate.dropCollection("spectrum" + SymbolConst.DELIMITER + libraryDO.getId());
-            log.info("remove done: " + libraryDO.getId());
-        }
+//        for (LibraryDO libraryDO : libraryDOS) {
+//            if (libraryDO.getId().equals("ALL_GNPS") || libraryDO.getId().equals("MassBank-MoNA")) {
+//                continue;
+//            }
+//            spectrumService.remove(new SpectrumQuery(), libraryDO.getId());
+//            libraryService.remove(libraryDO.getId());
+//            mongoTemplate.dropCollection("spectrum" + SymbolConst.DELIMITER + libraryDO.getId());
+//            log.info("remove done: " + libraryDO.getId());
+//        }
     }
 
     @RequestMapping("/decoy")
@@ -146,17 +149,14 @@ public class TestController {
 
         //all the strategies on one library
         String libraryId = "MassBank-Europe";
-//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-//            if (decoyStrategy.equals(DecoyStrategy.FragmentationTree)) {
-//                continue;
-//            }
-//            methodDO.setDecoyStrategy(decoyStrategy.getName());
-//            for (int i = 0; i < repeat; i++) {
-//                spectrumGenerator.execute(libraryId, methodDO, true);
-//            }
-//        }
-        methodDO.setDecoyStrategy(DecoyStrategy.SameMz.getName());
-        spectrumGenerator.execute(libraryId, methodDO, true);
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            methodDO.setDecoyStrategy(decoyStrategy.getName());
+            for (int i = 0; i < repeat; i++) {
+                spectrumGenerator.execute(libraryId, methodDO, true);
+            }
+        }
+//        methodDO.setDecoyStrategy(DecoyStrategy.SameMz.getName());
+//        spectrumGenerator.execute(libraryId, methodDO, true);
     }
 
     @RequestMapping("dataExchange")
@@ -228,7 +228,7 @@ public class TestController {
         //real score distribution sheet by the target-decoy strategy
         String queryLibraryId = "GNPS-NIST14-MATCHES";
         String targetLibraryId = "MassBank-Europe";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.SameMz.getName();
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
         MethodDO methodDO = new MethodDO();
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
@@ -237,12 +237,13 @@ public class TestController {
 
         //simple identification process
 //        String queryLibraryId = "GNPS-NIST14-MATCHES";
-//        String targetLibraryId = "MassBank-MoNA";
+//        String targetLibraryId = "MassBank-Europe";
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.SameMz.getName();
 //        MethodDO methodDO = new MethodDO();
 //        methodDO.setPpmForMzTolerance(true);
 //        methodDO.setPpm(10);
 //        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-//        reporter.simpleScoreGraph(queryLibraryId, targetLibraryId, null, methodDO, 100, false, true, -30);
+//        reporter.simpleScoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 100, false, false, -30);
 
         //entropy distribution graph
 //        String libraryId = "MassBank-Europe";
@@ -256,7 +257,7 @@ public class TestController {
         methodDO.setPpm(10);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
         String queryLibraryId = "GNPS-NIST14-MATCHES";
-        String targetLibraryId = "MassBank-Europe";
+        String targetLibraryId = "MassBank-MoNA";
 
         //compare different spectrum match method
 //        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
@@ -290,9 +291,8 @@ public class TestController {
     public void all() {
         importLibrary();
         filter();
-//        sirius();
+        sirius();
         decoy();
-        report();
         compare();
     }
 }

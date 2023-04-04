@@ -39,7 +39,6 @@ public class SpectrumGenerator {
             case Test -> test(spectrumDOS, decoySpectrumDOS, method);
             default -> log.error("Decoy procedure {} is currently not supported", method.getDecoyStrategy());
         }
-        if (entropyControl) entropyControl(spectrumDOS, decoySpectrumDOS);
 
         //insert decoy spectra into database
         decoySpectrumDOS.parallelStream().forEach(spectrumDO -> spectrumDO.setLibraryId(libraryId + SymbolConst.DELIMITER + method.getDecoyStrategy()));
@@ -57,6 +56,7 @@ public class SpectrumGenerator {
             decoySpectrumDO.setDecoy(true);
             decoySpectrumDOS.add(decoySpectrumDO);
         });
+        entropyControl(spectrumDOS, decoySpectrumDOS);
     }
 
     /**
