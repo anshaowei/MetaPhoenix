@@ -178,7 +178,7 @@ public class TestController {
                     switch (cell.getColumnIndex()) {
                         case 0 -> spectrumDO.setCompoundName(cell.getStringCellValue());
                         case 3 -> spectrumDO.setPrecursorMz(cell.getNumericCellValue());
-                        case 10 -> spectrumDO.setSmiles(cell.getStringCellValue());
+                        case 9 -> spectrumDO.setInChIKey(cell.getStringCellValue());
                         case 12 -> {
                             String values = cell.getStringCellValue();
                             String[] valueArray = values.split(" ");
@@ -228,12 +228,12 @@ public class TestController {
         //real score distribution sheet by the target-decoy strategy
         String queryLibraryId = "GNPS-NIST14-MATCHES";
         String targetLibraryId = "MassBank-Europe";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.XYMeta.getName();
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.SameMz.getName();
         MethodDO methodDO = new MethodDO();
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-        reporter.scoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 50);
+        reporter.scoreGraph(queryLibraryId, targetLibraryId, null, methodDO, 50);
 
         //simple identification process
 //        String queryLibraryId = "GNPS-NIST14-MATCHES";
@@ -256,43 +256,35 @@ public class TestController {
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-        String queryLibraryId = "GNPS-NIST14-MATCHES";
-        String targetLibraryId = "MassBank-MoNA";
+        String queryLibraryId = "ST001794";
+        String targetLibraryId = "MassBank-Europe";
 
         //compare different spectrum match method
-//        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
+        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
 
         //compare different decoy strategy
-        reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 100);
+//        reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 100);
     }
 
     @RequestMapping("integrate")
     public void integrate() {
         //integrate all the libraries
-//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//        for (LibraryDO libraryDO : libraryDOS) {
-//            integrator.integrate(libraryDO.getId());
-//        }
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        for (LibraryDO libraryDO : libraryDOS) {
+            integrator.integrate(libraryDO.getId());
+        }
 
         //integrate one library
 //        String libraryId = "MassBank-Europe";
 //        integrator.integrate(libraryId);
-
-        //test InChIKey combination
-//        for (LibraryDO libraryDO : libraryService.getAll(new LibraryQuery())) {
-//            String libraryId = libraryDO.getId();
-//            List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-//            int k = spectrumDOS.stream().collect(Collectors.groupingBy(spectrumDO -> spectrumDO.getInChIKey().split(SymbolConst.DELIMITER)[0])).keySet().size();
-//            log.info("libraryId: {}, size: {}, k: {}", libraryId, spectrumDOS.size(), k);
-//        }
     }
 
     @RequestMapping("all")
     public void all() {
-        importLibrary();
-        filter();
-        sirius();
-        decoy();
-        compare();
+//        importLibrary();
+//        filter();
+//        sirius();
+//        decoy();
+//        compare();
     }
 }

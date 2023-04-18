@@ -184,7 +184,7 @@ public class Similarity {
     }
 
     private static double weightedDotProduct(double mz, double intensity) {
-        return Math.pow(mz, 3d) * Math.pow(intensity, 0.6);
+        return Math.pow(mz, 3) * Math.pow(intensity, 0.6);
     }
 
 }

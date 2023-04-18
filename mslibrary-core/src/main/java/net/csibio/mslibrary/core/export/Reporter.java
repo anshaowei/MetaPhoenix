@@ -42,7 +42,7 @@ public class Reporter {
 
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "TTDC_FDR", "CTDC_FDR",
-                "true_FDR", "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "true_Count", "false_Count");
+                "true_FDR", "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "truePositive", "falsePositive", "trueNegative", "falseNegative", "FPR", "TPR");
         List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval, 1);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet(fileName).doWrite(dataSheet);
@@ -116,7 +116,6 @@ public class Reporter {
         log.info("export {} success", fileName);
     }
 
-
     private List<List<Object>> getDataSheet(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int scoreInterval, int decoyMultiplier) {
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
         List<List<Object>> dataSheet = new ArrayList<>();
@@ -130,9 +129,11 @@ public class Reporter {
         List<LibraryHit> bestTargetHits = new ArrayList<>();
         List<LibraryHit> ctdcList = new ArrayList<>();
 
-        //for true FDR calculation
-        List<LibraryHit> trueHits = new ArrayList<>();
-        List<LibraryHit> falseHits = new ArrayList<>();
+        //for true FDR calculation and ROC curve calculation
+        List<LibraryHit> truePositives = new ArrayList<>();
+        List<LibraryHit> falsePositives = new ArrayList<>();
+        List<LibraryHit> tureNegatives = new ArrayList<>();
+        List<LibraryHit> falseNegatives = new ArrayList<>();
 
         //collect data
         hitsMap.forEach((k, v) -> {
@@ -152,9 +153,11 @@ public class Reporter {
                     for (LibraryHit hit : targetHitsList) {
                         String[] inChIKeyArray = hit.getInChIKey().split("-");
                         if (inChIKeyArray[0].equals(k.getInChIKey().split("-")[0])) {
-                            trueHits.add(hit);
+                            truePositives.add(hit);
+                            falseNegatives.add(hit);
                         } else {
-                            falseHits.add(hit);
+                            falsePositives.add(hit);
+                            tureNegatives.add(hit);
                         }
                     }
                 }
@@ -173,7 +176,10 @@ public class Reporter {
 
         //estimate PIT
         double threshold = 0.5;
-        double PIT = (double) targetHits.stream().filter(hit -> hit.getScore() < threshold).toList().size() / decoyHits.stream().filter(hit -> hit.getScore() < threshold).toList().size() / decoyMultiplier;
+        double PIT = 0d;
+        if (decoyHits.size() != 0) {
+            PIT = (double) targetHits.stream().filter(hit -> hit.getScore() < threshold).toList().size() / decoyHits.stream().filter(hit -> hit.getScore() < threshold).toList().size() / decoyMultiplier;
+        }
 
         for (int i = 0; i < scoreInterval; i++) {
             double finalMinScore = minScore + i * step;
@@ -190,7 +196,8 @@ public class Reporter {
             double TTDC_FDR = (target == 0) ? 0d : decoy / target;
 
             //separated target-decoy strategy calculation
-            int targetCount, rightCount, falseCount, bestTargetCount;
+            int targetCount, bestTargetCount;
+            int truePositiveCount, falsePositiveCount, trueNegativeCount, falseNegativeCount;
             double decoyCount, bestDecoyCount;
             targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
             decoyCount = (double) decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size() / decoyMultiplier;
@@ -198,11 +205,13 @@ public class Reporter {
             bestDecoyCount = (double) bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size() / decoyMultiplier;
 
             //real data calculation
-            rightCount = trueHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            falseCount = falseHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
+            truePositiveCount = truePositives.stream().filter(hit -> hit.getScore() >= finalMaxScore).toList().size();
+            falsePositiveCount = falsePositives.stream().filter(hit -> hit.getScore() >= finalMaxScore).toList().size();
+            trueNegativeCount = tureNegatives.stream().filter(hit -> hit.getScore() < finalMaxScore).toList().size();
+            falseNegativeCount = falseNegatives.stream().filter(hit -> hit.getScore() < finalMaxScore).toList().size();
             double trueFDR = 0d, BestSTDS_FDR = 0d, STDS_FDR = 0d, pValue = 0d;
-            if (rightCount + falseCount != 0) {
-                trueFDR = (double) falseCount / (rightCount + falseCount);
+            if (truePositiveCount + falsePositiveCount != 0) {
+                trueFDR = (double) falsePositiveCount / (truePositiveCount + falsePositiveCount);
             }
             if (bestTargetCount != 0) {
                 BestSTDS_FDR = bestDecoyCount / (bestTargetCount + bestDecoyCount);
@@ -229,9 +238,9 @@ public class Reporter {
             //target frequency
             row.add((double) targetCount / targetHits.size());
             //decoy frequency
-            row.add((double) decoyCount / decoyHits.size());
+            row.add(decoyHits.size() == 0 ? 0 : decoyCount / decoyHits.size());
             //total frequency
-            row.add((double) (targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
+            row.add((targetCount + decoyCount) / (targetHits.size() + decoyHits.size()));
             //CTDC FDR
             row.add(CTDC_FDR);
             //TTDC FDR
@@ -248,10 +257,20 @@ public class Reporter {
             row.add(pValue);
             //PIT
             row.add(PIT);
-            //true count
-            row.add(rightCount);
-            //false count
-            row.add(falseCount);
+            //true positive count
+            row.add(truePositiveCount);
+            //false positive count
+            row.add(falsePositiveCount);
+            //true negative count
+            row.add(trueNegativeCount);
+            //false negative count
+            row.add(falseNegativeCount);
+            //false positive rate
+            if (falsePositiveCount + trueNegativeCount != 0)
+                row.add(falsePositiveCount / (double) (falsePositiveCount + trueNegativeCount));
+            //ture positive rate
+            if (truePositiveCount + falseNegativeCount != 0)
+                row.add(truePositiveCount / (double) (truePositiveCount + falseNegativeCount));
             dataSheet.add(row);
         }
         return dataSheet;
