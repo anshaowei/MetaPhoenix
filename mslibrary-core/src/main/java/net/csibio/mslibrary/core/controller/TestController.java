@@ -232,7 +232,7 @@ public class TestController {
         MethodDO methodDO = new MethodDO();
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Cosine);
         reporter.scoreGraph(queryLibraryId, targetLibraryId, null, methodDO, 50);
 
         //simple identification process

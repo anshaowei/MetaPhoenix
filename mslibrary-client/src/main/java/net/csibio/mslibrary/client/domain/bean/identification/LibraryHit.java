@@ -15,6 +15,8 @@ public class LibraryHit {
 
     boolean isDecoy = false;
 
+    boolean right = false;
+
     String precursorAdduct;
 
     Double precursorMz;

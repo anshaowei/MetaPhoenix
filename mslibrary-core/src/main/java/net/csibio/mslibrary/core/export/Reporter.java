@@ -42,7 +42,7 @@ public class Reporter {
 
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "TTDC_FDR", "CTDC_FDR",
-                "true_FDR", "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "truePositive", "falsePositive", "trueNegative", "falseNegative", "FPR", "TPR");
+                "true_FDR", "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "truePositive", "falsePositive", "trueNegative", "falseNegative", "FPR", "TPR", "AUC");
         List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval, 1);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet(fileName).doWrite(dataSheet);
@@ -149,17 +149,18 @@ public class Reporter {
                 if (targetHitsList != null && targetHitsList.size() != 0) {
                     targetHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
                     bestTargetHits.add(targetHitsList.get(0));
-                    targetHits.addAll(targetHitsList);
                     for (LibraryHit hit : targetHitsList) {
                         String[] inChIKeyArray = hit.getInChIKey().split("-");
                         if (inChIKeyArray[0].equals(k.getInChIKey().split("-")[0])) {
                             truePositives.add(hit);
                             falseNegatives.add(hit);
+                            hit.setRight(true);
                         } else {
                             falsePositives.add(hit);
                             tureNegatives.add(hit);
                         }
                     }
+                    targetHits.addAll(targetHitsList);
                 }
                 if (decoyHitsList != null && decoyHitsList.size() != 0) {
                     decoyHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
@@ -168,6 +169,21 @@ public class Reporter {
                 }
             }
         });
+
+        //AUC calculation
+        double AUC = 0d, rightCount = 0d, falseCount = 0d;
+        targetHits.sort(Comparator.comparing(LibraryHit::getScore));
+        for (int i = 0; i < targetHits.size(); i++) {
+            LibraryHit hit = targetHits.get(i);
+            if (hit.isRight()) {
+                AUC += i;
+                rightCount++;
+            } else {
+                falseCount++;
+            }
+        }
+        AUC = AUC - rightCount * (rightCount + 1) / 2;
+        AUC = AUC / (rightCount * falseCount);
 
         //score range and step
         double minScore = 0.0;
@@ -271,6 +287,8 @@ public class Reporter {
             //ture positive rate
             if (truePositiveCount + falseNegativeCount != 0)
                 row.add(truePositiveCount / (double) (truePositiveCount + falseNegativeCount));
+            //AUC
+            row.add(AUC);
             dataSheet.add(row);
         }
         return dataSheet;
