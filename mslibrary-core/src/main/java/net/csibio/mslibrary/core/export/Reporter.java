@@ -3,7 +3,7 @@ package net.csibio.mslibrary.core.export;
 import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
-import net.csibio.mslibrary.client.algorithm.similarity.Entropy;
+import net.csibio.mslibrary.client.algorithm.entropy.Entropy;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
@@ -414,7 +414,7 @@ public class Reporter {
                 if (spectrumDOS.size() != 0) {
                     List<Double> entropyList = new ArrayList<>();
                     for (SpectrumDO spectrumDO : spectrumDOS) {
-                        entropyList.add(Entropy.getEntropy(spectrumDO.getSpectrum()));
+                        entropyList.add(Entropy.getSpectrumEntropy(spectrumDO.getSpectrum()));
                     }
                     Collections.sort(entropyList);
                     double minValue = 0d;

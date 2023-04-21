@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.client.algorithm.similarity;
 
 import net.csibio.aird.bean.common.Spectrum;
+import net.csibio.mslibrary.client.algorithm.entropy.Entropy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import org.apache.commons.math3.stat.StatUtils;
@@ -95,12 +96,12 @@ public class Similarity {
         Spectrum spectrumB = SpectrumUtil.clone(libSpectrum);
         SpectrumUtil.normalize(spectrumA);
         SpectrumUtil.normalize(spectrumB);
-        double entropyA = Entropy.getEntropy(spectrumA);
-        double entropyB = Entropy.getEntropy(spectrumB);
+        double entropyA = Entropy.getSpectrumEntropy(spectrumA);
+        double entropyB = Entropy.getSpectrumEntropy(spectrumB);
 
         Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, 1, 1, mzTolerance);
         SpectrumUtil.normalize(mixSpectrum);
-        double entropyMix = Entropy.getEntropy(mixSpectrum);
+        double entropyMix = Entropy.getSpectrumEntropy(mixSpectrum);
 
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
@@ -111,8 +112,8 @@ public class Similarity {
         SpectrumUtil.normalize(spectrumA);
         SpectrumUtil.normalize(spectrumB);
 
-        double entropyA = Entropy.getEntropy(spectrumA);
-        double entropyB = Entropy.getEntropy(spectrumB);
+        double entropyA = Entropy.getSpectrumEntropy(spectrumA);
+        double entropyB = Entropy.getSpectrumEntropy(spectrumB);
         double weightA;
         double weightB;
 
@@ -131,7 +132,7 @@ public class Similarity {
         //mix spectrum
         Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, weightA, weightB, mzTolerance);
         SpectrumUtil.normalize(mixSpectrum);
-        double entropyMix = Entropy.getEntropy(mixSpectrum);
+        double entropyMix = Entropy.getSpectrumEntropy(mixSpectrum);
 
         return 1 - (2 * entropyMix - entropyA - entropyB) / Math.log(4);
     }
