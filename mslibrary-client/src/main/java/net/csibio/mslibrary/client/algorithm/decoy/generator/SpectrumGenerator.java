@@ -21,7 +21,7 @@ public class SpectrumGenerator {
     @Autowired
     SpectrumService spectrumService;
 
-    public void execute(String libraryId, MethodDO method, boolean entropyControl) {
+    public void execute(String libraryId, MethodDO method) {
         long start = System.currentTimeMillis();
         log.info("Start to generate decoy spectra on library: {} by {} method", libraryId, method.getDecoyStrategy());
 

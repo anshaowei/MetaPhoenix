@@ -42,7 +42,8 @@ public class Reporter {
 
         //header
         List<Object> header = Arrays.asList("BeginScore", "EndScore", "TargetFrequency", "DecoyFrequency", "TotalFrequency", "TTDC_FDR", "CTDC_FDR",
-                "true_FDR", "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT", "truePositive", "falsePositive", "trueNegative", "falseNegative", "FPR", "TPR", "AUC");
+                "true_FDR", "BestSTDS_FDR", "STDS_FDR", "standard_FDR", "pValue", "PIT",
+                "truePositive", "falsePositive", "trueNegative", "falseNegative", "FPR", "TPR", "AUC");
         List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, scoreInterval, 1);
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet(fileName).doWrite(dataSheet);
