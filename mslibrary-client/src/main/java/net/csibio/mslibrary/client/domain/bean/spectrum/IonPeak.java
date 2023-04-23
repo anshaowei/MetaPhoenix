@@ -7,6 +7,8 @@ public class IonPeak implements Comparable {
     Double mz;
     Double intensity;
 
+    Double entropy;
+
     public IonPeak(double mz, double intensity) {
         this.mz = mz;
         this.intensity = intensity;
