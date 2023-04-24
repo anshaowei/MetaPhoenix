@@ -36,8 +36,8 @@ public class SpectrumGenerator {
             case Naive -> naive(spectrumDOS, decoySpectrumDOS);
             case XYMeta -> xyMeta(spectrumDOS, decoySpectrumDOS, method);
             case SameMz -> sameMz(spectrumDOS, decoySpectrumDOS);
-//            case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
-            case Test -> test(spectrumDOS, decoySpectrumDOS, method);
+            case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
+            case IonEntropy -> ionEntropy(spectrumDOS, decoySpectrumDOS, method);
             default -> log.error("Decoy procedure {} is currently not supported", method.getDecoyStrategy());
         }
 
@@ -93,7 +93,7 @@ public class SpectrumGenerator {
         });
     }
 
-    private void test(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
+    private void ionEntropy(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
             List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance).toList();
@@ -130,8 +130,18 @@ public class SpectrumGenerator {
             List<IonPeak> ionPeaks = new ArrayList<>(ionPeakMap.keySet());
             ionPeaks.sort(Comparator.comparingDouble(IonPeak::getEntropy));
 
-            //generate decoy spectrum by reverse the ion intensity by entropy
+            //process the ion peaks with entropy 0
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
+            List<IonPeak> entropyZeroIonPeaks = ionPeaks.stream().filter(ionPeak -> ionPeak.getEntropy() == 0).toList();
+            List<Double> intensities = new ArrayList<>(entropyZeroIonPeaks.stream().map(IonPeak::getIntensity).toList());
+            for (IonPeak ionPeak : entropyZeroIonPeaks) {
+                int random = new Random().nextInt(intensities.size());
+                decoyIonPeaks.add(new IonPeak(ionPeak.getMz(), intensities.get(random)));
+                intensities.remove(random);
+            }
+
+            //generate decoy spectrum by reverse the ion intensity by entropy
+            ionPeaks.removeIf(ionPeak -> ionPeak.getEntropy() == 0);
             for (int i = 0; i < ionPeaks.size(); i++) {
                 IonPeak ionPeak = ionPeaks.get(i);
                 decoyIonPeaks.add(new IonPeak(ionPeak.getMz(), ionPeaks.get(ionPeaks.size() - i - 1).getIntensity()));
