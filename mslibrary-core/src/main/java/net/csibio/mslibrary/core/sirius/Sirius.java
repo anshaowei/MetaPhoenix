@@ -81,16 +81,6 @@ public class Sirius {
         getDecoySpectra(libraryId, libraryProjectSpace);
     }
 
-    /**
-     * This function parse the filter and decoy result from the analyzed sirius project space
-     * @param libraryId
-     */
-    public void parseProjectSpace(String libraryId) {
-        String libraryProjectSpace = vmProperties.getSiriusProjectSpace() + File.separator + libraryId;
-        getFilteredSpectra(libraryId, libraryProjectSpace);
-        getDecoySpectra(libraryId, libraryProjectSpace);
-    }
-
     private void getFilteredSpectra(String libraryId, String projectSpace) {
         log.info("Start parsing filtered spectra in the sirius project: {}", projectSpace);
         int rawDataPoints = 0, rawSpectraCount = 0;
