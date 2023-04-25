@@ -4,9 +4,11 @@ package net.csibio.mslibrary.core.controller;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
+import net.csibio.mslibrary.client.algorithm.entropy.Entropy;
 import net.csibio.mslibrary.client.algorithm.integrate.Integrator;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
+import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -35,7 +37,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("test")
@@ -71,12 +76,12 @@ public class TestController {
     public void importLibrary() {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
-        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+//        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
 //        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
@@ -91,7 +96,7 @@ public class TestController {
 //        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //filter on one library
-//        String libraryId = "MassBank-Europe";
+//        String libraryId = "ALL_GNPS";
 //        noiseFilter.filter(libraryId);
 
         //basic filter on one library
@@ -149,14 +154,14 @@ public class TestController {
 
         //all the strategies on one library
         String libraryId = "MassBank-Europe";
-//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-//            methodDO.setDecoyStrategy(decoyStrategy.getName());
-//            for (int i = 0; i < repeat; i++) {
-//                spectrumGenerator.execute(libraryId, methodDO);
-//            }
-//        }
-        methodDO.setDecoyStrategy(DecoyStrategy.Test.getName());
-        spectrumGenerator.execute(libraryId, methodDO);
+        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+            methodDO.setDecoyStrategy(decoyStrategy.getName());
+            for (int i = 0; i < repeat; i++) {
+                spectrumGenerator.execute(libraryId, methodDO);
+            }
+        }
+//        methodDO.setDecoyStrategy(DecoyStrategy.IonEntropy.getName());
+//        spectrumGenerator.execute(libraryId, methodDO);
     }
 
     @RequestMapping("dataExchange")
@@ -204,14 +209,14 @@ public class TestController {
     @RequestMapping("sirius")
     public void sirius() {
         //sirius process on all the library
-//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//        for (LibraryDO libraryDO : libraryDOS) {
-//            sirius.execute(libraryDO.getId());
-//        }
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        for (LibraryDO libraryDO : libraryDOS) {
+            sirius.execute(libraryDO.getId());
+        }
 
         //sirius process on one library
-        String libraryId = "MassBank-Europe";
-        sirius.execute(libraryId);
+//        String libraryId = "MassBank-MoNA";
+//        sirius.execute(libraryId);
     }
 
     @RequestMapping("export")
@@ -281,10 +286,45 @@ public class TestController {
 
     @RequestMapping("all")
     public void all() {
-//        importLibrary();
-//        filter();
-//        sirius();
-        decoy();
-        compare();
+        importLibrary();
+        filter();
+        sirius();
+//        decoy();
+//        compare();
+//        ionEntropy();
+    }
+
+    @RequestMapping("ionEntropy")
+    public void ionEntropy() {
+        String libraryId = "MassBank-MoNA";
+        //ion numbers in a library
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        List<IonPeak> ionPeaks = new ArrayList<>();
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
+                ionPeaks.add(ionPeak);
+            }
+        }
+        Map<Double, List<IonPeak>> ionPeakMap = ionPeaks.stream().collect(Collectors.groupingBy(IonPeak::getMz));
+        HashMap<Double, Double> ionEntropyMap = new HashMap<>();
+        for (Double mz : ionPeakMap.keySet()) {
+            double[] intensities = new double[ionPeakMap.get(mz).size()];
+            for (int i = 0; i < intensities.length; i++) {
+                intensities[i] = ionPeakMap.get(mz).get(i).getIntensity();
+            }
+            double ionEntropy = Entropy.getEntropy(intensities);
+            ionEntropyMap.put(mz, ionEntropy);
+        }
+        //sort ionEntropyMap by the value
+        List<Map.Entry<Double, Double>> list = new ArrayList<>(ionEntropyMap.entrySet());
+        list.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
+        int zeroCount = 0;
+        for (Map.Entry<Double, Double> entry : list) {
+            if (entry.getValue() == 0) {
+                zeroCount++;
+            }
+        }
+        int a = 0;
     }
 }

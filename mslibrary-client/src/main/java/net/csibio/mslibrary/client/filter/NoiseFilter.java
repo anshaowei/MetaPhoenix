@@ -37,7 +37,7 @@ public class NoiseFilter {
         log.info("remove {} spectra with empty key information, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 
-        //2. remove zero data points
+        //2. remove zero or noise data points
         int dataPoint = 0;
         int totalDataPoint = 0;
         for (SpectrumDO spectrumDO : spectrumDOS) {
