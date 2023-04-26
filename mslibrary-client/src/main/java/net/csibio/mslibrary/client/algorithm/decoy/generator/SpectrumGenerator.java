@@ -96,7 +96,7 @@ public class SpectrumGenerator {
     private void ionEntropy(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
-            List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance).toList();
+            List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance).toList();
 
             List<IonPeak> ionWarehouse = new ArrayList<>();
             for (SpectrumDO spectrum : spectraWarehouse) {
