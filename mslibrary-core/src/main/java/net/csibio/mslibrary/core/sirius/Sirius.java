@@ -81,7 +81,7 @@ public class Sirius {
         getDecoySpectra(libraryId, libraryProjectSpace);
     }
 
-    private void getFilteredSpectra(String libraryId, String projectSpace) {
+    public void getFilteredSpectra(String libraryId, String projectSpace) {
         log.info("Start parsing filtered spectra in the sirius project: {}", projectSpace);
         int rawDataPoints = 0, rawSpectraCount = 0;
         List<SpectrumDO> rawSpectrumDOS = spectrumService.getAllByLibraryId(libraryId);
@@ -100,11 +100,10 @@ public class Sirius {
         for (File f : files) {
             if (!f.getName().equals(".compression") && !f.getName().equals(".version") && !f.getName().equals(".format") && !f.getName().equals(".DS_Store")) {
                 File[] subFiles = f.listFiles();
-                assert subFiles != null;
                 String[] infos = f.getName().split(SymbolConst.UNDERLINE);
                 String rawSpectrumId = infos[infos.length - 1];
                 SpectrumDO rawSpectrumDO = rawSpectraMap.get(rawSpectrumId);
-                if (rawSpectrumDO == null) {
+                if (rawSpectrumDO == null || subFiles == null) {
                     continue;
                 }
                 SpectrumDO filteredSpectrumDO = null;
@@ -143,7 +142,7 @@ public class Sirius {
         log.info("Finish filter library: {} by FragmentationTree method", libraryId);
     }
 
-    private void getDecoySpectra(String libraryId, String projectSpace) {
+    public void getDecoySpectra(String libraryId, String projectSpace) {
         log.info("Start parsing decoy spectra in the sirius project: {}", projectSpace);
         String decoyLibraryId = libraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree;
         List<SpectrumDO> rawSpectrumDOS = spectrumService.getAllByLibraryId(libraryId);
