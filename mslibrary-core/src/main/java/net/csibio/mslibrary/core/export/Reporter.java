@@ -295,14 +295,15 @@ public class Reporter {
         return dataSheet;
     }
 
-    public void estimatedPValueGraph(String fileName, ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap, int pInterval) {
+    public void estimatedPValueGraph(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int pInterval) {
+        String fileName = "estimatedPValueGraph";
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export estimatedPValue graph : " + outputFileName);
-        List<List<Object>> scoreDataSheet = null;
+        List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 1000, 1);
 
         //reverse score data sheet to make pValue ascending
-        Collections.reverse(scoreDataSheet);
-        List<List<Object>> dataSheet = new ArrayList<>();
+        Collections.reverse(dataSheet);
+        List<List<Object>> resultDatasheet = new ArrayList<>();
         List<Double> thresholds = new ArrayList<>();
 
         //pValue thresholds
@@ -311,22 +312,16 @@ public class Reporter {
             thresholds.add(step * (i + 1));
         }
 
-        //record real pValue and sum frequencies from pValue 0~1
-        double[] pValueArray = new double[scoreDataSheet.size()];
-        double targetFrequency = 0.0;
-        double decoyFrequency = 0.0;
-        double totalFrequency = 0.0;
-        List<Double> targetFrequencyList = new ArrayList<>();
-        List<Double> decoyFrequencyList = new ArrayList<>();
-        List<Double> totalFrequencyList = new ArrayList<>();
-        for (int i = 0; i < scoreDataSheet.size(); i++) {
-            pValueArray[i] = (double) scoreDataSheet.get(i).get(10);
-            targetFrequency += (double) scoreDataSheet.get(i).get(2);
-            decoyFrequency += (double) scoreDataSheet.get(i).get(3);
-            totalFrequency += (double) scoreDataSheet.get(i).get(4);
-            targetFrequencyList.add(targetFrequency);
-            decoyFrequencyList.add(decoyFrequency);
-            totalFrequencyList.add(totalFrequency);
+        //record real pValue and frequencies from pValue 0~1
+        double[] pValueArray = new double[dataSheet.size()];
+        List<Integer> turePositiveList = new ArrayList<>();
+        List<Integer> falsePositiveList = new ArrayList<>();
+        for (int i = 0; i < dataSheet.size(); i++) {
+            pValueArray[i] = (double) dataSheet.get(i).get(11);
+            Integer turePositive = (Integer) dataSheet.get(i).get(13);
+            Integer falsePositive = (Integer) dataSheet.get(i).get(14);
+            turePositiveList.add(turePositive);
+            falsePositiveList.add(falsePositive);
         }
 
         //for each threshold, find the nearest pValue and record the index
@@ -341,9 +336,6 @@ public class Reporter {
             }
         }
 
-        //header
-        List<Object> header = Arrays.asList("EstimatedPValue", "RealPValue", "TargetFrequency", "DecoyFrequency", "TotalFrequency");
-        dataSheet.add(header);
         //calculate the frequency of each threshold according to the index
         for (int i = 0; i < indexList.size(); i++) {
             int index = indexList.get(i);
@@ -355,27 +347,28 @@ public class Reporter {
                 row.add("NA");
                 row.add("NA");
             } else {
-                row.add(scoreDataSheet.get(index).get(6));
+                row.add(dataSheet.get(index).get(6));
                 if (i == 0) {
-                    row.add(targetFrequencyList.get(index));
-                    row.add(decoyFrequencyList.get(index));
-                    row.add(totalFrequencyList.get(index));
+                    row.add(turePositiveList.get(index));
+                    row.add(falsePositiveList.get(index));
                 } else {
                     if (indexList.get(i - 1) == -1) {
-                        row.add(targetFrequencyList.get(index));
-                        row.add(decoyFrequencyList.get(index));
-                        row.add(totalFrequencyList.get(index));
+                        row.add(turePositiveList.get(index));
+                        row.add(falsePositiveList.get(index));
                     } else {
-                        row.add(targetFrequencyList.get(index) - targetFrequencyList.get(indexList.get(i - 1)));
-                        row.add(decoyFrequencyList.get(index) - decoyFrequencyList.get(indexList.get(i - 1)));
-                        row.add(totalFrequencyList.get(index) - totalFrequencyList.get(indexList.get(i - 1)));
+                        row.add(turePositiveList.get(index) - turePositiveList.get(indexList.get(i - 1)));
+                        row.add(falsePositiveList.get(index) - falsePositiveList.get(indexList.get(i - 1)));
                     }
                 }
             }
-            dataSheet.add(row);
+            resultDatasheet.add(row);
         }
 
-        EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(dataSheet);
+        //header
+        List<Object> header = Arrays.asList("EstimatedPValue", "RealPValue", "TargetFrequency", "DecoyFrequency", "TotalFrequency");
+        resultDatasheet.add(header);
+
+        EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(resultDatasheet);
         log.info("export estimatedPValue graph success: " + outputFileName);
     }
 
@@ -391,6 +384,9 @@ public class Reporter {
                 continue;
             }
             List<SpectrumDO> spectrumDOS = mongoTemplate.findAll(SpectrumDO.class, name);
+            if (spectrumDOS.size() == 0) {
+                continue;
+            }
             if (name.equals("spectrum" + SymbolConst.DELIMITER + libraryId)) {
                 idSpectraMap.put("raw", spectrumDOS);
             } else {
