@@ -233,17 +233,17 @@ public class TestController {
         //real score distribution sheet by the target-decoy strategy
 //        String queryLibraryId = "MassBank-MoNA";
 //        String targetLibraryId = "ALL_GNPS";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.SameMz.getName();
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.IonEntropy.getName();
 //        MethodDO methodDO = new MethodDO();
 //        methodDO.setPpmForMzTolerance(true);
 //        methodDO.setPpm(10);
 //        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-//        reporter.scoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 100);
+//        reporter.scoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 1000);
 
         //simple identification process
-//        String queryLibraryId = "GNPS-NIST14-MATCHES";
-//        String targetLibraryId = "MassBank-Europe";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.SameMz.getName();
+//        String queryLibraryId = "MassBank-MoNA";
+//        String targetLibraryId = "ALL_GNPS";
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.IonEntropy.getName();
 //        MethodDO methodDO = new MethodDO();
 //        methodDO.setPpmForMzTolerance(true);
 //        methodDO.setPpm(10);
@@ -275,10 +275,10 @@ public class TestController {
         String targetLibraryId = "ALL_GNPS";
 
         //compare different spectrum match method
-        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
+//        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
 
         //compare different decoy strategy
-//        reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 100);
+        reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 100);
     }
 
     @RequestMapping("integrate")

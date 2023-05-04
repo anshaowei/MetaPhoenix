@@ -341,32 +341,20 @@ public class Reporter {
             int index = indexList.get(i);
             List<Object> row = new ArrayList<>();
             row.add(thresholds.get(i));
-            if (index == -1) {
-                row.add("NA");
-                row.add("NA");
-                row.add("NA");
-                row.add("NA");
+            row.add(dataSheet.get(index).get(11));
+            if (i == 0) {
+                row.add((double) turePositiveList.get(index));
+                row.add((double) falsePositiveList.get(index));
             } else {
-                row.add(dataSheet.get(index).get(11));
-                if (i == 0) {
-                    row.add(turePositiveList.get(index));
-                    row.add(falsePositiveList.get(index));
-                } else {
-                    if (indexList.get(i - 1) == -1) {
-                        row.add(turePositiveList.get(index));
-                        row.add(falsePositiveList.get(index));
-                    } else {
-                        row.add(turePositiveList.get(index) - turePositiveList.get(indexList.get(i - 1)));
-                        row.add(falsePositiveList.get(index) - falsePositiveList.get(indexList.get(i - 1)));
-                    }
-                }
+                row.add(turePositiveList.get(index) - turePositiveList.get(indexList.get(i - 1)));
+                row.add(falsePositiveList.get(index) - falsePositiveList.get(indexList.get(i - 1)));
             }
             resultDatasheet.add(row);
         }
 
         //header
-        List<Object> header = Arrays.asList("EstimatedPValue", "RealPValue", "TargetFrequency", "DecoyFrequency", "TotalFrequency");
-        resultDatasheet.add(header);
+        List<Object> header = Arrays.asList("EstimatedPValue", "RealPValue", "True", "False");
+        resultDatasheet.add(0, header);
 
         EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(resultDatasheet);
         log.info("export estimatedPValue graph success: " + outputFileName);
