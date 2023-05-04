@@ -222,10 +222,10 @@ public class Reporter {
             bestDecoyCount = (double) bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size() / decoyMultiplier;
 
             //real data calculation
-            truePositiveCount = truePositives.stream().filter(hit -> hit.getScore() >= finalMaxScore).toList().size();
-            falsePositiveCount = falsePositives.stream().filter(hit -> hit.getScore() >= finalMaxScore).toList().size();
-            trueNegativeCount = tureNegatives.stream().filter(hit -> hit.getScore() < finalMaxScore).toList().size();
-            falseNegativeCount = falseNegatives.stream().filter(hit -> hit.getScore() < finalMaxScore).toList().size();
+            truePositiveCount = truePositives.stream().filter(hit -> hit.getScore() >= finalMinScore).toList().size();
+            falsePositiveCount = falsePositives.stream().filter(hit -> hit.getScore() >= finalMinScore).toList().size();
+            trueNegativeCount = tureNegatives.stream().filter(hit -> hit.getScore() < finalMinScore).toList().size();
+            falseNegativeCount = falseNegatives.stream().filter(hit -> hit.getScore() < finalMinScore).toList().size();
             double trueFDR = 0d, BestSTDS_FDR = 0d, STDS_FDR = 0d, pValue = 0d;
             if (truePositiveCount + falsePositiveCount != 0) {
                 trueFDR = (double) falsePositiveCount / (truePositiveCount + falsePositiveCount);
@@ -347,7 +347,7 @@ public class Reporter {
                 row.add("NA");
                 row.add("NA");
             } else {
-                row.add(dataSheet.get(index).get(6));
+                row.add(dataSheet.get(index).get(11));
                 if (i == 0) {
                     row.add(turePositiveList.get(index));
                     row.add(falsePositiveList.get(index));
