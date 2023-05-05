@@ -216,10 +216,10 @@ public class Reporter {
             int targetCount, bestTargetCount;
             int truePositiveCount, falsePositiveCount, trueNegativeCount, falseNegativeCount;
             double decoyCount, bestDecoyCount;
-            targetCount = targetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            decoyCount = (double) decoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size() / decoyMultiplier;
-            bestTargetCount = bestTargetHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size();
-            bestDecoyCount = (double) bestDecoyHits.stream().filter(hit -> hit.getScore() > finalMinScore).toList().size() / decoyMultiplier;
+            targetCount = targetHits.stream().filter(hit -> hit.getScore() >= finalMinScore).toList().size();
+            decoyCount = (double) decoyHits.stream().filter(hit -> hit.getScore() >= finalMinScore).toList().size() / decoyMultiplier;
+            bestTargetCount = bestTargetHits.stream().filter(hit -> hit.getScore() >= finalMinScore).toList().size();
+            bestDecoyCount = (double) bestDecoyHits.stream().filter(hit -> hit.getScore() >= finalMinScore).toList().size() / decoyMultiplier;
 
             //real data calculation
             truePositiveCount = truePositives.stream().filter(hit -> hit.getScore() >= finalMinScore).toList().size();
@@ -345,6 +345,9 @@ public class Reporter {
             if (i == 0) {
                 row.add((double) turePositiveList.get(index));
                 row.add((double) falsePositiveList.get(index));
+            } else if (i == indexList.size() - 1) {
+                row.add(turePositiveList.get(turePositiveList.size() - 1) - turePositiveList.get(index));
+                row.add(falsePositiveList.get(falsePositiveList.size() - 1) - falsePositiveList.get(index));
             } else {
                 row.add(turePositiveList.get(index) - turePositiveList.get(indexList.get(i - 1)));
                 row.add(falsePositiveList.get(index) - falsePositiveList.get(indexList.get(i - 1)));

@@ -146,4 +146,31 @@ public class NoiseFilter {
         log.info("finish noise filter on library: {}", libraryId);
     }
 
+    public void removeZeroDataPoints(String libraryId){
+        log.info("start remove zero data points on library: {}", libraryId);
+        List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
+
+        int dataPoint = 0;
+        int totalDataPoint = 0;
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            List<Double> mzs = new ArrayList<>();
+            List<Double> ints = new ArrayList<>();
+            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                if (spectrumDO.getInts()[i] == 0d) {
+                    continue;
+                }
+                mzs.add(spectrumDO.getMzs()[i]);
+                ints.add(spectrumDO.getInts()[i]);
+            }
+            dataPoint += spectrumDO.getMzs().length - mzs.size();
+            totalDataPoint += spectrumDO.getMzs().length;
+            spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
+            spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
+        }
+        log.info("remove {} zero data points, {} spectra left, {}% data points removed", dataPoint, spectrumDOS.size(), dataPoint * 100.0 / totalDataPoint);
+        spectrumService.remove(new SpectrumQuery(), libraryId);
+        spectrumService.insert(spectrumDOS, libraryId);
+        log.info("finish  on library: {}", libraryId);
+    }
+
 }

@@ -212,11 +212,13 @@ public class TestController {
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
 //        for (LibraryDO libraryDO : libraryDOS) {
 //            sirius.execute(libraryDO.getId());
+//            noiseFilter.removeZeroDataPoints(libraryDO.getId());
 //        }
 
         //sirius process on one library
         String libraryId = "ALL_GNPS";
         sirius.execute(libraryId);
+        noiseFilter.removeZeroDataPoints(libraryId);
     }
 
     @RequestMapping("export")
@@ -231,14 +233,14 @@ public class TestController {
     @RequestMapping("report")
     public void report() {
         //real score distribution sheet by the target-decoy strategy
-//        String queryLibraryId = "MassBank-MoNA";
-//        String targetLibraryId = "ALL_GNPS";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.IonEntropy.getName();
-//        MethodDO methodDO = new MethodDO();
-//        methodDO.setPpmForMzTolerance(true);
-//        methodDO.setPpm(10);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-//        reporter.scoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 1000);
+        String queryLibraryId = "MassBank-MoNA";
+        String targetLibraryId = "ALL_GNPS";
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName();
+        MethodDO methodDO = new MethodDO();
+        methodDO.setPpmForMzTolerance(true);
+        methodDO.setPpm(10);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+        reporter.scoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 100);
 
         //simple identification process
 //        String queryLibraryId = "MassBank-MoNA";
@@ -255,14 +257,14 @@ public class TestController {
 //        reporter.entropyDistributionGraph(libraryId, 100);
 
         //estimate p value graph
-        String queryLibraryId = "MassBank-MoNA";
-        String targetLibraryId = "ALL_GNPS";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName();
-        MethodDO methodDO = new MethodDO();
-        methodDO.setPpmForMzTolerance(true);
-        methodDO.setPpm(10);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-        reporter.estimatedPValueGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 20);
+//        String queryLibraryId = "MassBank-MoNA";
+//        String targetLibraryId = "ALL_GNPS";
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName();
+//        MethodDO methodDO = new MethodDO();
+//        methodDO.setPpmForMzTolerance(true);
+//        methodDO.setPpm(10);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+//        reporter.estimatedPValueGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 20);
     }
 
     @RequestMapping("compare")
