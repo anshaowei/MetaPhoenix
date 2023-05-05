@@ -146,10 +146,11 @@ public class NoiseFilter {
         log.info("finish noise filter on library: {}", libraryId);
     }
 
-    public void removeZeroDataPoints(String libraryId){
+    public void filterZeroPoint(String libraryId) {
         log.info("start remove zero data points on library: {}", libraryId);
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
 
+        spectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs() == null || spectrumDO.getMzs().length == 0 || spectrumDO.getInts() == null || spectrumDO.getInts().length == 0);
         int dataPoint = 0;
         int totalDataPoint = 0;
         for (SpectrumDO spectrumDO : spectrumDOS) {

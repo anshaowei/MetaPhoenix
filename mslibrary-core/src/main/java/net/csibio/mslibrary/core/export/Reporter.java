@@ -345,9 +345,6 @@ public class Reporter {
             if (i == 0) {
                 row.add((double) turePositiveList.get(index));
                 row.add((double) falsePositiveList.get(index));
-            } else if (i == indexList.size() - 1) {
-                row.add(turePositiveList.get(turePositiveList.size() - 1) - turePositiveList.get(index));
-                row.add(falsePositiveList.get(falsePositiveList.size() - 1) - falsePositiveList.get(index));
             } else {
                 row.add(turePositiveList.get(index) - turePositiveList.get(indexList.get(i - 1)));
                 row.add(falsePositiveList.get(index) - falsePositiveList.get(indexList.get(i - 1)));
