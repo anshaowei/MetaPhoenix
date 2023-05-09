@@ -74,12 +74,12 @@ public class TestController {
     public void importLibrary() {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
         gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
-//        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
         massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
@@ -305,61 +305,106 @@ public class TestController {
 //        sirius();
 //        decoy();
 //        compare();
-//        ionEntropy();
+        ionEntropy();
     }
 
     @RequestMapping("ionEntropy")
     public void ionEntropy() {
-        String libraryId = "ALL_GNPS";
-        //ion numbers in a library
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        List<IonPeak> ionPeaks = new ArrayList<>();
-        for (SpectrumDO spectrumDO : spectrumDOS) {
-            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
-                ionPeaks.add(ionPeak);
-            }
-        }
-        Map<Double, List<IonPeak>> ionPeakMap = ionPeaks.stream().collect(Collectors.groupingBy(IonPeak::getMz));
-        HashMap<Double, Double> ionEntropyMap = new HashMap<>();
-        for (Double mz : ionPeakMap.keySet()) {
-            double[] intensities = new double[ionPeakMap.get(mz).size()];
-            for (int i = 0; i < intensities.length; i++) {
-                intensities[i] = ionPeakMap.get(mz).get(i).getIntensity();
-            }
-            double ionEntropy = Entropy.getEntropy(intensities);
-            ionEntropyMap.put(mz, ionEntropy);
-        }
-        List<Double> ionMzList = new ArrayList<>(ionEntropyMap.keySet());
-        Collections.sort(ionMzList);
-
-        log.info("start export ion entropy graph");
-        List<List<Object>> result = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            final double minMz = i * 10;
-            final double maxMz = (i + 1) * 10;
-            List<Object> row = new ArrayList<>();
-            double avgEntropy = 0;
-            int ionCount = 0;
-            for (Double mz : ionMzList) {
-                if (mz >= minMz && mz < maxMz) {
-                    ionCount++;
-                    double entropy = ionEntropyMap.get(mz);
-                    avgEntropy += entropy;
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        for (LibraryDO libraryDO : libraryDOS) {
+            List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryDO.getId());
+            List<IonPeak> ionPeaks = new ArrayList<>();
+            for (SpectrumDO spectrumDO : spectrumDOS) {
+                for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                    IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
+                    ionPeaks.add(ionPeak);
                 }
             }
-            if (ionCount > 0) {
-                avgEntropy /= ionCount;
+            Map<Double, List<IonPeak>> ionPeakMap = ionPeaks.stream().collect(Collectors.groupingBy(IonPeak::getMz));
+            HashMap<Double, Double> ionEntropyMap = new HashMap<>();
+            for (Double mz : ionPeakMap.keySet()) {
+                double[] intensities = new double[ionPeakMap.get(mz).size()];
+                for (int i = 0; i < intensities.length; i++) {
+                    intensities[i] = ionPeakMap.get(mz).get(i).getIntensity();
+                }
+                double ionEntropy = Entropy.getEntropy(intensities);
+                ionEntropyMap.put(mz, ionEntropy);
             }
-            row.add(minMz);
-            row.add(maxMz);
-            row.add(avgEntropy);
-            result.add(row);
+            List<Double> ionMzList = new ArrayList<>(ionEntropyMap.keySet());
+            Collections.sort(ionMzList);
+
+            //mz to ion entropy graph
+//            log.info("start export ion entropy graph");
+//            List<List<Object>> result = new ArrayList<>();
+//            for (int i = 0; i < 100; i++) {
+//                final double minMz = i * 10;
+//                final double maxMz = (i + 1) * 10;
+//                List<Object> row = new ArrayList<>();
+//                double avgEntropy = 0;
+//                int ionCount = 0;
+//                for (Double mz : ionMzList) {
+//                    if (mz >= minMz && mz < maxMz) {
+//                        ionCount++;
+//                        double entropy = ionEntropyMap.get(mz);
+//                        avgEntropy += entropy;
+//                    }
+//                }
+//                if (ionCount > 0) {
+//                    avgEntropy /= ionCount;
+//                }
+//                row.add(minMz);
+//                row.add(maxMz);
+//                row.add(avgEntropy);
+//                result.add(row);
+//            }
+//            List<Object> header = Arrays.asList("minMz", "maxMz", "avgEntropy");
+//            result.add(0, header);
+//            String fileName = libraryDO.getId();
+//            String outputFileName = "/Users/anshaowei/downloads/" + libraryDO.getId() + ".xlsx";
+//            EasyExcel.write(outputFileName).sheet(fileName).doWrite(result);
+//            log.info("export {} success", outputFileName);
+
+            //zero ion entropy
+//            int zeroIonCount = 0;
+//            for (Double mz : ionMzList) {
+//                if (ionEntropyMap.get(mz) == 0) {
+//                    zeroIonCount++;
+//                }
+//            }
+//            log.info("library {} has {} ions, {} of them have zero entropy", libraryDO.getId(), ionMzList.size(), zeroIonCount);
+
+            //ion entropy fraction
+            log.info("start export ion entropy fraction graph");
+            List<List<Object>> result = new ArrayList<>();
+            double maxIonEntropy = 5d;
+            double minIonEntropy = 0d;
+            for (int i = 0; i < 100; i++) {
+                final double minMz = i * 10;
+                final double maxMz = (i + 1) * 10;
+                List<Object> row = new ArrayList<>();
+                double avgEntropy = 0;
+                int ionCount = 0;
+                for (Double mz : ionMzList) {
+                    if (mz >= minMz && mz < maxMz) {
+                        ionCount++;
+                        double entropy = ionEntropyMap.get(mz);
+                        avgEntropy += entropy;
+                    }
+                }
+                if (ionCount > 0) {
+                    avgEntropy /= ionCount;
+                }
+                row.add(minMz);
+                row.add(maxMz);
+                row.add(avgEntropy);
+                result.add(row);
+            }
+            List<Object> header = Arrays.asList("minMz", "maxMz", "avgEntropy");
+            result.add(0, header);
+            String fileName = libraryDO.getId();
+            String outputFileName = "/Users/anshaowei/downloads/" + libraryDO.getId() + ".xlsx";
+            EasyExcel.write(outputFileName).sheet(fileName).doWrite(result);
+            log.info("export {} success", outputFileName);
         }
-        List<Object> header = Arrays.asList("minMz", "maxMz", "avgEntropy");
-        result.add(0,header);
-        String outputFileName = "/Users/anshaowei/downloads/ion_entropy_graph.xlsx";
-        EasyExcel.write(outputFileName).sheet("ionEntropy").doWrite(result);
-        log.info("export {} success", outputFileName);
     }
 }
