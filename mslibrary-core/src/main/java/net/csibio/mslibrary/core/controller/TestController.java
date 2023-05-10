@@ -4,9 +4,7 @@ package net.csibio.mslibrary.core.controller;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
-import net.csibio.mslibrary.client.algorithm.entropy.Entropy;
 import net.csibio.mslibrary.client.algorithm.integrate.Integrator;
-import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
@@ -35,12 +33,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -316,43 +311,6 @@ public class TestController {
     @RequestMapping("ionEntropy")
     public void ionEntropy() {
         String libraryId = "ALL_GNPS";
-
-        List<SpectrumDO> parsedSpectra = new ArrayList<>();
-        List<SpectrumDO> filterdSpectra = new ArrayList<>();
-        File file = new File("/Users/anshaowei/Documents/Metabolomics/ProjectSpace/ALL_GNPS");
-        File[] files = file.listFiles();
-        assert files != null;
-        for (File f : files) {
-            if (!f.getName().equals(".compression") && !f.getName().equals(".version") && !f.getName().equals(".format") && !f.getName().equals(".DS_Store")) {
-                File[] subFiles = f.listFiles();
-                boolean mark = false;
-                SpectrumDO targetSpectrumDO = new SpectrumDO();
-                SpectrumDO filteredSpectrumDO;
-                if (subFiles == null) continue;
-                for (File subFile : subFiles) {
-                    if (subFile.getName().equals("spectrum.ms")) {
-                        if (parseSpectrum(subFile.getPath(), targetSpectrumDO) != null) {
-                            parsedSpectra.add(targetSpectrumDO);
-                            mark = true;
-                        }
-                    }
-                }
-                for (File subFile : subFiles) {
-                    if (subFile.getName().equals("spectra") && mark) {
-                        File[] subSubFiles = subFile.listFiles();
-                        assert subSubFiles != null;
-                        for (File subSubFile : subSubFiles) {
-                            if (subSubFile.getName().endsWith(".tsv")) {
-                                filteredSpectrumDO = parseTsvFile(subSubFile.getAbsolutePath());
-                                filteredSpectrumDO.setComment(targetSpectrumDO.getComment());
-                                filterdSpectra.add(filteredSpectrumDO);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         Map<String, List<SpectrumDO>> inchikeyMap = spectrumDOS.stream().collect(Collectors.groupingBy(spectrumDO -> spectrumDO.getInChIKey().split("-")[0]));
 
@@ -367,62 +325,6 @@ public class TestController {
                 ionPeaks.add(ionPeak);
             }
         }
-
-        HashMap<String, SpectrumDO> filteredSpectraMap = new HashMap<>();
-        for (SpectrumDO spectrumDO : filterdSpectra) {
-            filteredSpectraMap.put(spectrumDO.getComment(), spectrumDO);
-        }
-
-        double avgAnnotatedEntropy = 0;
-        double avgNonAnnotatedEntropy = 0;
-        for (SpectrumDO spectrumDO : parsedSpectra) {
-            HashMap<IonPeak, Double> annotatedMap = new HashMap<>();
-            HashMap<IonPeak, Double> nonAnnotatedMap = new HashMap<>();
-            SpectrumDO filterdSpectrumDO = filteredSpectraMap.get(spectrumDO.getComment());
-            List<IonPeak> filteredIonPeaks = new ArrayList<>();
-            if (filterdSpectrumDO == null) continue;
-            for (int i = 0; i < filterdSpectrumDO.getMzs().length; i++) {
-                IonPeak ionPeak = new IonPeak(filterdSpectrumDO.getMzs()[i], filterdSpectrumDO.getInts()[i]);
-                Double mzTolerance = 10 * Constants.PPM * ionPeak.getMz();
-                List<IonPeak> candidates = ionPeaks.stream().filter(ionPeak1 -> Math.abs(ionPeak1.getMz() - ionPeak.getMz()) < mzTolerance).toList();
-                double[] ionIntensities = new double[candidates.size()];
-                for (int j = 0; j < candidates.size(); j++) {
-                    ionIntensities[j] = candidates.get(j).getIntensity();
-                }
-                double ionEntropy = Entropy.getEntropy(ionIntensities);
-                annotatedMap.put(ionPeak, ionEntropy);
-                filteredIonPeaks.add(ionPeak);
-            }
-            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
-                if (filteredIonPeaks.contains(ionPeak)) {
-                    continue;
-                }
-                Double mzTolerance = 10 * Constants.PPM * ionPeak.getMz();
-                List<IonPeak> candidates = ionPeaks.stream().filter(ionPeak1 -> Math.abs(ionPeak1.getMz() - ionPeak.getMz()) < mzTolerance).toList();
-                double[] ionIntensities = new double[candidates.size()];
-                for (int j = 0; j < candidates.size(); j++) {
-                    ionIntensities[j] = candidates.get(j).getIntensity();
-                }
-                double ionEntropy = Entropy.getEntropy(ionIntensities);
-                nonAnnotatedMap.put(ionPeak, ionEntropy);
-            }
-            double annotatedEntropy = 0;
-            double nonAnnotatedEntropy = 0;
-            for (IonPeak ionPeak : annotatedMap.keySet()) {
-                annotatedEntropy += annotatedMap.get(ionPeak);
-            }
-            for (IonPeak ionPeak : nonAnnotatedMap.keySet()) {
-                nonAnnotatedEntropy += nonAnnotatedMap.get(ionPeak);
-            }
-            annotatedEntropy /= annotatedMap.size();
-            if (nonAnnotatedMap.size() != 0) nonAnnotatedEntropy /= nonAnnotatedMap.size();
-            avgAnnotatedEntropy += annotatedEntropy;
-            avgNonAnnotatedEntropy += nonAnnotatedEntropy;
-        }
-        avgAnnotatedEntropy /= parsedSpectra.size();
-        avgNonAnnotatedEntropy /= parsedSpectra.size();
-        int a = 0;
 
 //        TreeSet<IonPeak> ionPeakSet = new TreeSet<>(ionPeaks);
 //        ConcurrentHashMap<IonPeak, Double> ionEntropyMap = new ConcurrentHashMap<>();
@@ -529,96 +431,4 @@ public class TestController {
 //            log.info("export {} success", outputFileName);
     }
 
-    private SpectrumDO parseSpectrum(String spectrumFile, SpectrumDO spectrumDO) {
-        //read file use buffer
-        File file = new File(spectrumFile);
-        FileInputStream fis = null;
-        try {
-            fis = new FileInputStream(file);
-            BufferedReader br = new BufferedReader(new java.io.InputStreamReader(fis));
-            String line = br.readLine();
-            boolean label = false;
-            List<Double> mzList = new ArrayList<>();
-            List<Double> intensityList = new ArrayList<>();
-            while (line != null) {
-                String lowerLine = line.toLowerCase();
-                if (lowerLine.startsWith("##")) {
-                    label = true;
-                    String[] items = line.substring(2).split(" ");
-                    if (items[0].equals("precursormz")) {
-                        spectrumDO.setPrecursorMz(Double.parseDouble(items[1]));
-                    }
-                    if (items[0].equals("inchikey")) {
-                        if (!items[1].split("-")[0].equals("TZBJGXHYKVUXJN")) {
-                            return null;
-                        }
-                        spectrumDO.setInChIKey(items[1]);
-                    }
-                    if (items[0].equals("name")) {
-                        spectrumDO.setComment(items[1]);
-                    }
-                }
-                if (label && !line.startsWith(" ") && !line.startsWith("##") && !line.startsWith(">") && !line.equals("")) {
-                    String[] items = line.split(" ");
-                    mzList.add(Double.parseDouble(items[0]));
-                    intensityList.add(Double.parseDouble(items[1]));
-                }
-                line = br.readLine();
-            }
-            double[] mzArray = new double[mzList.size()];
-            double[] intensityArray = new double[intensityList.size()];
-            for (int i = 0; i < mzList.size(); i++) {
-                mzArray[i] = mzList.get(i);
-                intensityArray[i] = intensityList.get(i);
-            }
-            spectrumDO.setMzs(mzArray);
-            spectrumDO.setInts(intensityArray);
-            fis.close();
-            br.close();
-            return spectrumDO;
-        } catch (Exception e) {
-            log.error("error when parsing decoy spectrum file: {}", spectrumFile);
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private SpectrumDO parseTsvFile(String tsvFilePath) {
-        SpectrumDO spectrumDO = new SpectrumDO();
-        //read file use buffer
-        File file = new File(tsvFilePath);
-        FileInputStream fis;
-        try {
-            fis = new FileInputStream(file);
-            BufferedReader br = new BufferedReader(new java.io.InputStreamReader(fis));
-            String line = br.readLine();
-            List<Double> mzList = new ArrayList<>();
-            List<Double> intensityList = new ArrayList<>();
-            while (line != null) {
-                if (!line.startsWith("mz")) {
-                    String[] items = line.split("\t");
-                    mzList.add(Double.parseDouble(items[0]));
-                    intensityList.add(Double.parseDouble(items[1]));
-                }
-                line = br.readLine();
-            }
-            if (mzList.size() == 0 || intensityList.size() == 0) {
-                log.error("Error when parsing tsv file: {}", tsvFilePath);
-                return null;
-            }
-            double[] mzArray = new double[mzList.size()];
-            double[] intensityArray = new double[intensityList.size()];
-            for (int i = 0; i < mzList.size(); i++) {
-                mzArray[i] = mzList.get(i);
-                intensityArray[i] = intensityList.get(i);
-            }
-            spectrumDO.setMzs(mzArray);
-            spectrumDO.setInts(intensityArray);
-            return spectrumDO;
-        } catch (Exception e) {
-            log.error("Error when parsing tsv file: {}", tsvFilePath);
-            e.printStackTrace();
-        }
-        return null;
-    }
 }
