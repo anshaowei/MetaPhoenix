@@ -7,7 +7,6 @@ import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.integrate.Integrator;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
-import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
 import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
@@ -37,8 +36,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("test")
@@ -259,14 +256,17 @@ public class TestController {
 //        reporter.entropyDistributionGraph(libraryId, 100);
 
         //estimate p value graph
-        String queryLibraryId = "MassBank-MoNA";
-        String targetLibraryId = "ALL_GNPS";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.SameMz.getName();
-        MethodDO methodDO = new MethodDO();
-        methodDO.setPpmForMzTolerance(true);
-        methodDO.setPpm(10);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-        reporter.estimatedPValueGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 20);
+//        String queryLibraryId = "MassBank-MoNA";
+//        String targetLibraryId = "ALL_GNPS";
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.SameMz.getName();
+//        MethodDO methodDO = new MethodDO();
+//        methodDO.setPpmForMzTolerance(true);
+//        methodDO.setPpm(10);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+//        reporter.estimatedPValueGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 20);
+
+        //ion entropy distribution
+        reporter.ionEntropyDistributionGraph("ALL_GNPS");
     }
 
     @RequestMapping("compare")
@@ -285,150 +285,15 @@ public class TestController {
         reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 100);
     }
 
-    @RequestMapping("integrate")
-    public void integrate() {
-        //integrate all the libraries
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        for (LibraryDO libraryDO : libraryDOS) {
-            integrator.integrate(libraryDO.getId());
-        }
-
-        //integrate one library
-//        String libraryId = "MassBank-Europe";
-//        integrator.integrate(libraryId);
-    }
-
     @RequestMapping("all")
     public void all() {
         importLibrary();
         filter();
-        sirius();
+        report();
+//        sirius();
 //        decoy();
 //        compare();
 //        ionEntropy();
-    }
-
-    @RequestMapping("ionEntropy")
-    public void ionEntropy() {
-        String libraryId = "ALL_GNPS";
-        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        Map<String, List<SpectrumDO>> inchikeyMap = spectrumDOS.stream().collect(Collectors.groupingBy(spectrumDO -> spectrumDO.getInChIKey().split("-")[0]));
-
-        //sort inchikeyMap by the number of spectra descending
-        List<Map.Entry<String, List<SpectrumDO>>> inchikeyList = new ArrayList<>(inchikeyMap.entrySet());
-        inchikeyList.sort((o1, o2) -> o2.getValue().size() - o1.getValue().size());
-
-        List<IonPeak> ionPeaks = new ArrayList<>();
-        for (SpectrumDO spectrumDO : inchikeyList.get(0).getValue()) {
-            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
-                ionPeaks.add(ionPeak);
-            }
-        }
-
-//        TreeSet<IonPeak> ionPeakSet = new TreeSet<>(ionPeaks);
-//        ConcurrentHashMap<IonPeak, Double> ionEntropyMap = new ConcurrentHashMap<>();
-//        ionPeakSet.parallelStream().forEach(ionPeak -> {
-//            Double mzTolerance = 10 * Constants.PPM * ionPeak.getMz();
-//            List<IonPeak> candidates = ionPeaks.stream().filter(ionPeak1 -> Math.abs(ionPeak1.getMz() - ionPeak.getMz()) < mzTolerance).toList();
-//            double[] ionIntensities = new double[candidates.size()];
-//            for (int i = 0; i < candidates.size(); i++) {
-//                ionIntensities[i] = candidates.get(i).getIntensity();
-//            }
-//            double ionEntropy = Entropy.getEntropy(ionIntensities);
-//            ionEntropyMap.put(ionPeak, ionEntropy);
-//        });
-//
-//        //sort ion entropy map by value descending
-//        List<Map.Entry<IonPeak, Double>> ionEntropyList = new ArrayList<>(ionEntropyMap.entrySet());
-//        Collections.sort(ionEntropyList, (o1, o2) -> o2.getValue().compareTo(o1.getValue()));
-//        int k = 0;
-
-//            Map<Double, List<IonPeak>> ionPeakMap = ionPeaks.stream().collect(Collectors.groupingBy(IonPeak::getMz));
-//            HashMap<Double, Double> ionEntropyMap = new HashMap<>();
-//            for (Double mz : ionPeakMap.keySet()) {
-//                double[] intensities = new double[ionPeakMap.get(mz).size()];
-//                for (int i = 0; i < intensities.length; i++) {
-//                    intensities[i] = ionPeakMap.get(mz).get(i).getIntensity();
-//                }
-//                double ionEntropy = Entropy.getEntropy(intensities);
-//                ionEntropyMap.put(mz, ionEntropy);
-//            }
-//            List<Double> ionMzList = new ArrayList<>(ionEntropyMap.keySet());
-//            Collections.sort(ionMzList);
-
-        //mz to ion entropy graph
-//            log.info("start export ion entropy graph");
-//            List<List<Object>> result = new ArrayList<>();
-//            for (int i = 0; i < 100; i++) {
-//                final double minMz = i * 10;
-//                final double maxMz = (i + 1) * 10;
-//                List<Object> row = new ArrayList<>();
-//                double avgEntropy = 0;
-//                int ionCount = 0;
-//                for (Double mz : ionMzList) {
-//                    if (mz >= minMz && mz < maxMz) {
-//                        ionCount++;
-//                        double entropy = ionEntropyMap.get(mz);
-//                        avgEntropy += entropy;
-//                    }
-//                }
-//                if (ionCount > 0) {
-//                    avgEntropy /= ionCount;
-//                }
-//                row.add(minMz);
-//                row.add(maxMz);
-//                row.add(avgEntropy);
-//                result.add(row);
-//            }
-//            List<Object> header = Arrays.asList("minMz", "maxMz", "avgEntropy");
-//            result.add(0, header);
-//            String fileName = libraryDO.getId();
-//            String outputFileName = "/Users/anshaowei/downloads/" + libraryDO.getId() + ".xlsx";
-//            EasyExcel.write(outputFileName).sheet(fileName).doWrite(result);
-//            log.info("export {} success", outputFileName);
-
-        //zero ion entropy
-//            int zeroIonCount = 0;
-//            for (Double mz : ionMzList) {
-//                if (ionEntropyMap.get(mz) == 0) {
-//                    zeroIonCount++;
-//                }
-//            }
-//            log.info("library {} has {} ions, {} of them have zero entropy", libraryDO.getId(), ionMzList.size(), zeroIonCount);
-
-        //ion entropy fraction
-//            log.info("start export ion entropy fraction graph");
-//            List<List<Object>> result = new ArrayList<>();
-//            double maxIonEntropy = 5d;
-//            double minIonEntropy = 0d;
-//            for (int i = 0; i < 100; i++) {
-//                final double minMz = i * 10;
-//                final double maxMz = (i + 1) * 10;
-//                List<Object> row = new ArrayList<>();
-//                double avgEntropy = 0;
-//                int ionCount = 0;
-//                for (Double mz : ionMzList) {
-//                    if (mz >= minMz && mz < maxMz) {
-//                        ionCount++;
-//                        double entropy = ionEntropyMap.get(mz);
-//                        avgEntropy += entropy;
-//                    }
-//                }
-//                if (ionCount > 0) {
-//                    avgEntropy /= ionCount;
-//                }
-//                row.add(minMz);
-//                row.add(maxMz);
-//                row.add(avgEntropy);
-//                result.add(row);
-//            }
-//            List<Object> header = Arrays.asList("minMz", "maxMz", "avgEntropy");
-//            result.add(0, header);
-//            String fileName = libraryDO.getId();
-//            String outputFileName = "/Users/anshaowei/downloads/" + libraryDO.getId() + ".xlsx";
-//            EasyExcel.write(outputFileName).sheet(fileName).doWrite(result);
-//            log.info("export {} success", outputFileName);
     }
 
 }
