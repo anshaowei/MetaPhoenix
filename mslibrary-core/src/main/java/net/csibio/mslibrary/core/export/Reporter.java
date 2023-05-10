@@ -4,9 +4,11 @@ import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
 import net.csibio.mslibrary.client.algorithm.entropy.Entropy;
+import net.csibio.mslibrary.client.constants.Constants;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.domain.bean.identification.LibraryHit;
+import net.csibio.mslibrary.client.domain.bean.spectrum.IonPeak;
 import net.csibio.mslibrary.client.domain.db.MethodDO;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import net.csibio.mslibrary.client.service.LibraryHitService;
@@ -428,6 +430,59 @@ public class Reporter {
         }
         dataSheet.add(0, header);
         EasyExcel.write(outputFileName).sheet("entropyDistributionGraph").doWrite(dataSheet);
+        log.info("export {} success", fileName);
+    }
+
+    public void ionEntropyDistributionGraph(String libraryId) {
+        String fileName = "ionEntropyDistributionGraph" + SymbolConst.DELIMITER + libraryId;
+        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        log.info("Start export {} to {}", fileName, outputFileName);
+
+        List<List<Object>> dataSheet = new ArrayList<>();
+        List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
+        List<IonPeak> ionPeaks = new ArrayList<>();
+        for (SpectrumDO spectrumDO : spectrumDOS) {
+            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
+                ionPeaks.add(ionPeak);
+            }
+        }
+
+        TreeSet<IonPeak> ionPeakSet = new TreeSet<>(ionPeaks);
+        //calculate ion entropy for each ion without precursor filter
+        ionPeakSet.parallelStream().forEach(ionPeak -> {
+            Double mzTolerance = 10 * Constants.PPM * ionPeak.getMz();
+            List<IonPeak> candidates = ionPeaks.stream().filter(ionPeak1 -> Math.abs(ionPeak1.getMz() - ionPeak.getMz()) < mzTolerance).toList();
+            double[] ionIntensities = new double[candidates.size()];
+            for (int i = 0; i < candidates.size(); i++) {
+                ionIntensities[i] = candidates.get(i).getIntensity();
+            }
+            double ionEntropy = Entropy.getEntropy(ionIntensities);
+            ionPeak.setIonEntropy(ionEntropy);
+        });
+
+        for (int i = 0; i < 1000; i++) {
+            final double minMz = i;
+            final double maxMz = i + 1;
+            List<Object> row = new ArrayList<>();
+            double avgIonEntropy = 0;
+            int ionCount = 0;
+            for (IonPeak ionPeak : ionPeakSet) {
+                if (ionPeak.getMz() >= minMz && ionPeak.getMz() < maxMz) {
+                    ionCount++;
+                    avgIonEntropy += ionPeak.getIonEntropy();
+                }
+            }
+            if (ionCount > 0) {
+                avgIonEntropy /= ionCount;
+            }
+            row.add(minMz);
+            row.add(maxMz);
+            row.add(avgIonEntropy);
+            dataSheet.add(row);
+        }
+
+        EasyExcel.write(outputFileName).sheet(fileName).doWrite(dataSheet);
         log.info("export {} success", fileName);
     }
 
