@@ -440,45 +440,79 @@ public class Reporter {
 
         List<List<Object>> dataSheet = new ArrayList<>();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
-        List<IonPeak> ionPeaks = new ArrayList<>();
-        for (SpectrumDO spectrumDO : spectrumDOS) {
-            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i]);
-                ionPeaks.add(ionPeak);
-            }
-        }
-
-        TreeSet<IonPeak> ionPeakSet = new TreeSet<>(ionPeaks);
-        //calculate ion entropy for each ion without precursor filter
-        ionPeakSet.parallelStream().forEach(ionPeak -> {
-            Double mzTolerance = 10 * Constants.PPM * ionPeak.getMz();
-            List<IonPeak> candidates = ionPeaks.stream().filter(ionPeak1 -> Math.abs(ionPeak1.getMz() - ionPeak.getMz()) < mzTolerance).toList();
-            double[] ionIntensities = new double[candidates.size()];
-            for (int i = 0; i < candidates.size(); i++) {
-                ionIntensities[i] = candidates.get(i).getIntensity();
-            }
-            double ionEntropy = Entropy.getEntropy(ionIntensities);
-            ionPeak.setIonEntropy(ionEntropy);
-        });
-
-        for (int i = 0; i < 1000; i++) {
-            final double minMz = i;
-            final double maxMz = i + 1;
-            List<Object> row = new ArrayList<>();
-            double avgIonEntropy = 0;
-            int ionCount = 0;
-            for (IonPeak ionPeak : ionPeakSet) {
-                if (ionPeak.getMz() >= minMz && ionPeak.getMz() < maxMz) {
-                    ionCount++;
-                    avgIonEntropy += ionPeak.getIonEntropy();
+        List<IonPeak> ionPeaks = Collections.synchronizedList(new ArrayList<>());
+        spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            Double mzTolerance = 10 * Constants.PPM * spectrumDO.getPrecursorMz();
+            List<SpectrumDO> candidates = spectrumDOS.stream().filter(spectrumDO1 -> Math.abs(spectrumDO1.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance).toList();
+            List<IonPeak> candidateIonPeaks = new ArrayList<>();
+            for (SpectrumDO candidate : candidates) {
+                int precursorIndex = ArrayUtil.findNearestIndex(candidate.getMzs(), spectrumDO.getPrecursorMz());
+                double precursorIntensity = candidate.getInts()[precursorIndex];
+                for (int j = 0; j < candidate.getMzs().length; j++) {
+                    IonPeak candidateIonPeak = new IonPeak(candidate.getMzs()[j], candidate.getInts()[j] / precursorIntensity);
+                    candidateIonPeaks.add(candidateIonPeak);
                 }
             }
-            if (ionCount > 0) {
-                avgIonEntropy /= ionCount;
+            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                int precursorIndex = ArrayUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
+                double precursorIntensity = spectrumDO.getInts()[precursorIndex];
+                IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i] / precursorIntensity);
+                Double ionMzTolerance = 10 * Constants.PPM * ionPeak.getMz();
+                List<IonPeak> targetIonPeaks = candidateIonPeaks.stream().filter(ionPeak1 -> Math.abs(ionPeak1.getMz() - ionPeak.getMz()) < ionMzTolerance).toList();
+                ionPeak.setIonEntropy(Entropy.getEntropy(targetIonPeaks.stream().mapToDouble(IonPeak::getIntensity).toArray()) / Math.log(targetIonPeaks.size()));
+                ionPeaks.add(ionPeak);
             }
-            row.add(minMz);
-            row.add(maxMz);
-            row.add(avgIonEntropy);
+        });
+
+//        TreeSet<IonPeak> ionPeakSet = new TreeSet<>(ionPeaks);
+//        //calculate ion entropy for each ion without precursor filter
+//        ionPeakSet.parallelStream().forEach(ionPeak -> {
+//            Double mzTolerance = 10 * Constants.PPM * ionPeak.getMz();
+//            List<IonPeak> candidates = ionPeaks.stream().filter(ionPeak1 -> Math.abs(ionPeak1.getMz() - ionPeak.getMz()) < mzTolerance).toList();
+//            double[] ionIntensities = new double[candidates.size()];
+//            for (int i = 0; i < candidates.size(); i++) {
+//                ionIntensities[i] = candidates.get(i).getIntensity();
+//            }
+//            double ionEntropy = Entropy.getEntropy(ionIntensities);
+//            ionPeak.setIonEntropy(ionEntropy);
+//        });
+
+        //mz to average ion entropy graph
+//        for (int i = 0; i < 100; i++) {
+//            final double minMz = i * 10;
+//            final double maxMz = (i + 1) * 10;
+//            List<Object> row = new ArrayList<>();
+//            double avgIonEntropy = 0;
+//            int ionCount = 0;
+//            for (IonPeak ionPeak : ionPeaks) {
+//                if (ionPeak.getMz() >= minMz && ionPeak.getMz() < maxMz) {
+//                    ionCount++;
+//                    avgIonEntropy += ionPeak.getIonEntropy();
+//                }
+//            }
+//            if (ionCount > 0) {
+//                avgIonEntropy /= ionCount;
+//            }
+//            row.add(minMz);
+//            row.add(maxMz);
+//            row.add(avgIonEntropy);
+//            dataSheet.add(row);
+//        }
+
+        //ion entropy distribution graph
+        for (int i = 0; i < 100; i++) {
+            final double minIonEntropy = i / 100d;
+            final double maxIonEntropy = (i + 1) / 100d;
+            List<Object> row = new ArrayList<>();
+            int ionCount = 0;
+            for (IonPeak ionPeak : ionPeaks) {
+                if (ionPeak.getIonEntropy() >= minIonEntropy && ionPeak.getIonEntropy() < maxIonEntropy) {
+                    ionCount++;
+                }
+            }
+            row.add(minIonEntropy);
+            row.add(maxIonEntropy);
+            row.add(ionCount / (double) ionPeaks.size());
             dataSheet.add(row);
         }
 
