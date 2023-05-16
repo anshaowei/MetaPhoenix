@@ -339,17 +339,18 @@ public class Reporter {
         }
 
         //calculate the frequency of each threshold according to the index
+        double totalTruePositive = turePositiveList.get(turePositiveList.size() - 1);
         for (int i = 0; i < indexList.size(); i++) {
             int index = indexList.get(i);
             List<Object> row = new ArrayList<>();
             row.add(thresholds.get(i));
             row.add(dataSheet.get(index).get(11));
             if (i == 0) {
-                row.add((double) turePositiveList.get(index));
-                row.add((double) falsePositiveList.get(index));
+                row.add((double) turePositiveList.get(index) / totalTruePositive);
+                row.add((double) falsePositiveList.get(index) / totalTruePositive);
             } else {
-                row.add(turePositiveList.get(index) - turePositiveList.get(indexList.get(i - 1)));
-                row.add(falsePositiveList.get(index) - falsePositiveList.get(indexList.get(i - 1)));
+                row.add((turePositiveList.get(index) - turePositiveList.get(indexList.get(i - 1))) / totalTruePositive);
+                row.add((falsePositiveList.get(index) - falsePositiveList.get(indexList.get(i - 1))) / totalTruePositive);
             }
             resultDatasheet.add(row);
         }
@@ -495,10 +496,13 @@ public class Reporter {
 //            dataSheet.add(row);
 //        }
 
+        int ZeroCount = ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 0d).toList().size();
+        int MaxCount = ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 1d).toList().size();
+
         //ion entropy distribution graph
         for (int i = 0; i < 100; i++) {
-            final double minIonEntropy = i / 100d;
-            final double maxIonEntropy = (i + 1) / 100d;
+            final double minIonEntropy = i / 25d;
+            final double maxIonEntropy = (i + 1) / 25d;
             List<Object> row = new ArrayList<>();
             int ionCount = 0;
             for (IonPeak ionPeak : ionPeaks) {
