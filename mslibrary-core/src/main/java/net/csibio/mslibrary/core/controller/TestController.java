@@ -6,7 +6,6 @@ import net.csibio.aird.constant.SymbolConst;
 import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.identification.Identify;
-import net.csibio.mslibrary.client.algorithm.integrate.Integrator;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.domain.db.LibraryDO;
@@ -18,7 +17,6 @@ import net.csibio.mslibrary.client.filter.NoiseFilter;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.massbank.MassBankParser;
 import net.csibio.mslibrary.client.parser.universal.MgfParser;
-import net.csibio.mslibrary.client.service.LibraryHitService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.core.export.Exporter;
@@ -75,13 +73,13 @@ public class TestController {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
 //        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-MSMLS.msp");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
 //        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+//        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
     @RequestMapping("/filter")
@@ -112,7 +110,7 @@ public class TestController {
         //remove all the decoy libraries
         List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
         for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-            if (decoyStrategy.equals(DecoyStrategy.FragmentationTree)) {
+            if (decoyStrategy.equals(DecoyStrategy.FragmentationTreeBased)) {
                 continue;
             }
             for (LibraryDO libraryDO : libraryDOS) {
@@ -156,7 +154,7 @@ public class TestController {
 //        }
 
         //all the strategies on one library
-        String libraryId = "MassBank-MoNA";
+        String libraryId = "ALL_GNPS";
         for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
             methodDO.setDecoyStrategy(decoyStrategy.getName());
             for (int i = 0; i < repeat; i++) {
@@ -262,7 +260,7 @@ public class TestController {
         //estimate p value graph
         String queryLibraryId = "GNPS-NIST14-MATCHES";
         String targetLibraryId = "MassBank-MoNA";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName();
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTreeBased.getName();
         MethodDO methodDO = new MethodDO();
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
@@ -318,23 +316,30 @@ public class TestController {
         }
         querySpectrumDOS.removeIf(spectrumDO -> !spectrumDO.getMsLevel().equals(MsLevel.MS2.getCode()));
 
+        //add querySpectrumID
+        Integer m = 0;
+        for (SpectrumDO spectrumDO : querySpectrumDOS) {
+            spectrumDO.setId(m.toString());
+            m++;
+        }
+
         //identification process
         MethodDO methodDO = new MethodDO();
         methodDO.setPpm(10);
         methodDO.setPpmForMzTolerance(true);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
         String targetLibraryId = "ALL_GNPS";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.IonEntropy.getName();
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.IonEntropyBased.getName();
         identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.05);
     }
 
     @RequestMapping("all")
     public void all() {
-//        importLibrary();
-//        filter();
+        importLibrary();
+        filter();
 //        sirius();
         decoy();
-        report();
+//        report();
 //        compare();
 //        ionEntropy();
     }

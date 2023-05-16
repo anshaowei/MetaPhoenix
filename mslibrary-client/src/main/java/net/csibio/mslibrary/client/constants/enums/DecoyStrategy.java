@@ -5,9 +5,9 @@ public enum DecoyStrategy {
     Naive("Naive"),
     XYMeta("XYMeta"),
     SpectrumBased("SpectrumBased"),
-    SameMz("SameMz"),
-    IonEntropy("IonEntropy"),
-    FragmentationTree("FragmentationTree");
+    SpectralEntropyBased("SpectralEntropyBased"),
+    IonEntropyBased("IonEntropyBased"),
+    FragmentationTreeBased("FragmentationTreeBased");
 
     private final String name;
 

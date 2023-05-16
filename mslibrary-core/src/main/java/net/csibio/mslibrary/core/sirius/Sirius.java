@@ -144,7 +144,7 @@ public class Sirius {
 
     public void getDecoySpectra(String libraryId, String projectSpace) {
         log.info("Start parsing decoy spectra in the sirius project: {}", projectSpace);
-        String decoyLibraryId = libraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree;
+        String decoyLibraryId = libraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTreeBased;
         List<SpectrumDO> rawSpectrumDOS = spectrumService.getAllByLibraryId(libraryId);
         List<SpectrumDO> decoySpectrumDOS = new ArrayList<>();
         List<String> deleteIds = new ArrayList<>();

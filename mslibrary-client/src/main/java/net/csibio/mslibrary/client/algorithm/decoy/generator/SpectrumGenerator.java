@@ -35,9 +35,9 @@ public class SpectrumGenerator {
         switch (strategy) {
             case Naive -> naive(spectrumDOS, decoySpectrumDOS);
             case XYMeta -> xyMeta(spectrumDOS, decoySpectrumDOS, method);
-            case SameMz -> sameMz(spectrumDOS, decoySpectrumDOS);
+            case SpectralEntropyBased -> sameMz(spectrumDOS, decoySpectrumDOS);
             case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
-            case IonEntropy -> ionEntropy(spectrumDOS, decoySpectrumDOS, method);
+            case IonEntropyBased -> ionEntropy(spectrumDOS, decoySpectrumDOS, method);
             default -> log.error("Decoy procedure {} is currently not supported", method.getDecoyStrategy());
         }
 
