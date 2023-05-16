@@ -35,9 +35,9 @@ public class SpectrumGenerator {
         switch (strategy) {
             case Naive -> naive(spectrumDOS, decoySpectrumDOS);
             case XYMeta -> xyMeta(spectrumDOS, decoySpectrumDOS, method);
-            case SpectralEntropyBased -> sameMz(spectrumDOS, decoySpectrumDOS);
-            case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
-            case IonEntropyBased -> ionEntropy(spectrumDOS, decoySpectrumDOS, method);
+            case SpectralEntropyBased -> spectralEntropyBased(spectrumDOS, decoySpectrumDOS);
+//            case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
+            case IonEntropyBased -> ionEntropyBased(spectrumDOS, decoySpectrumDOS, method);
             default -> log.error("Decoy procedure {} is currently not supported", method.getDecoyStrategy());
         }
 
@@ -47,7 +47,7 @@ public class SpectrumGenerator {
         log.info("Decoy spectra generation finished, cost {} ms", System.currentTimeMillis() - start);
     }
 
-    private void sameMz(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
+    private void spectralEntropyBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             SpectrumDO decoySpectrumDO = new SpectrumDO();
             decoySpectrumDO.setRawSpectrumId(spectrumDO.getId());
@@ -93,7 +93,7 @@ public class SpectrumGenerator {
         });
     }
 
-    private void ionEntropy(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
+    private void ionEntropyBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
             List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance).toList();
