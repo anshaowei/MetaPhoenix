@@ -106,6 +106,12 @@ public class MgfParser {
                     }
                     spectrumDO.setMzs(mzArray);
                     spectrumDO.setInts(intensityArray);
+                    //process with charge and pepmass
+                    if (spectrumDO.getPrecursorMz() != null) {
+                        if (Math.abs(spectrumDO.getCharge()) != 1 && spectrumDO.getPrecursorMz() != 0) {
+                            spectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz() / Math.abs(spectrumDO.getCharge()));
+                        }
+                    }
                     spectrumDOS.add(spectrumDO);
                 }
             }
