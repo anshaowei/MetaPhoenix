@@ -3,7 +3,9 @@ package net.csibio.mslibrary.core.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
+import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
+import net.csibio.mslibrary.client.algorithm.identification.Identify;
 import net.csibio.mslibrary.client.algorithm.integrate.Integrator;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
@@ -15,6 +17,7 @@ import net.csibio.mslibrary.client.domain.query.SpectrumQuery;
 import net.csibio.mslibrary.client.filter.NoiseFilter;
 import net.csibio.mslibrary.client.parser.gnps.GnpsParser;
 import net.csibio.mslibrary.client.parser.massbank.MassBankParser;
+import net.csibio.mslibrary.client.parser.universal.MgfParser;
 import net.csibio.mslibrary.client.service.LibraryHitService;
 import net.csibio.mslibrary.client.service.LibraryService;
 import net.csibio.mslibrary.client.service.SpectrumService;
@@ -61,34 +64,35 @@ public class TestController {
     @Autowired
     Exporter exporter;
     @Autowired
-    Integrator integrator;
-    @Autowired
-    LibraryHitService libraryHitService;
-    @Autowired
     Sirius sirius;
+    @Autowired
+    MgfParser mgfParser;
+    @Autowired
+    Identify identify;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
         //gnps
-//        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.json");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+//        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-MSMLS.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
 //        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-//        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
     @RequestMapping("/filter")
     public void filter() {
         //filter all the libraries
-//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
+//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //filter zero data points
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
@@ -152,7 +156,7 @@ public class TestController {
 //        }
 
         //all the strategies on one library
-        String libraryId = "ALL_GNPS";
+        String libraryId = "MassBank-MoNA";
         for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
             methodDO.setDecoyStrategy(decoyStrategy.getName());
             for (int i = 0; i < repeat; i++) {
@@ -215,9 +219,9 @@ public class TestController {
 //        }
 
         //sirius process on one library
-        String libraryId = "ALL_GNPS";
+        String libraryId = "MassBank-MoNA";
         sirius.execute(libraryId);
-        noiseFilter.filterZeroPoint(libraryId);
+//        noiseFilter.filterZeroPoint(libraryId);
     }
 
     @RequestMapping("export")
@@ -249,24 +253,26 @@ public class TestController {
 //        methodDO.setPpmForMzTolerance(true);
 //        methodDO.setPpm(10);
 //        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-//        reporter.simpleScoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 300, false, true, -30);
+//        reporter.simpleScoreGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 100, false, false, -30);
 
         //entropy distribution graph
 //        String libraryId = "ALL_GNPS";
 //        reporter.entropyDistributionGraph(libraryId, 100);
 
         //estimate p value graph
-//        String queryLibraryId = "MassBank-MoNA";
-//        String targetLibraryId = "ALL_GNPS";
-//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.SameMz.getName();
-//        MethodDO methodDO = new MethodDO();
-//        methodDO.setPpmForMzTolerance(true);
-//        methodDO.setPpm(10);
-//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-//        reporter.estimatedPValueGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 20);
+        String queryLibraryId = "GNPS-NIST14-MATCHES";
+        String targetLibraryId = "MassBank-MoNA";
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTree.getName();
+        MethodDO methodDO = new MethodDO();
+        methodDO.setPpmForMzTolerance(true);
+        methodDO.setPpm(10);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+        reporter.estimatedPValueGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 20);
 
         //ion entropy distribution
-        reporter.ionEntropyDistributionGraph("ALL_GNPS");
+//        reporter.ionEntropyDistributionGraph("GNPS-NIST14-MATCHES");
+//        reporter.ionEntropyDistributionGraph("MassBank-Europe");
+//        reporter.ionEntropyDistributionGraph("MassBank-MoNA");
     }
 
     @RequestMapping("compare")
@@ -285,13 +291,50 @@ public class TestController {
         reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 100);
     }
 
+
+    @RequestMapping("identification")
+    public void identification() {
+        //file parser
+        String filePath = "/Users/anshaowei/Downloads/Datasets/MSV000085201.mgf";
+        List<SpectrumDO> querySpectrumDOS = mgfParser.execute(filePath);
+
+        //remove low quality data
+        querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs() == null || spectrumDO.getMzs().length == 0 ||
+                spectrumDO.getInts() == null || spectrumDO.getInts().length == 0 ||
+                spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 ||
+                spectrumDO.getIonMode() == null);
+        for (SpectrumDO spectrumDO : querySpectrumDOS) {
+            List<Double> mzs = new ArrayList<>();
+            List<Double> ints = new ArrayList<>();
+            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                if (spectrumDO.getInts()[i] == 0d) {
+                    continue;
+                }
+                mzs.add(spectrumDO.getMzs()[i]);
+                ints.add(spectrumDO.getInts()[i]);
+            }
+            spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
+            spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
+        }
+        querySpectrumDOS.removeIf(spectrumDO -> !spectrumDO.getMsLevel().equals(MsLevel.MS2.getCode()));
+
+        //identification process
+        MethodDO methodDO = new MethodDO();
+        methodDO.setPpm(10);
+        methodDO.setPpmForMzTolerance(true);
+        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+        String targetLibraryId = "ALL_GNPS";
+        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.IonEntropy.getName();
+        identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.05);
+    }
+
     @RequestMapping("all")
     public void all() {
-        importLibrary();
-        filter();
-        report();
+//        importLibrary();
+//        filter();
 //        sirius();
-//        decoy();
+        decoy();
+        report();
 //        compare();
 //        ionEntropy();
     }
