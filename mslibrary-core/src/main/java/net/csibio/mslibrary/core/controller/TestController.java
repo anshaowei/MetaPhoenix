@@ -1,6 +1,13 @@
 package net.csibio.mslibrary.core.controller;
 
 
+import io.github.msdk.MSDKException;
+import io.github.msdk.datamodel.MsScan;
+import io.github.msdk.io.mzml.MzMLFileImportMethod;
+import io.github.msdk.io.mzml.data.MzMLCVParam;
+import io.github.msdk.io.mzml.data.MzMLMsScan;
+import io.github.msdk.io.mzml.data.MzMLPrecursorElement;
+import io.github.msdk.io.mzml.data.MzMLRawDataFile;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
 import net.csibio.aird.enums.MsLevel;
@@ -291,16 +298,48 @@ public class TestController {
 
 
     @RequestMapping("identification")
-    public void identification() {
+    public void identification() throws MSDKException {
         //file parser
-        String filePath = "/Users/anshaowei/Downloads/Datasets/MSV000085201.mgf";
-        List<SpectrumDO> querySpectrumDOS = mgfParser.execute(filePath);
+//        String filePath = "/Users/anshaowei/Downloads/MSV000079651_specs_ms.mgf";
+//        List<SpectrumDO> querySpectrumDOS = mgfParser.execute(filePath);
+
+        //mzml file parser
+        MzMLFileImportMethod importer = new MzMLFileImportMethod("/Users/anshaowei/Downloads/Test/L_C18_Polar_16_MS2_DF_1_01.mzML");
+        importer.execute();
+        MzMLRawDataFile mzMLRawDataFile = (MzMLRawDataFile) importer.getResult();
+        assert mzMLRawDataFile != null;
+        List<MsScan> msScans = mzMLRawDataFile.getScans();
+        List<SpectrumDO> querySpectrumDOS = new ArrayList<>();
+        for (MsScan msScan : msScans) {
+            MzMLMsScan mzMLMsScan = (MzMLMsScan) msScan;
+            if (!mzMLMsScan.getMsLevel().equals(2)) {
+                continue;
+            }
+            SpectrumDO spectrumDO = new SpectrumDO();
+            spectrumDO.setMzs(mzMLMsScan.getMzValues());
+            double[] intensityArray = new double[mzMLMsScan.getIntensityValues().length];
+            for (int i = 0; i < mzMLMsScan.getIntensityValues().length; i++) {
+                intensityArray[i] = mzMLMsScan.getIntensityValues()[i];
+            }
+            spectrumDO.setInts(intensityArray);
+            if (mzMLMsScan.getPrecursorList().getPrecursorElements().size() != 1) {
+                continue;
+            }
+            MzMLPrecursorElement precursor = mzMLMsScan.getPrecursorList().getPrecursorElements().get(0);
+            List<MzMLCVParam> mzMLCVParams = precursor.getSelectedIonList().get().getSelectedIonList().get(0).getCVParamsList();
+            for (MzMLCVParam mzMLCVParam : mzMLCVParams) {
+                if (mzMLCVParam.getName().get().equals("selected ion m/z")) {
+                    spectrumDO.setPrecursorMz(Double.parseDouble(mzMLCVParam.getValue().get()));
+                }
+            }
+            spectrumDO.setMsLevel(2);
+            querySpectrumDOS.add(spectrumDO);
+        }
 
         //remove low quality data
         querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs() == null || spectrumDO.getMzs().length == 0 ||
                 spectrumDO.getInts() == null || spectrumDO.getInts().length == 0 ||
-                spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0 ||
-                spectrumDO.getIonMode() == null);
+                spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0);
         for (SpectrumDO spectrumDO : querySpectrumDOS) {
             List<Double> mzs = new ArrayList<>();
             List<Double> ints = new ArrayList<>();
