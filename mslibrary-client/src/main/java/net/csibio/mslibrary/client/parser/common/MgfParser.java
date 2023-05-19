@@ -1,4 +1,4 @@
-package net.csibio.mslibrary.client.parser.universal;
+package net.csibio.mslibrary.client.parser.common;
 
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;

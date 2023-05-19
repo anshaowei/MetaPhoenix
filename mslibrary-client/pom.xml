@@ -18,6 +18,12 @@
             <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.github.msdk</groupId>
+            <artifactId>msdk-io-mzml</artifactId>
+            <version>0.0.27</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
             <artifactId>xstream</artifactId>
             <version>1.4.20</version>
