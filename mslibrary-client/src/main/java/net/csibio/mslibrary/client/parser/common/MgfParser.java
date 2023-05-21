@@ -18,7 +18,7 @@ public class MgfParser {
         //read file use buffer
         File file = new File(filePath);
         FileInputStream fis;
-        log.info("Start mgf file parser on {}", file.getName());
+//        log.info("Start mgf file parser on {}", file.getName());
 
         try {
             //fast read of spectra information
@@ -34,7 +34,7 @@ public class MgfParser {
             }
             br.close();
             fis.close();
-            log.info("Pre scan: total spectrum count: {}", spectrumCount);
+//            log.info("Pre scan: total spectrum count: {}", spectrumCount);
 
             fis = new FileInputStream(file);
             br = new BufferedReader(new java.io.InputStreamReader(fis));
@@ -49,7 +49,10 @@ public class MgfParser {
                         //pepmass
                         if (line.toLowerCase().startsWith("pepmass")) {
                             String value = line.substring("pepmass".length() + 1);
-                            spectrumDO.setPrecursorMz(Double.parseDouble(value));
+                            try {
+                                spectrumDO.setPrecursorMz(Double.parseDouble(value));
+                            } catch (Exception ignored) {
+                            }
                         }
                         //charge
                         else if (line.toLowerCase().startsWith("charge")) {
@@ -107,16 +110,19 @@ public class MgfParser {
                     spectrumDO.setMzs(mzArray);
                     spectrumDO.setInts(intensityArray);
                     //process with charge and pepmass
-                    if (spectrumDO.getPrecursorMz() != null) {
+                    if (spectrumDO.getPrecursorMz() != null && spectrumDO.getCharge() != null) {
                         if (Math.abs(spectrumDO.getCharge()) != 1 && spectrumDO.getPrecursorMz() != 0) {
                             spectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz() / Math.abs(spectrumDO.getCharge()));
                         }
+                        spectrumDOS.add(spectrumDO);
                     }
-                    spectrumDOS.add(spectrumDO);
                 }
             }
             fis.close();
             br.close();
+            if (spectrumDOS.size() == 0) {
+                log.error("No spectrum found in file: " + filePath);
+            }
             return spectrumDOS;
         } catch (Exception e) {
             e.printStackTrace();

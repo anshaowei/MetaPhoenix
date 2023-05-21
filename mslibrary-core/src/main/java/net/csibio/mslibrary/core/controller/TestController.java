@@ -1,10 +1,9 @@
 package net.csibio.mslibrary.core.controller;
 
 
-import io.github.msdk.MSDKException;
+import com.alibaba.excel.EasyExcel;
 import lombok.extern.slf4j.Slf4j;
 import net.csibio.aird.constant.SymbolConst;
-import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.algorithm.decoy.generator.SpectrumGenerator;
 import net.csibio.mslibrary.client.algorithm.identification.Identify;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
@@ -38,6 +37,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -68,9 +69,9 @@ public class TestController {
     @Autowired
     MgfParser mgfParser;
     @Autowired
-    Identify identify;
-    @Autowired
     MzMLParser mzMLParser;
+    @Autowired
+    Identify identify;
 
     @RequestMapping("/importLibrary")
     public void importLibrary() {
@@ -295,49 +296,91 @@ public class TestController {
 
 
     @RequestMapping("identification")
-    public void identification() throws MSDKException {
-        //file parser
-//        String filePath = "/Users/anshaowei/Downloads/MSV000079651_specs_ms.mgf";
-//        List<SpectrumDO> querySpectrumDOS = mgfParser.execute(filePath);
+    public void identification() {
+        List<List<Object>> dataSheet = Collections.synchronizedList(new ArrayList<>());
 
-        //mzml file parser
-        String filePath = "/Users/anshaowei/Downloads/MSV000079651_specs_ms.mgf";
-        List<SpectrumDO> querySpectrumDOS = mzMLParser.execute(filePath);
+        String datasetsPath = "/Users/anshaowei/Downloads/Test2";
+        File file = new File(datasetsPath);
+        File[] files = file.listFiles();
+        assert files != null;
+        //covert files to list
+        List<File> fileList = Arrays.asList(files);
 
-        //remove low quality data
-        querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs() == null || spectrumDO.getMzs().length == 0 ||
-                spectrumDO.getInts() == null || spectrumDO.getInts().length == 0 ||
-                spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0);
-        for (SpectrumDO spectrumDO : querySpectrumDOS) {
-            List<Double> mzs = new ArrayList<>();
-            List<Double> ints = new ArrayList<>();
-            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                if (spectrumDO.getInts()[i] == 0d) {
-                    continue;
+        fileList.parallelStream().forEach(f -> {
+            if (!f.getName().equals(".DS_Store")) {
+                List<Object> row = new ArrayList<>();
+                List<SpectrumDO> querySpectrumDOS = new ArrayList<>();
+                File[] subFiles = f.listFiles();
+                assert subFiles != null;
+                for (File subFile : subFiles) {
+                    if (subFile.getName().endsWith(".mgf") || subFile.getName().endsWith(".MGF")) {
+                        List<SpectrumDO> tempSpectrumDOS = mgfParser.execute(subFile.getAbsolutePath());
+                        if (tempSpectrumDOS == null || tempSpectrumDOS.size() == 0) {
+                            log.error("mgf file is empty: " + subFile.getAbsolutePath());
+                        } else {
+                            querySpectrumDOS.addAll(tempSpectrumDOS);
+                        }
+                    } else if (subFile.getName().endsWith(".mzML")) {
+                        List<SpectrumDO> tempSpectrumDOS = mzMLParser.execute(subFile.getAbsolutePath());
+                        if (tempSpectrumDOS == null || tempSpectrumDOS.size() == 0) {
+                            log.error("mzML file is empty: " + subFile.getAbsolutePath());
+                        } else {
+                            querySpectrumDOS.addAll(tempSpectrumDOS);
+                        }
+                    }
                 }
-                mzs.add(spectrumDO.getMzs()[i]);
-                ints.add(spectrumDO.getInts()[i]);
+                if (querySpectrumDOS.size() == 0) {
+                    log.error("no spectrum data: " + f.getAbsolutePath());
+                } else {
+                    log.info(f + " has " + querySpectrumDOS.size() + " spectra");
+                }
+                row.add(f.getName());
+                row.add(querySpectrumDOS.size());
+                dataSheet.add(row);
             }
-            spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
-            spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
-        }
-        querySpectrumDOS.removeIf(spectrumDO -> !spectrumDO.getMsLevel().equals(MsLevel.MS2.getCode()));
+        });
 
-        //add querySpectrumID
-        Integer m = 0;
-        for (SpectrumDO spectrumDO : querySpectrumDOS) {
-            spectrumDO.setId(m.toString());
-            m++;
-        }
+        //export data sheet
+        List<Object> header = Arrays.asList("Dataset", "Spectra");
+        dataSheet.add(0, header);
+        String outputFilePath = "/Users/anshaowei/Downloads/identification.xlsx";
+        EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
+        log.info("export data sheet to " + outputFilePath);
 
-        //identification process
-        MethodDO methodDO = new MethodDO();
-        methodDO.setPpm(10);
-        methodDO.setPpmForMzTolerance(true);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-        String targetLibraryId = "ALL_GNPS";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.IonEntropyBased.getName();
-        identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.05);
+//        //remove low quality data
+//        querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs() == null || spectrumDO.getMzs().length == 0 ||
+//                spectrumDO.getInts() == null || spectrumDO.getInts().length == 0 ||
+//                spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0);
+//        for (SpectrumDO spectrumDO : querySpectrumDOS) {
+//            List<Double> mzs = new ArrayList<>();
+//            List<Double> ints = new ArrayList<>();
+//            for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+//                if (spectrumDO.getInts()[i] == 0d) {
+//                    continue;
+//                }
+//                mzs.add(spectrumDO.getMzs()[i]);
+//                ints.add(spectrumDO.getInts()[i]);
+//            }
+//            spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
+//            spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
+//        }
+//        querySpectrumDOS.removeIf(spectrumDO -> !spectrumDO.getMsLevel().equals(MsLevel.MS2.getCode()));
+//
+//        //add querySpectrumID
+//        Integer m = 0;
+//        for (SpectrumDO spectrumDO : querySpectrumDOS) {
+//            spectrumDO.setId(m.toString());
+//            m++;
+//        }
+//
+//        //identification process
+//        MethodDO methodDO = new MethodDO();
+//        methodDO.setPpm(10);
+//        methodDO.setPpmForMzTolerance(true);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+//        String targetLibraryId = "ALL_GNPS";
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.IonEntropyBased.getName();
+//        identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.05);
     }
 
     @RequestMapping("all")
