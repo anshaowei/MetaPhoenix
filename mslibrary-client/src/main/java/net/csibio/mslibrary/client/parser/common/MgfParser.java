@@ -49,6 +49,9 @@ public class MgfParser {
                         //pepmass
                         if (line.toLowerCase().startsWith("pepmass")) {
                             String value = line.substring("pepmass".length() + 1);
+                            if (value.contains(" ")) {
+                                value = value.substring(0, value.indexOf(" "));
+                            }
                             try {
                                 spectrumDO.setPrecursorMz(Double.parseDouble(value));
                             } catch (Exception ignored) {
@@ -114,6 +117,8 @@ public class MgfParser {
                         if (Math.abs(spectrumDO.getCharge()) != 1 && spectrumDO.getPrecursorMz() != 0) {
                             spectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz() / Math.abs(spectrumDO.getCharge()));
                         }
+                    }
+                    if (spectrumDO.getPrecursorMz() != null) {
                         spectrumDOS.add(spectrumDO);
                     }
                 }

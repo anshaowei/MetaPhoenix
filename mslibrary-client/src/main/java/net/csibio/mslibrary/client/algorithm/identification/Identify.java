@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,7 +25,7 @@ public class Identify {
     @Autowired
     SpectrumService spectrumService;
 
-    public void execute(List<SpectrumDO> querySpectrumDOS, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, double fdr) {
+    public HashMap<String, List<LibraryHit>> execute(List<SpectrumDO> querySpectrumDOS, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, double fdr) {
         ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO);
         List<LibraryHit> decoyHits = new ArrayList<>();
         List<LibraryHit> targetHits = new ArrayList<>();
@@ -64,7 +65,8 @@ public class Identify {
         //get hits with this score threshold
         final double finalScoreThreshold = scoreThreshold;
         List<LibraryHit> resultHits = targetHits.stream().filter(hit -> hit.getScore() >= finalScoreThreshold).toList();
-        Map<String, List<LibraryHit>> resultMap = resultHits.stream().collect(Collectors.groupingBy(LibraryHit::getQuerySpectrumId));
+        HashMap<String, List<LibraryHit>> resultMap = (HashMap<String, List<LibraryHit>>) resultHits.stream().collect(Collectors.groupingBy(LibraryHit::getQuerySpectrumId));
+        return resultMap;
     }
 
     public void execute(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, double fdr) {
