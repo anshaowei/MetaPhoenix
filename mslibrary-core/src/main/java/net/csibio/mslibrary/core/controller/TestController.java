@@ -38,7 +38,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 @RestController
 @RequestMapping("test")
@@ -309,7 +312,6 @@ public class TestController {
         File[] files = file.listFiles();
         assert files != null;
         List<File> fileList = Arrays.asList(files);
-        List<List<Object>> dataSheet = Collections.synchronizedList(new ArrayList<>());
 
         fileList.parallelStream().forEach(f -> {
             if (!f.getName().equals(".DS_Store")) {
@@ -382,16 +384,17 @@ public class TestController {
                     row.add(allHits);
                     row.add(matchedHits);
                 }
+
+                //export data sheet
+                List<List<Object>> dataSheet = new ArrayList<>();
                 dataSheet.add(row);
+                List<Object> header = Arrays.asList("Dataset", "QuerySpectra", "AllHits", "MatchedHits");
+                dataSheet.add(0, header);
+                String outputFilePath = "/Users/anshaowei/Downloads/report/" + f.getName() + ".xlsx";
+                EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
+                log.info("export data sheet to " + outputFilePath);
             }
         });
-
-        //export data sheet
-        List<Object> header = Arrays.asList("Dataset", "QuerySpectra", "AllHits", "MatchedHits");
-        dataSheet.add(0, header);
-        String outputFilePath = "/Users/anshaowei/Downloads/identification.xlsx";
-        EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
-        log.info("export data sheet to " + outputFilePath);
     }
 
     @RequestMapping("all")
