@@ -7,7 +7,8 @@ public enum DecoyStrategy {
     SpectrumBased("SpectrumBased"),
     SpectralEntropyBased("SpectralEntropyBased"),
     IonEntropyBased("IonEntropyBased"),
-    FragmentationTreeBased("FragmentationTreeBased");
+    FragmentationTreeBased("FragmentationTreeBased"),
+    IonEntropyBased2("IonEntropyBased2");
 
     private final String name;
 

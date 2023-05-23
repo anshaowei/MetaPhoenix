@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Component("mgfParser")
 @Slf4j
@@ -90,10 +91,15 @@ public class MgfParser {
                             String value = line.substring("inchi".length() + 1);
                             spectrumDO.setInChI(value);
                         }
-                        //scan and mz values
-                        else if (line.toLowerCase().startsWith("scan")) {
+                        //mz values
+                        else if (startWithNumber(line)) {
                             while (!(line = br.readLine()).toLowerCase().startsWith("end")) {
-                                String[] values = line.split(" ");
+                                String[] values = null;
+                                if (line.contains(" ")) {
+                                    values = line.split(" ");
+                                } else if (line.contains("\t")) {
+                                    values = line.split("\t");
+                                }
                                 if (values.length == 2) {
                                     double mz = Double.parseDouble(values[0]);
                                     double intensity = Double.parseDouble(values[1]);
@@ -112,12 +118,6 @@ public class MgfParser {
                     }
                     spectrumDO.setMzs(mzArray);
                     spectrumDO.setInts(intensityArray);
-                    //process with charge and pepmass
-                    if (spectrumDO.getPrecursorMz() != null && spectrumDO.getCharge() != null) {
-                        if (Math.abs(spectrumDO.getCharge()) != 1 && spectrumDO.getPrecursorMz() != 0) {
-                            spectrumDO.setPrecursorMz(spectrumDO.getPrecursorMz() / Math.abs(spectrumDO.getCharge()));
-                        }
-                    }
                     if (spectrumDO.getPrecursorMz() != null) {
                         spectrumDOS.add(spectrumDO);
                     }
@@ -133,5 +133,9 @@ public class MgfParser {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private boolean startWithNumber(String str) {
+        return Pattern.matches("^[0-9].*", str);
     }
 }
