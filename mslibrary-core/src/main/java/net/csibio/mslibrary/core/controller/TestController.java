@@ -390,7 +390,7 @@ public class TestController {
                 //export data sheet
                 List<List<Object>> dataSheet = new ArrayList<>();
                 dataSheet.add(row);
-                List<Object> header = Arrays.asList("Dataset", "QuerySpectra", "AllHits", "MatchedHits");
+                List<Object> header = Arrays.asList("Dataset", "totalCount", "QuerySpectra", "AllHits", "MatchedHits");
                 dataSheet.add(0, header);
                 String outputFilePath = "/Users/anshaowei/Downloads/report/" + f.getName() + ".xlsx";
                 EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
