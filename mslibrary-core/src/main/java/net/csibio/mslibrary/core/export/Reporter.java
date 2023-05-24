@@ -437,6 +437,7 @@ public class Reporter {
     public void ionEntropyDistributionGraph(String libraryId) {
         String fileName = "ionEntropyDistributionGraph" + SymbolConst.DELIMITER + libraryId;
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        Double maxEntropy = 5d;
 
         List<List<Object>> dataSheet = new ArrayList<>();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
@@ -542,21 +543,20 @@ public class Reporter {
         int precursorMaxCount = precursorIonPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 1d).toList().size();
 
         //ion entropy distribution graph
+        int nonZeroIonCount = ionPeaks.size() - ZeroCount;
         for (int i = 0; i < 100; i++) {
-            final double minIonEntropy = i / 25d;
-            final double maxIonEntropy = (i + 1) / 25d;
+            final double minIonEntropy = i / 100d * maxEntropy;
+            final double maxIonEntropy = (i + 1) / 100d * maxEntropy;
             List<Object> row = new ArrayList<>();
             int ionCount = 0;
             for (IonPeak ionPeak : ionPeaks) {
-                if (ionPeak.getIonEntropy() > minIonEntropy && ionPeak.getIonEntropy() < maxIonEntropy) {
+                if (ionPeak.getIonEntropy() > minIonEntropy && ionPeak.getIonEntropy() <= maxIonEntropy) {
                     ionCount++;
                 }
             }
             row.add(minIonEntropy);
             row.add(maxIonEntropy);
-            double otherionCount = ionPeaks.size() - ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 0d).count() -
-                    ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 1d).count();
-            row.add(ionCount / otherionCount);
+            row.add((double) ionCount / nonZeroIonCount);
             dataSheet.add(row);
         }
 
@@ -567,19 +567,20 @@ public class Reporter {
         dataSheet = new ArrayList<>();
         fileName = "precursorIonEntropyDistribution" + SymbolConst.DELIMITER + libraryId;
         outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+        int nonZeroPrecursorIonCount = precursorIonPeaks.size() - precursorZeroCount;
         for (int i = 0; i < 100; i++) {
-            final double minIonEntropy = i / 25d;
-            final double maxIonEntropy = (i + 1) / 25d;
+            final double minIonEntropy = i / 100d * maxEntropy;
+            final double maxIonEntropy = (i + 1) / 100d * maxEntropy;
             List<Object> row = new ArrayList<>();
-            int ionCount = 0;
-            for (IonPeak ionPeak : precursorIonPeaks) {
-                if (ionPeak.getIonEntropy() > minIonEntropy && ionPeak.getIonEntropy() < maxIonEntropy) {
-                    ionCount++;
+            int precursorIonCount = 0;
+            for (IonPeak precursorIonPeak : precursorIonPeaks) {
+                if (precursorIonPeak.getIonEntropy() > minIonEntropy && precursorIonPeak.getIonEntropy() <= maxIonEntropy) {
+                    precursorIonCount++;
                 }
             }
             row.add(minIonEntropy);
             row.add(maxIonEntropy);
-            row.add(ionCount);
+            row.add((double) precursorIonCount / nonZeroPrecursorIonCount);
             dataSheet.add(row);
         }
         EasyExcel.write(outputFileName).sheet(fileName).doWrite(dataSheet);
