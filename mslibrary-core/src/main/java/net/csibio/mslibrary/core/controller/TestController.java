@@ -80,12 +80,12 @@ public class TestController {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
 //        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-MSMLS.msp");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
-//        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
         massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
@@ -265,19 +265,19 @@ public class TestController {
 //        reporter.entropyDistributionGraph(libraryId, 100);
 
         //estimate p value graph
-        String queryLibraryId = "GNPS-NIST14-MATCHES";
-        String targetLibraryId = "MassBank-MoNA";
-        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTreeBased.getName();
-        MethodDO methodDO = new MethodDO();
-        methodDO.setPpmForMzTolerance(true);
-        methodDO.setPpm(10);
-        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-        reporter.estimatedPValueGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 20);
+//        String queryLibraryId = "GNPS-NIST14-MATCHES";
+//        String targetLibraryId = "MassBank-MoNA";
+//        String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.FragmentationTreeBased.getName();
+//        MethodDO methodDO = new MethodDO();
+//        methodDO.setPpmForMzTolerance(true);
+//        methodDO.setPpm(10);
+//        methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+//        reporter.estimatedPValueGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 20);
 
         //ion entropy distribution
-//        reporter.ionEntropyDistributionGraph("GNPS-NIST14-MATCHES");
-//        reporter.ionEntropyDistributionGraph("MassBank-Europe");
-//        reporter.ionEntropyDistributionGraph("MassBank-MoNA");
+        reporter.ionEntropyDistributionGraph("GNPS-NIST14-MATCHES");
+        reporter.ionEntropyDistributionGraph("MassBank-Europe");
+        reporter.ionEntropyDistributionGraph("MassBank-MoNA");
     }
 
     @RequestMapping("compare")
@@ -403,9 +403,9 @@ public class TestController {
         importLibrary();
         filter();
 //        sirius();
-        decoy();
-//        report();
-        compare();
+//        decoy();
+        report();
+//        compare();
 //        ionEntropy();
     }
 
