@@ -15,6 +15,7 @@ import net.csibio.mslibrary.client.service.LibraryHitService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.client.utils.ArrayUtil;
 import net.csibio.mslibrary.core.config.VMProperties;
+import org.apache.commons.math3.stat.StatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
@@ -483,14 +484,14 @@ public class Reporter {
             List<SpectrumDO> candidateSpectra = spectrumDOS.stream().filter(spectrumDO1 -> Math.abs(spectrumDO1.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance).toList();
             List<IonPeak> candidateIonPeaks = new ArrayList<>();
             for (SpectrumDO candidate : candidateSpectra) {
-                double basePeakIntensity = ArrayUtil.maxValue(candidate.getInts());
+                double basePeakIntensity = StatUtils.max(candidate.getInts());
                 for (int j = 0; j < candidate.getMzs().length; j++) {
                     IonPeak candidateIonPeak = new IonPeak(candidate.getMzs()[j], candidate.getInts()[j] / basePeakIntensity * 100);
                     candidateIonPeaks.add(candidateIonPeak);
                 }
             }
             for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                double basePeakIntensity = ArrayUtil.maxValue(spectrumDO.getInts());
+                double basePeakIntensity = StatUtils.max(spectrumDO.getInts());
                 IonPeak ionPeak = new IonPeak(spectrumDO.getMzs()[i], spectrumDO.getInts()[i] / basePeakIntensity * 100);
                 Double ionMzTolerance = 10 * Constants.PPM * ionPeak.getMz();
                 List<IonPeak> targetIonPeaks = candidateIonPeaks.stream().filter(ionPeak1 -> Math.abs(ionPeak1.getMz() - ionPeak.getMz()) < ionMzTolerance).toList();
@@ -503,7 +504,7 @@ public class Reporter {
             }
             if (ArrayUtil.findNearestDiff(spectrumDO.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance) {
                 int precursorIndex = ArrayUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
-                double basePeakIntensity = ArrayUtil.maxValue(spectrumDO.getInts());
+                double basePeakIntensity = StatUtils.max(spectrumDO.getInts());
                 IonPeak precursorIonPeak = new IonPeak(spectrumDO.getMzs()[precursorIndex], spectrumDO.getInts()[precursorIndex] / basePeakIntensity * 100);
                 List<IonPeak> targetIonPeaks = candidateIonPeaks.stream().filter(ionPeak1 -> Math.abs(ionPeak1.getMz() - precursorIonPeak.getMz()) < mzTolerance).toList();
                 if (targetIonPeaks.size() == 1) {

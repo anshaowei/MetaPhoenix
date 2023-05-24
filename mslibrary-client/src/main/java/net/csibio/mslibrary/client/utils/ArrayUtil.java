@@ -16,16 +16,6 @@ public class ArrayUtil {
         return sum(array) / array.length;
     }
 
-    public static double maxValue(double[] values) {
-        double max = Double.MIN_VALUE;
-        for (double value : values) {
-            if (value > max) {
-                max = value;
-            }
-        }
-        return max;
-    }
-
     public static double[] toArray(List<Double> list) {
         double[] target = new double[list.size()];
         for (int i = 0; i < list.size(); i++) {
