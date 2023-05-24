@@ -82,20 +82,20 @@ public class TestController {
         //gnps
 //        gnpsParser.parseJSON("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.json");
 //        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-MSMLS.msp");
-        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
-//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
+//        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-NIST14-MATCHES.msp");
+        gnpsParser.parseMsp("/Users/anshaowei/Documents/Metabolomics/library/GNPS/ALL_GNPS.msp");
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
-        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+//        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
+//        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
     @RequestMapping("/filter")
     public void filter() {
         //filter all the libraries
         List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
+        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
@@ -170,7 +170,7 @@ public class TestController {
 //                spectrumGenerator.execute(libraryId, methodDO);
 //            }
 //        }
-        methodDO.setDecoyStrategy(DecoyStrategy.IonEntropyBased2.getName());
+        methodDO.setDecoyStrategy(DecoyStrategy.IonEntropyBased.getName());
         spectrumGenerator.execute(libraryId, methodDO);
     }
 
@@ -300,7 +300,7 @@ public class TestController {
 
 
     @RequestMapping("identification")
-    public void identification() throws IOException {
+    public void identification() {
 
         String datasetsPath = "/Users/anshaowei/Downloads/Test";
         String logPath = "/Users/anshaowei/Downloads/log.txt";
@@ -313,92 +313,96 @@ public class TestController {
 
         File file = new File(datasetsPath);
         File[] files = file.listFiles();
-        FileWriter fileWriter = new FileWriter(logPath);
-        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-        assert files != null;
+        try {
+            FileWriter fileWriter = new FileWriter(logPath);
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            assert files != null;
 
-        for (File f : files) {
-            if (!f.getName().equals(".DS_Store")) {
-                List<Object> row = new ArrayList<>();
-                List<SpectrumDO> querySpectrumDOS = new ArrayList<>();
-                File[] subFiles = f.listFiles();
-                assert subFiles != null;
-                for (File subFile : subFiles) {
-                    if (subFile.getName().endsWith(".mgf") || subFile.getName().endsWith(".MGF")) {
-                        List<SpectrumDO> tempSpectrumDOS = mgfParser.execute(subFile.getAbsolutePath());
-                        if (tempSpectrumDOS == null || tempSpectrumDOS.size() == 0) {
-                            bufferedWriter.write("mgf file is empty: " + subFile.getAbsolutePath() + "\n");
-                            log.error("mgf file is empty: " + subFile.getAbsolutePath());
-                        } else {
-                            querySpectrumDOS.addAll(tempSpectrumDOS);
-                        }
-                    } else if (subFile.getName().endsWith(".mzML")) {
-                        List<SpectrumDO> tempSpectrumDOS = mzMLParser.execute(subFile.getAbsolutePath());
-                        if (tempSpectrumDOS == null || tempSpectrumDOS.size() == 0) {
-                            bufferedWriter.write("mzML file is empty: " + subFile.getAbsolutePath() + "\n");
-                            log.error("mzML file is empty: " + subFile.getAbsolutePath());
-                        } else {
-                            querySpectrumDOS.addAll(tempSpectrumDOS);
+            for (File f : files) {
+                if (!f.getName().equals(".DS_Store")) {
+                    List<Object> row = new ArrayList<>();
+                    List<SpectrumDO> querySpectrumDOS = new ArrayList<>();
+                    File[] subFiles = f.listFiles();
+                    assert subFiles != null;
+                    for (File subFile : subFiles) {
+                        if (subFile.getName().endsWith(".mgf") || subFile.getName().endsWith(".MGF")) {
+                            List<SpectrumDO> tempSpectrumDOS = mgfParser.execute(subFile.getAbsolutePath());
+                            if (tempSpectrumDOS == null || tempSpectrumDOS.size() == 0) {
+                                bufferedWriter.write("mgf file is empty: " + subFile.getAbsolutePath() + "\n");
+                                log.error("mgf file is empty: " + subFile.getAbsolutePath());
+                            } else {
+                                querySpectrumDOS.addAll(tempSpectrumDOS);
+                            }
+                        } else if (subFile.getName().endsWith(".mzML")) {
+                            List<SpectrumDO> tempSpectrumDOS = mzMLParser.execute(subFile.getAbsolutePath());
+                            if (tempSpectrumDOS == null || tempSpectrumDOS.size() == 0) {
+                                bufferedWriter.write("mzML file is empty: " + subFile.getAbsolutePath() + "\n");
+                                log.error("mzML file is empty: " + subFile.getAbsolutePath());
+                            } else {
+                                querySpectrumDOS.addAll(tempSpectrumDOS);
+                            }
                         }
                     }
-                }
 
-                //remove low quality spectra
-                int total = querySpectrumDOS.size();
-                querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs() == null || spectrumDO.getMzs().length == 0 ||
-                        spectrumDO.getInts() == null || spectrumDO.getInts().length == 0 ||
-                        spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0);
-                for (SpectrumDO spectrumDO : querySpectrumDOS) {
-                    List<Double> mzs = new ArrayList<>();
-                    List<Double> ints = new ArrayList<>();
-                    for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                        if (spectrumDO.getInts()[i] == 0d) {
-                            continue;
+                    //remove low quality spectra
+                    int total = querySpectrumDOS.size();
+                    querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs() == null || spectrumDO.getMzs().length == 0 ||
+                            spectrumDO.getInts() == null || spectrumDO.getInts().length == 0 ||
+                            spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0);
+                    for (SpectrumDO spectrumDO : querySpectrumDOS) {
+                        List<Double> mzs = new ArrayList<>();
+                        List<Double> ints = new ArrayList<>();
+                        for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                            if (spectrumDO.getInts()[i] == 0d) {
+                                continue;
+                            }
+                            mzs.add(spectrumDO.getMzs()[i]);
+                            ints.add(spectrumDO.getInts()[i]);
                         }
-                        mzs.add(spectrumDO.getMzs()[i]);
-                        ints.add(spectrumDO.getInts()[i]);
+                        spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
+                        spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
                     }
-                    spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
-                    spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
-                }
-                querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMsLevel() == null);
-                querySpectrumDOS.removeIf(spectrumDO -> !spectrumDO.getMsLevel().equals(MsLevel.MS2.getCode()));
+                    querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMsLevel() == null);
+                    querySpectrumDOS.removeIf(spectrumDO -> !spectrumDO.getMsLevel().equals(MsLevel.MS2.getCode()));
 
-                //add querySpectrumID
-                Integer m = 0;
-                for (SpectrumDO spectrumDO : querySpectrumDOS) {
-                    spectrumDO.setId(m.toString());
-                    m++;
-                }
-
-                HashMap<String, List<LibraryHit>> result = identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.05);
-                int allHits = 0;
-                int matchedHits = 0;
-                for (String queryId : result.keySet()) {
-                    List<LibraryHit> libraryHits = result.get(queryId);
-                    allHits += libraryHits.size();
-                    if (libraryHits.size() > 0) {
-                        matchedHits++;
+                    //add querySpectrumID
+                    Integer m = 0;
+                    for (SpectrumDO spectrumDO : querySpectrumDOS) {
+                        spectrumDO.setId(m.toString());
+                        m++;
                     }
-                }
-                row.add(f.getName());
-                row.add(total);
-                row.add(querySpectrumDOS.size());
-                row.add(allHits);
-                row.add(matchedHits);
 
-                //export data sheet
-                List<List<Object>> dataSheet = new ArrayList<>();
-                dataSheet.add(row);
-                List<Object> header = Arrays.asList("Dataset", "totalCount", "QuerySpectra", "AllHits", "MatchedHits");
-                dataSheet.add(0, header);
-                String outputFilePath = "/Users/anshaowei/Downloads/report/" + f.getName() + ".xlsx";
-                EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
-                log.info("export data sheet to " + outputFilePath);
+                    HashMap<String, List<LibraryHit>> result = identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.05);
+                    int allHits = 0;
+                    int matchedHits = 0;
+                    for (String queryId : result.keySet()) {
+                        List<LibraryHit> libraryHits = result.get(queryId);
+                        allHits += libraryHits.size();
+                        if (libraryHits.size() > 0) {
+                            matchedHits++;
+                        }
+                    }
+                    row.add(f.getName());
+                    row.add(total);
+                    row.add(querySpectrumDOS.size());
+                    row.add(allHits);
+                    row.add(matchedHits);
+
+                    //export data sheet
+                    List<List<Object>> dataSheet = new ArrayList<>();
+                    dataSheet.add(row);
+                    List<Object> header = Arrays.asList("Dataset", "totalCount", "QuerySpectra", "AllHits", "MatchedHits");
+                    dataSheet.add(0, header);
+                    String outputFilePath = "/Users/anshaowei/Downloads/report/" + f.getName() + ".xlsx";
+                    EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
+                    log.info("export data sheet to " + outputFilePath);
+                }
             }
+            fileWriter.close();
+            bufferedWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        fileWriter.close();
-        bufferedWriter.close();
     }
 
     @RequestMapping("all")
@@ -406,8 +410,9 @@ public class TestController {
         importLibrary();
         filter();
 //        sirius();
-//        decoy();
-        report();
+        decoy();
+        identification();
+//        report();
 //        compare();
 //        ionEntropy();
     }
