@@ -97,7 +97,7 @@ public class NoiseFilter {
     }
 
     public void basicFilter(String libraryId) {
-        log.info("start simple noise filter on library: {}", libraryId);
+        log.info("start basic noise filter on library: {}", libraryId);
         List<SpectrumDO> spectrumDOS = spectrumService.getAll(new SpectrumQuery(), libraryId);
         int count = spectrumDOS.size();
 

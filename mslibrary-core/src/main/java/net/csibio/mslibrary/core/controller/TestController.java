@@ -36,7 +36,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -275,8 +277,8 @@ public class TestController {
 //        reporter.estimatedPValueGraph(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 20);
 
         //ion entropy distribution
-        reporter.ionEntropyDistributionGraph("GNPS-NIST14-MATCHES");
-        reporter.ionEntropyDistributionGraph("MassBank-Europe");
+//        reporter.ionEntropyDistributionGraph("GNPS-NIST14-MATCHES");
+//        reporter.ionEntropyDistributionGraph("MassBank-Europe");
         reporter.ionEntropyDistributionGraph("MassBank-MoNA");
     }
 
@@ -298,9 +300,10 @@ public class TestController {
 
 
     @RequestMapping("identification")
-    public void identification() {
+    public void identification() throws IOException {
 
         String datasetsPath = "/Users/anshaowei/Downloads/Test";
+        String logPath = "/Users/anshaowei/Downloads/log.txt";
         String targetLibraryId = "ALL_GNPS";
         String decoyLibraryId = targetLibraryId + SymbolConst.DELIMITER + DecoyStrategy.IonEntropyBased.getName();
         MethodDO methodDO = new MethodDO();
@@ -310,10 +313,11 @@ public class TestController {
 
         File file = new File(datasetsPath);
         File[] files = file.listFiles();
+        FileWriter fileWriter = new FileWriter(logPath);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         assert files != null;
-        List<File> fileList = Arrays.asList(files);
 
-        fileList.parallelStream().forEach(f -> {
+        for (File f : files) {
             if (!f.getName().equals(".DS_Store")) {
                 List<Object> row = new ArrayList<>();
                 List<SpectrumDO> querySpectrumDOS = new ArrayList<>();
@@ -323,6 +327,7 @@ public class TestController {
                     if (subFile.getName().endsWith(".mgf") || subFile.getName().endsWith(".MGF")) {
                         List<SpectrumDO> tempSpectrumDOS = mgfParser.execute(subFile.getAbsolutePath());
                         if (tempSpectrumDOS == null || tempSpectrumDOS.size() == 0) {
+                            bufferedWriter.write("mgf file is empty: " + subFile.getAbsolutePath() + "\n");
                             log.error("mgf file is empty: " + subFile.getAbsolutePath());
                         } else {
                             querySpectrumDOS.addAll(tempSpectrumDOS);
@@ -330,6 +335,7 @@ public class TestController {
                     } else if (subFile.getName().endsWith(".mzML")) {
                         List<SpectrumDO> tempSpectrumDOS = mzMLParser.execute(subFile.getAbsolutePath());
                         if (tempSpectrumDOS == null || tempSpectrumDOS.size() == 0) {
+                            bufferedWriter.write("mzML file is empty: " + subFile.getAbsolutePath() + "\n");
                             log.error("mzML file is empty: " + subFile.getAbsolutePath());
                         } else {
                             querySpectrumDOS.addAll(tempSpectrumDOS);
@@ -395,7 +401,9 @@ public class TestController {
                 EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
                 log.info("export data sheet to " + outputFilePath);
             }
-        });
+        }
+        fileWriter.close();
+        bufferedWriter.close();
     }
 
     @RequestMapping("all")
