@@ -342,55 +342,50 @@ public class TestController {
                         }
                     }
                 }
-                if (querySpectrumDOS.size() == 0) {
-                    log.error("no spectrum data: " + f.getAbsolutePath());
-                    row.add(f.getName());
-                    row.add(0);
-                    row.add(0);
-                    row.add(0);
-                } else {
-                    //remove low quality spectra
-                    querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs() == null || spectrumDO.getMzs().length == 0 ||
-                            spectrumDO.getInts() == null || spectrumDO.getInts().length == 0 ||
-                            spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0);
-                    for (SpectrumDO spectrumDO : querySpectrumDOS) {
-                        List<Double> mzs = new ArrayList<>();
-                        List<Double> ints = new ArrayList<>();
-                        for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                            if (spectrumDO.getInts()[i] == 0d) {
-                                continue;
-                            }
-                            mzs.add(spectrumDO.getMzs()[i]);
-                            ints.add(spectrumDO.getInts()[i]);
-                        }
-                        spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
-                        spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
-                    }
-                    querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMsLevel() == null);
-                    querySpectrumDOS.removeIf(spectrumDO -> !spectrumDO.getMsLevel().equals(MsLevel.MS2.getCode()));
 
-                    //add querySpectrumID
-                    Integer m = 0;
-                    for (SpectrumDO spectrumDO : querySpectrumDOS) {
-                        spectrumDO.setId(m.toString());
-                        m++;
-                    }
-
-                    HashMap<String, List<LibraryHit>> result = identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.05);
-                    int allHits = 0;
-                    int matchedHits = 0;
-                    for (String queryId : result.keySet()) {
-                        List<LibraryHit> libraryHits = result.get(queryId);
-                        allHits += libraryHits.size();
-                        if (libraryHits.size() > 0) {
-                            matchedHits++;
+                //remove low quality spectra
+                int total = querySpectrumDOS.size();
+                querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMzs() == null || spectrumDO.getMzs().length == 0 ||
+                        spectrumDO.getInts() == null || spectrumDO.getInts().length == 0 ||
+                        spectrumDO.getPrecursorMz() == null || spectrumDO.getPrecursorMz() == 0);
+                for (SpectrumDO spectrumDO : querySpectrumDOS) {
+                    List<Double> mzs = new ArrayList<>();
+                    List<Double> ints = new ArrayList<>();
+                    for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+                        if (spectrumDO.getInts()[i] == 0d) {
+                            continue;
                         }
+                        mzs.add(spectrumDO.getMzs()[i]);
+                        ints.add(spectrumDO.getInts()[i]);
                     }
-                    row.add(f.getName());
-                    row.add(querySpectrumDOS.size());
-                    row.add(allHits);
-                    row.add(matchedHits);
+                    spectrumDO.setMzs(mzs.stream().mapToDouble(Double::doubleValue).toArray());
+                    spectrumDO.setInts(ints.stream().mapToDouble(Double::doubleValue).toArray());
                 }
+                querySpectrumDOS.removeIf(spectrumDO -> spectrumDO.getMsLevel() == null);
+                querySpectrumDOS.removeIf(spectrumDO -> !spectrumDO.getMsLevel().equals(MsLevel.MS2.getCode()));
+
+                //add querySpectrumID
+                Integer m = 0;
+                for (SpectrumDO spectrumDO : querySpectrumDOS) {
+                    spectrumDO.setId(m.toString());
+                    m++;
+                }
+
+                HashMap<String, List<LibraryHit>> result = identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.05);
+                int allHits = 0;
+                int matchedHits = 0;
+                for (String queryId : result.keySet()) {
+                    List<LibraryHit> libraryHits = result.get(queryId);
+                    allHits += libraryHits.size();
+                    if (libraryHits.size() > 0) {
+                        matchedHits++;
+                    }
+                }
+                row.add(f.getName());
+                row.add(total);
+                row.add(querySpectrumDOS.size());
+                row.add(allHits);
+                row.add(matchedHits);
 
                 //export data sheet
                 List<List<Object>> dataSheet = new ArrayList<>();
