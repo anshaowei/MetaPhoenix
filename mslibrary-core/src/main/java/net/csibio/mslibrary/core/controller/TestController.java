@@ -36,9 +36,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,14 +86,14 @@ public class TestController {
 
         //massbank
 //        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp");
-//        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
+        massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
     }
 
     @RequestMapping("/filter")
     public void filter() {
         //filter all the libraries
         List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
+        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //basic filter
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
@@ -164,14 +162,14 @@ public class TestController {
 
         //all the strategies on one library
         String libraryId = "ALL_GNPS";
-        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
-            methodDO.setDecoyStrategy(decoyStrategy.getName());
-            for (int i = 0; i < repeat; i++) {
-                spectrumGenerator.execute(libraryId, methodDO);
-            }
-        }
-//        methodDO.setDecoyStrategy(DecoyStrategy.IonEntropy.getName());
-//        spectrumGenerator.execute(libraryId, methodDO);
+//        for (DecoyStrategy decoyStrategy : DecoyStrategy.values()) {
+//            methodDO.setDecoyStrategy(decoyStrategy.getName());
+//            for (int i = 0; i < repeat; i++) {
+//                spectrumGenerator.execute(libraryId, methodDO);
+//            }
+//        }
+        methodDO.setDecoyStrategy(DecoyStrategy.IonEntropyBased2.getName());
+        spectrumGenerator.execute(libraryId, methodDO);
     }
 
     @RequestMapping("dataExchange")
@@ -300,7 +298,7 @@ public class TestController {
 
 
     @RequestMapping("identification")
-    public void identification() throws IOException {
+    public void identification() {
 
         String datasetsPath = "/Users/anshaowei/Downloads/Test";
         String targetLibraryId = "ALL_GNPS";
@@ -315,10 +313,7 @@ public class TestController {
         assert files != null;
         List<File> fileList = Arrays.asList(files);
 
-        FileWriter fileWriter = new FileWriter("/Users/anshaowei/Downloads/log.txt");
-        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-
-        for (File f : files) {
+        fileList.parallelStream().forEach(f -> {
             if (!f.getName().equals(".DS_Store")) {
                 List<Object> row = new ArrayList<>();
                 List<SpectrumDO> querySpectrumDOS = new ArrayList<>();
@@ -328,7 +323,6 @@ public class TestController {
                     if (subFile.getName().endsWith(".mgf") || subFile.getName().endsWith(".MGF")) {
                         List<SpectrumDO> tempSpectrumDOS = mgfParser.execute(subFile.getAbsolutePath());
                         if (tempSpectrumDOS == null || tempSpectrumDOS.size() == 0) {
-                            bufferedWriter.write("mgf file is empty: " + subFile.getAbsolutePath());
                             log.error("mgf file is empty: " + subFile.getAbsolutePath());
                         } else {
                             querySpectrumDOS.addAll(tempSpectrumDOS);
@@ -336,7 +330,6 @@ public class TestController {
                     } else if (subFile.getName().endsWith(".mzML")) {
                         List<SpectrumDO> tempSpectrumDOS = mzMLParser.execute(subFile.getAbsolutePath());
                         if (tempSpectrumDOS == null || tempSpectrumDOS.size() == 0) {
-                            bufferedWriter.write("mzML file is empty: " + subFile.getAbsolutePath());
                             log.error("mzML file is empty: " + subFile.getAbsolutePath());
                         } else {
                             querySpectrumDOS.addAll(tempSpectrumDOS);
@@ -402,9 +395,7 @@ public class TestController {
                 EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
                 log.info("export data sheet to " + outputFilePath);
             }
-        }
-        bufferedWriter.close();
-        fileWriter.close();
+        });
     }
 
     @RequestMapping("all")
@@ -414,7 +405,7 @@ public class TestController {
 //        sirius();
         decoy();
 //        report();
-//        compare();
+        compare();
 //        ionEntropy();
     }
 
