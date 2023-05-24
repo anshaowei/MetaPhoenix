@@ -387,11 +387,23 @@ public class TestController {
                     row.add(querySpectrumDOS.size());
                     row.add(allHits);
                     row.add(matchedHits);
+                    allHits = 0;
+                    matchedHits = 0;
+                    result = identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.1);
+                    for (String queryId : result.keySet()) {
+                        List<LibraryHit> libraryHits = result.get(queryId);
+                        allHits += libraryHits.size();
+                        if (libraryHits.size() > 0) {
+                            matchedHits++;
+                        }
+                    }
+                    row.add(allHits);
+                    row.add(matchedHits);
 
                     //export data sheet
                     List<List<Object>> dataSheet = new ArrayList<>();
                     dataSheet.add(row);
-                    List<Object> header = Arrays.asList("Dataset", "totalCount", "QuerySpectra", "AllHits", "MatchedHits");
+                    List<Object> header = Arrays.asList("Dataset", "totalCount", "QuerySpectra", "AllHits-0.05", "MatchedHits-0.05", "AllHits-0.1", "MatchedHits-0.1");
                     dataSheet.add(0, header);
                     String outputFilePath = "/Users/anshaowei/Downloads/report/" + f.getName() + ".xlsx";
                     EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
