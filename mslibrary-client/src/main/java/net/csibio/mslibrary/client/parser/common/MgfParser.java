@@ -1,6 +1,7 @@
 package net.csibio.mslibrary.client.parser.common;
 
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import org.springframework.stereotype.Component;
 
@@ -119,6 +120,7 @@ public class MgfParser {
                     spectrumDO.setMzs(mzArray);
                     spectrumDO.setInts(intensityArray);
                     if (spectrumDO.getPrecursorMz() != null) {
+                        spectrumDO.setMsLevel(MsLevel.MS2.getCode());
                         spectrumDOS.add(spectrumDO);
                     }
                 }

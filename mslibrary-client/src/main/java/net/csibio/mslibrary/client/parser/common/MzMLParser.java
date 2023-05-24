@@ -7,6 +7,7 @@ import io.github.msdk.io.mzml.data.MzMLMsScan;
 import io.github.msdk.io.mzml.data.MzMLPrecursorElement;
 import io.github.msdk.io.mzml.data.MzMLRawDataFile;
 import lombok.extern.slf4j.Slf4j;
+import net.csibio.aird.enums.MsLevel;
 import net.csibio.mslibrary.client.domain.db.SpectrumDO;
 import org.springframework.stereotype.Component;
 
@@ -53,7 +54,7 @@ public class MzMLParser {
             }
 
             //MS Level
-            spectrumDO.setMsLevel(2);
+            spectrumDO.setMsLevel(MsLevel.MS2.getCode());
             spectrumDOS.add(spectrumDO);
         }
         return spectrumDOS;
