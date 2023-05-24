@@ -158,7 +158,7 @@ public class SpectrumGenerator {
 
             List<IonPeak> ionWarehouse = new ArrayList<>();
             for (SpectrumDO spectrum : spectraWarehouse) {
-                double baseIntensity = Arrays.stream(spectrum.getInts()).max().getAsDouble();
+                double baseIntensity = ArrayUtil.maxValue(spectrum.getInts());
                 for (int i = 0; i < spectrum.getMzs().length; i++) {
                     IonPeak ionPeak = new IonPeak(spectrum.getMzs()[i], spectrum.getInts()[i] / baseIntensity * 100);
                     ionWarehouse.add(ionPeak);
