@@ -372,7 +372,7 @@ public class TestController {
                         m++;
                     }
 
-                    HashMap<String, List<LibraryHit>> result = identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.05);
+                    HashMap<String, List<LibraryHit>> result = identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.01);
                     int allHits = 0;
                     int matchedHits = 0;
                     for (String queryId : result.keySet()) {
@@ -385,6 +385,18 @@ public class TestController {
                     row.add(f.getName());
                     row.add(total);
                     row.add(querySpectrumDOS.size());
+                    row.add(allHits);
+                    row.add(matchedHits);
+                    allHits = 0;
+                    matchedHits = 0;
+                    result = identify.execute(querySpectrumDOS, targetLibraryId, decoyLibraryId, methodDO, 0.05);
+                    for (String queryId : result.keySet()) {
+                        List<LibraryHit> libraryHits = result.get(queryId);
+                        allHits += libraryHits.size();
+                        if (libraryHits.size() > 0) {
+                            matchedHits++;
+                        }
+                    }
                     row.add(allHits);
                     row.add(matchedHits);
                     allHits = 0;
@@ -403,7 +415,7 @@ public class TestController {
                     //export data sheet
                     List<List<Object>> dataSheet = new ArrayList<>();
                     dataSheet.add(row);
-                    List<Object> header = Arrays.asList("Dataset", "totalCount", "QuerySpectra", "AllHits-0.05", "MatchedHits-0.05", "AllHits-0.1", "MatchedHits-0.1");
+                    List<Object> header = Arrays.asList("Dataset", "totalCount", "QuerySpectra", "AllHits-0.01", "MatchedHits-0.01", "AllHits-0.05", "MatchedHits-0.05", "AllHits-0.1", "MatchedHits-0.1");
                     dataSheet.add(0, header);
                     String outputFilePath = "/Users/anshaowei/Downloads/report/" + f.getName() + ".xlsx";
                     EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
@@ -419,8 +431,8 @@ public class TestController {
 
     @RequestMapping("all")
     public void all() {
-        importLibrary();
-        filter();
+//        importLibrary();
+//        filter();
 //        sirius();
         decoy();
         identification();
