@@ -438,7 +438,7 @@ public class Reporter {
     public void ionEntropyDistributionGraph(String libraryId) {
         String fileName = "ionEntropyDistributionGraph" + SymbolConst.DELIMITER + libraryId;
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
-        Double maxEntropy = 5d;
+        Double maxEntropy = 1d;
 
         List<List<Object>> dataSheet = new ArrayList<>();
         List<SpectrumDO> spectrumDOS = spectrumService.getAllByLibraryId(libraryId);
@@ -498,7 +498,10 @@ public class Reporter {
                 if (targetIonPeaks.size() == 1) {
                     ionPeak.setIonEntropy(0d);
                 } else {
-                    ionPeak.setIonEntropy(Entropy.getEntropy(targetIonPeaks.stream().mapToDouble(IonPeak::getIntensity).toArray()));
+                    ionPeak.setIonEntropy(Entropy.getEntropy(targetIonPeaks.stream().mapToDouble(IonPeak::getIntensity).toArray()) / Math.log(targetIonPeaks.size()));
+                }
+                if (ionPeak.getIonEntropy() > 1d) {
+                    ionPeak.setIonEntropy(1d);
                 }
                 ionPeaks.add(ionPeak);
             }
@@ -510,7 +513,10 @@ public class Reporter {
                 if (targetIonPeaks.size() == 1) {
                     precursorIonPeak.setIonEntropy(0d);
                 } else {
-                    precursorIonPeak.setIonEntropy(Entropy.getEntropy(targetIonPeaks.stream().mapToDouble(IonPeak::getIntensity).toArray()));
+                    precursorIonPeak.setIonEntropy(Entropy.getEntropy(targetIonPeaks.stream().mapToDouble(IonPeak::getIntensity).toArray()) / Math.log(targetIonPeaks.size()));
+                }
+                if (precursorIonPeak.getIonEntropy() > 1d) {
+                    precursorIonPeak.setIonEntropy(1d);
                 }
                 precursorIonPeaks.add(precursorIonPeak);
             }
@@ -538,13 +544,16 @@ public class Reporter {
 //            dataSheet.add(row);
 //        }
 
-        int ZeroCount = ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 0d).toList().size();
-        int MaxCount = ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 1d).toList().size();
+        int totalIonCount = ionPeaks.size();
+        int zeroCount = ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 0d).toList().size();
+        int maxCount = ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 1d).toList().size();
+        ionPeaks.removeIf(ionPeak -> ionPeak.getIonEntropy() == 0d || ionPeak.getIonEntropy() == 1d);
+        int totalPrecursorIonCount = precursorIonPeaks.size();
         int precursorZeroCount = precursorIonPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 0d).toList().size();
         int precursorMaxCount = precursorIonPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 1d).toList().size();
+        precursorIonPeaks.removeIf(ionPeak -> ionPeak.getIonEntropy() == 0d || ionPeak.getIonEntropy() == 1d);
 
         //ion entropy distribution graph
-        int nonZeroIonCount = ionPeaks.size() - ZeroCount;
         for (int i = 0; i < 100; i++) {
             final double minIonEntropy = i / 100d * maxEntropy;
             final double maxIonEntropy = (i + 1) / 100d * maxEntropy;
@@ -557,7 +566,7 @@ public class Reporter {
             }
             row.add(minIonEntropy);
             row.add(maxIonEntropy);
-            row.add((double) ionCount / nonZeroIonCount);
+            row.add((double) ionCount / ionPeaks.size());
             dataSheet.add(row);
         }
 
@@ -568,7 +577,6 @@ public class Reporter {
         dataSheet = new ArrayList<>();
         fileName = "precursorIonEntropyDistribution" + SymbolConst.DELIMITER + libraryId;
         outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
-        int nonZeroPrecursorIonCount = precursorIonPeaks.size() - precursorZeroCount;
         for (int i = 0; i < 100; i++) {
             final double minIonEntropy = i / 100d * maxEntropy;
             final double maxIonEntropy = (i + 1) / 100d * maxEntropy;
@@ -581,7 +589,7 @@ public class Reporter {
             }
             row.add(minIonEntropy);
             row.add(maxIonEntropy);
-            row.add((double) precursorIonCount / nonZeroPrecursorIonCount);
+            row.add((double) precursorIonCount / precursorIonPeaks.size());
             dataSheet.add(row);
         }
         EasyExcel.write(outputFileName).sheet(fileName).doWrite(dataSheet);
