@@ -26,7 +26,7 @@ public class Entropy {
     }
 
     public static double getNormalizedEntropy(double[] values) {
-        return getEntropy(values) / Math.log(values.length);
+        return (values.length == 1) ? 0 : getEntropy(values) / Math.log(values.length);
     }
 
     public static double getSpectrumEntropy(Spectrum spectrum) {
