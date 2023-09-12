@@ -37,19 +37,17 @@ public class NoiseFilter {
         log.info("remove {} spectra with empty key information, {} spectra left", count - spectrumDOS.size(), spectrumDOS.size());
         count = spectrumDOS.size();
 
-        //2. remove zero or noise data points
+        //2. remove zero data points
         int dataPoint = 0;
         int totalDataPoint = 0;
         for (SpectrumDO spectrumDO : spectrumDOS) {
             List<Double> mzs = new ArrayList<>();
             List<Double> ints = new ArrayList<>();
-            double basePeak = StatUtils.max(spectrumDO.getInts());
             for (int i = 0; i < spectrumDO.getMzs().length; i++) {
-                if (spectrumDO.getInts()[i] < 0.01 * basePeak) {
-                    continue;
+                if (spectrumDO.getInts()[i] != 0) {
+                    mzs.add(spectrumDO.getMzs()[i]);
+                    ints.add(spectrumDO.getInts()[i]);
                 }
-                mzs.add(spectrumDO.getMzs()[i]);
-                ints.add(spectrumDO.getInts()[i]);
             }
             dataPoint += spectrumDO.getMzs().length - mzs.size();
             totalDataPoint += spectrumDO.getMzs().length;
