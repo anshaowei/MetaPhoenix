@@ -26,14 +26,14 @@ public class MassBankParser {
     @Autowired
     LibraryService libraryService;
 
-    public void parseMspEU(String filePath) {
+    public void parseMspEU(String filePath, String libraryName) {
 
         //read file use buffer
         File file = new File(filePath);
         FileInputStream fis;
 
         //create library
-        String libraryName = "MassBank-Europe";
+//        String libraryName = "MassBank-Europe";
         LibraryDO libraryDO = new LibraryDO();
         libraryDO.setName(libraryName);
         if (libraryService.insert(libraryDO).isFailed()) {

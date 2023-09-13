@@ -559,9 +559,10 @@ public class Reporter {
         dataSheet.add(fractions);
 
         //ion entropy distribution graph
-        for (int i = 0; i < 100; i++) {
-            final double minIonEntropy = i / 100d * maxEntropy;
-            final double maxIonEntropy = (i + 1) / 100d * maxEntropy;
+        double steps = 100d;
+        for (int i = 0; i < steps; i++) {
+            final double minIonEntropy = i / steps * maxEntropy;
+            final double maxIonEntropy = (i + 1) / steps * maxEntropy;
             List<Object> row = new ArrayList<>();
             int ionCount = 0;
             for (IonPeak ionPeak : ionPeaks) {
