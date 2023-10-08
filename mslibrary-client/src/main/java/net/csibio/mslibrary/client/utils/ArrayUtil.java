@@ -35,7 +35,7 @@ public class ArrayUtil {
     }
 
     public static int findNearestIndex(double[] mzs, double mz) {
-        int left = 0, right = 0;
+        int left = 0, right;
         for (right = mzs.length - 1; left != right; ) {
             int midIndex = (right + left) / 2;
             int mid = (right - left);

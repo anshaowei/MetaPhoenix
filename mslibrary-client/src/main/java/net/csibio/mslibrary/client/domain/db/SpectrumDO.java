@@ -3,6 +3,7 @@ package net.csibio.mslibrary.client.domain.db;
 import lombok.Data;
 import net.csibio.aird.bean.common.Spectrum;
 import net.csibio.mslibrary.client.domain.bean.spectrum.AnnotationHistory;
+import net.csibio.mslibrary.client.utils.ArrayUtil;
 import net.csibio.mslibrary.client.utils.CompressUtil;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
@@ -196,6 +197,26 @@ public class SpectrumDO {
 
     public Spectrum getSpectrum() {
         return new Spectrum(getMzs(), getInts());
+    }
+
+    public Spectrum getPrecursorRemovedSpectrum() {
+        int precursorIndex = ArrayUtil.findNearestIndex(getMzs(), getPrecursorMz());
+        if (precursorIndex == 0) {
+            return getSpectrum();
+        } else {
+            double[] newMzs = new double[getMzs().length - 1];
+            double[] newInts = new double[getInts().length - 1];
+            for (int i = 0; i < getMzs().length; i++) {
+                if (i < precursorIndex) {
+                    newMzs[i] = getMzs()[i];
+                    newInts[i] = getInts()[i];
+                } else if (i > precursorIndex) {
+                    newMzs[i - 1] = getMzs()[i];
+                    newInts[i - 1] = getInts()[i];
+                }
+            }
+            return new Spectrum(newMzs, newInts);
+        }
     }
 
 }
