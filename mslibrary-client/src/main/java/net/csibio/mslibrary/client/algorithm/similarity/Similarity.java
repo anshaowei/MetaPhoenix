@@ -6,25 +6,33 @@ import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import org.apache.commons.math3.stat.StatUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Similarity {
 
     public static double getScore(Spectrum querySpectrum, Spectrum libSpectrum, SpectrumMatchMethod spectrumMatchMethod, double mzTolerance) {
         double score = 0;
+        mzTolerance = 0.001;
+        Spectrum spectrumA = SpectrumUtil.clone(querySpectrum);
+        Spectrum spectrumB = SpectrumUtil.clone(libSpectrum);
+        SpectrumUtil.normalize(spectrumA);
+        SpectrumUtil.normalize(spectrumB);
         switch (spectrumMatchMethod) {
             case Cosine:
-                score = getCosineSimilarity(querySpectrum, libSpectrum, mzTolerance, false);
+                score = getCosineSimilarity(spectrumA, spectrumB, mzTolerance, false);
                 break;
             case Entropy:
-                score = getEntropySimilarity(querySpectrum, libSpectrum, mzTolerance);
+                score = getEntropySimilarity(spectrumA, spectrumB, mzTolerance);
                 break;
             case Unweighted_Entropy:
-                score = getUnWeightedEntropySimilarity(querySpectrum, libSpectrum, mzTolerance);
+                score = getUnWeightedEntropySimilarity(spectrumA, spectrumB, mzTolerance);
                 break;
             case MetaPro:
-                score = getMetaProSimilarity(querySpectrum, libSpectrum, mzTolerance);
+                score = getMetaProSimilarity(spectrumA, spectrumB, mzTolerance);
                 break;
             case Weighted_Cosine:
-                score = getCosineSimilarity(querySpectrum, libSpectrum, mzTolerance, true);
+                score = getCosineSimilarity(spectrumA, spectrumB, mzTolerance, true);
                 break;
             default:
                 break;
@@ -92,14 +100,10 @@ public class Similarity {
     }
 
     private static double getUnWeightedEntropySimilarity(Spectrum querySpectrum, Spectrum libSpectrum, double mzTolerance) {
-        Spectrum spectrumA = SpectrumUtil.clone(querySpectrum);
-        Spectrum spectrumB = SpectrumUtil.clone(libSpectrum);
-        SpectrumUtil.normalize(spectrumA);
-        SpectrumUtil.normalize(spectrumB);
-        double entropyA = Entropy.getSpectrumEntropy(spectrumA);
-        double entropyB = Entropy.getSpectrumEntropy(spectrumB);
+        double entropyA = Entropy.getSpectrumEntropy(querySpectrum);
+        double entropyB = Entropy.getSpectrumEntropy(libSpectrum);
 
-        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, 1, 1, mzTolerance);
+        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(querySpectrum, libSpectrum, 1, 1, mzTolerance);
         SpectrumUtil.normalize(mixSpectrum);
         double entropyMix = Entropy.getSpectrumEntropy(mixSpectrum);
 
@@ -107,13 +111,8 @@ public class Similarity {
     }
 
     private static double getEntropySimilarity(Spectrum querySpectrum, Spectrum libSpectrum, double mzTolerance) {
-        Spectrum spectrumA = SpectrumUtil.clone(querySpectrum);
-        Spectrum spectrumB = SpectrumUtil.clone(libSpectrum);
-        SpectrumUtil.normalize(spectrumA);
-        SpectrumUtil.normalize(spectrumB);
-
-        double entropyA = Entropy.getSpectrumEntropy(spectrumA);
-        double entropyB = Entropy.getSpectrumEntropy(spectrumB);
+        double entropyA = Entropy.getSpectrumEntropy(querySpectrum);
+        double entropyB = Entropy.getSpectrumEntropy(libSpectrum);
         double weightA;
         double weightB;
 
@@ -130,7 +129,7 @@ public class Similarity {
         }
 
         //mix spectrum
-        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(spectrumA, spectrumB, weightA, weightB, mzTolerance);
+        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(querySpectrum, libSpectrum, weightA, weightB, mzTolerance);
         SpectrumUtil.normalize(mixSpectrum);
         double entropyMix = Entropy.getSpectrumEntropy(mixSpectrum);
 
@@ -147,6 +146,11 @@ public class Similarity {
         double dotProduct = 0d, expNorm = 0d, libNorm = 0d;
         while (expIndex < expMzArray.length && libIndex < libMzArray.length) {
             if (expMzArray[expIndex] < libMzArray[libIndex] - mzTolerance) {
+                if (isWeighted) {
+                    expNorm += weightedDotProduct(expMzArray[expIndex], expIntArray[expIndex]) * weightedDotProduct(expMzArray[expIndex], expIntArray[expIndex]);
+                } else {
+                    expNorm += expIntArray[expIndex] * expIntArray[expIndex];
+                }
                 expIndex++;
             } else if (expMzArray[expIndex] > libMzArray[libIndex] + mzTolerance) {
                 if (isWeighted) {
@@ -170,6 +174,14 @@ public class Similarity {
                 libIndex++;
             }
         }
+        while (expIndex < expMzArray.length) {
+            if (isWeighted) {
+                expNorm += weightedDotProduct(expMzArray[expIndex], expIntArray[expIndex]) * weightedDotProduct(expMzArray[expIndex], expIntArray[expIndex]);
+            } else {
+                expNorm += expIntArray[expIndex] * expIntArray[expIndex];
+            }
+            expIndex++;
+        }
         while (libIndex < libMzArray.length) {
             if (isWeighted) {
                 libNorm += weightedDotProduct(libMzArray[libIndex], libIntArray[libIndex]) * weightedDotProduct(libMzArray[libIndex], libIntArray[libIndex]);
@@ -181,7 +193,7 @@ public class Similarity {
         if (expNorm == 0 || libNorm == 0) {
             return 0;
         }
-        return dotProduct / Math.sqrt(expNorm) / Math.sqrt(libNorm);
+        return dotProduct * dotProduct / expNorm / libNorm;
     }
 
     private static double weightedDotProduct(double mz, double intensity) {
