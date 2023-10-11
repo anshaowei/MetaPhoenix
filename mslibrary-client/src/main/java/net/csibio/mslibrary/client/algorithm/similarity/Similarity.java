@@ -6,36 +6,24 @@ import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.mslibrary.client.utils.SpectrumUtil;
 import org.apache.commons.math3.stat.StatUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Similarity {
 
     public static double getScore(Spectrum querySpectrum, Spectrum libSpectrum, SpectrumMatchMethod spectrumMatchMethod, double mzTolerance) {
         double score = 0;
-        mzTolerance = 0.001;
+        mzTolerance = 0.05;
         Spectrum spectrumA = SpectrumUtil.clone(querySpectrum);
         Spectrum spectrumB = SpectrumUtil.clone(libSpectrum);
         SpectrumUtil.normalize(spectrumA);
         SpectrumUtil.normalize(spectrumB);
         switch (spectrumMatchMethod) {
-            case Cosine:
-                score = getCosineSimilarity(spectrumA, spectrumB, mzTolerance, false);
-                break;
-            case Entropy:
-                score = getEntropySimilarity(spectrumA, spectrumB, mzTolerance);
-                break;
-            case Unweighted_Entropy:
-                score = getUnWeightedEntropySimilarity(spectrumA, spectrumB, mzTolerance);
-                break;
-            case MetaPro:
-                score = getMetaProSimilarity(spectrumA, spectrumB, mzTolerance);
-                break;
-            case Weighted_Cosine:
-                score = getCosineSimilarity(spectrumA, spectrumB, mzTolerance, true);
-                break;
-            default:
-                break;
+            case Cosine -> score = getCosineSimilarity(spectrumA, spectrumB, mzTolerance, false);
+            case Cosine_SquareRoot -> score = getSRCosineSimilarity(spectrumA, spectrumB, mzTolerance, false);
+            case Entropy -> score = getEntropySimilarity(spectrumA, spectrumB, mzTolerance);
+            case Unweighted_Entropy -> score = getUnWeightedEntropySimilarity(spectrumA, spectrumB, mzTolerance);
+            case MetaPro -> score = getMetaProSimilarity(spectrumA, spectrumB, mzTolerance);
+            case Weighted_Cosine -> score = getCosineSimilarity(spectrumA, spectrumB, mzTolerance, true);
+            default -> {
+            }
         }
         if (score < 0) {
             score = 0.0;
@@ -194,6 +182,10 @@ public class Similarity {
             return 0;
         }
         return dotProduct * dotProduct / expNorm / libNorm;
+    }
+
+    private static double getSRCosineSimilarity(Spectrum querySpectrum, Spectrum libSpectrum, double mzTolerance, boolean isWeighted) {
+        return Math.sqrt(getCosineSimilarity(querySpectrum, libSpectrum, mzTolerance, isWeighted));
     }
 
     private static double weightedDotProduct(double mz, double intensity) {

@@ -150,6 +150,8 @@ public class LibraryHitServiceImpl implements LibraryHitService {
         return switch (spectrumMatchMethod) {
             case Entropy -> Similarity.getScore(querySpectrum, libSpectrum, SpectrumMatchMethod.Entropy, mzTolerance);
             case Cosine -> Similarity.getScore(querySpectrum, libSpectrum, SpectrumMatchMethod.Cosine, mzTolerance);
+            case Cosine_SquareRoot ->
+                    Similarity.getScore(querySpectrum, libSpectrum, SpectrumMatchMethod.Cosine_SquareRoot, mzTolerance);
             case Unweighted_Entropy ->
                     Similarity.getScore(querySpectrum, libSpectrum, SpectrumMatchMethod.Unweighted_Entropy, mzTolerance);
             case MetaPro -> Similarity.getScore(querySpectrum, libSpectrum, SpectrumMatchMethod.MetaPro, mzTolerance);
