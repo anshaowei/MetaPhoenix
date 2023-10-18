@@ -3,6 +3,7 @@ package net.csibio.mslibrary.client.constants.enums;
 public enum SpectrumMatchMethod {
 
     Cosine("Cosine"),
+    Cosine_SquareRoot("Cosine_ SquareRoot"),
     Entropy("Entropy"),
     Unweighted_Entropy("Unweighted_Entropy"),
     MetaPro("MetaPro"),
