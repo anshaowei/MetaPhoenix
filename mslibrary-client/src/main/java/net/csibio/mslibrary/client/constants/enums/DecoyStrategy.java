@@ -6,9 +6,12 @@ public enum DecoyStrategy {
     XYMeta("XYMeta"),
     SpectrumBased("SpectrumBased"),
     SpectralEntropyBased("SpectralEntropyBased"),
+    SpectralEntropyBased_PR("SpectralEntropyBased_PR"),
     IonEntropyBased("IonEntropyBased"),
-    FragmentationTreeBased("FragmentationTreeBased"),
-    IonEntropyBased2("IonEntropyBased2");
+    IonEntropyBased_PR("IonEntropyBased_PR"),
+    IonEntropyBased_BasePeak("IonEntropyBased_BasePeak"),
+    FragmentationTreeBased("FragmentationTreeBased");
+
 
     private final String name;
 
