@@ -15,7 +15,6 @@ import net.csibio.mslibrary.client.service.LibraryHitService;
 import net.csibio.mslibrary.client.service.SpectrumService;
 import net.csibio.mslibrary.client.utils.ArrayUtil;
 import net.csibio.mslibrary.core.config.VMProperties;
-import org.apache.commons.math3.stat.StatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
@@ -298,69 +297,194 @@ public class Reporter {
         return dataSheet;
     }
 
+//    public void estimatedPValueGraph(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int pInterval) {
+//        String fileName = "estimatedPValueGraph";
+//        String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
+//        log.info("start export estimatedPValue graph : " + outputFileName);
+//        List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 1000, 1);
+//
+//        //reverse score data sheet to make pValue ascending
+//        Collections.reverse(dataSheet);
+//        List<List<Object>> resultDatasheet = new ArrayList<>();
+//        List<Double> thresholds = new ArrayList<>();
+//
+//        //pValue thresholds
+//        double step = 1.0 / pInterval;
+//        for (int i = 0; i < pInterval; i++) {
+//            thresholds.add(step * (i + 1));
+//        }
+//
+//        //record real pValue and frequencies from pValue 0~1
+//        double[] pValueArray = new double[dataSheet.size()];
+//        List<Integer> turePositiveList = new ArrayList<>();
+//        List<Integer> falsePositiveList = new ArrayList<>();
+//        for (int i = 0; i < dataSheet.size(); i++) {
+//            pValueArray[i] = (double) dataSheet.get(i).get(11);
+//            Integer turePositive = (Integer) dataSheet.get(i).get(13);
+//            Integer falsePositive = (Integer) dataSheet.get(i).get(14);
+//            turePositiveList.add(turePositive);
+//            falsePositiveList.add(falsePositive);
+//        }
+//
+//        //for each threshold, find the nearest pValue and record the index
+//        List<Integer> indexList = new ArrayList<>();
+//        for (double threshold : thresholds) {
+//            int index = ArrayUtil.findNearestIndex(pValueArray, threshold);
+//            double diff = Math.abs(pValueArray[index] - threshold);
+//            if (diff > step) {
+//                indexList.add(-1);
+//            } else {
+//                indexList.add(index);
+//            }
+//        }
+//
+//        //calculate the frequency of each threshold according to the index
+//        double totalTruePositive = turePositiveList.get(turePositiveList.size() - 1);
+//        for (int i = 0; i < indexList.size(); i++) {
+//            int index = indexList.get(i);
+//            List<Object> row = new ArrayList<>();
+//            row.add(thresholds.get(i));
+//            row.add(dataSheet.get(index).get(11));
+//            if (i == 0) {
+//                row.add((double) turePositiveList.get(index) / totalTruePositive);
+//                row.add((double) falsePositiveList.get(index) / totalTruePositive);
+//            } else {
+//                row.add((turePositiveList.get(index) - turePositiveList.get(indexList.get(i - 1))) / totalTruePositive);
+//                row.add((falsePositiveList.get(index) - falsePositiveList.get(indexList.get(i - 1))) / totalTruePositive);
+//            }
+//            resultDatasheet.add(row);
+//        }
+//
+//        //header
+//        List<Object> header = Arrays.asList("EstimatedPValue", "RealPValue", "True", "False");
+//        resultDatasheet.add(0, header);
+//
+//        EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(resultDatasheet);
+//        log.info("export estimatedPValue graph success: " + outputFileName);
+//    }
+
     public void estimatedPValueGraph(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, int pInterval) {
         String fileName = "estimatedPValueGraph";
         String outputFileName = vmProperties.getRepository() + File.separator + fileName + ".xlsx";
         log.info("start export estimatedPValue graph : " + outputFileName);
-        List<List<Object>> dataSheet = getDataSheet(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO, 1000, 1);
 
-        //reverse score data sheet to make pValue ascending
-        Collections.reverse(dataSheet);
-        List<List<Object>> resultDatasheet = new ArrayList<>();
-        List<Double> thresholds = new ArrayList<>();
+        ConcurrentHashMap<SpectrumDO, List<LibraryHit>> hitsMap = libraryHitService.getTargetDecoyHitsMap(queryLibraryId, targetLibraryId, decoyLibraryId, methodDO);
 
-        //pValue thresholds
-        double step = 1.0 / pInterval;
+        //all hits above a score threshold for the target-decoy strategy
+        List<LibraryHit> decoyHits = new ArrayList<>();
+        List<LibraryHit> targetHits = new ArrayList<>();
+
+        //for true FDR calculation and ROC curve calculation
+        List<LibraryHit> truePositives = new ArrayList<>();
+        List<LibraryHit> falsePositives = new ArrayList<>();
+
+        //collect data
+        hitsMap.forEach((k, v) -> {
+            if (v.size() != 0) {
+                //concatenated target-decoy competition
+                v.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+
+                //separated target-decoy competition
+                Map<Boolean, List<LibraryHit>> decoyTargetMap = v.stream().collect(Collectors.groupingBy(LibraryHit::isDecoy));
+                List<LibraryHit> targetHitsList = decoyTargetMap.get(false);
+                List<LibraryHit> decoyHitsList = decoyTargetMap.get(true);
+//                int targetCount = targetHitsList.size();
+//                targetHitsList.removeIf(hit -> hit.getScore() == 0);
+                if (targetHitsList != null && targetHitsList.size() != 0) {
+                    targetHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                    for (LibraryHit hit : targetHitsList) {
+                        String[] inChIKeyArray = hit.getInChIKey().split("-");
+                        if (inChIKeyArray[0].equals(k.getInChIKey().split("-")[0])) {
+                            truePositives.add(hit);
+                            hit.setRight(true);
+                        } else {
+                            falsePositives.add(hit);
+                        }
+                    }
+                    targetHits.addAll(targetHitsList);
+                }
+//                decoyHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+//                decoyHitsList = decoyHitsList.subList(0, decoyHitsList.size() - (targetCount - targetHitsList.size()));
+                if (decoyHitsList != null && decoyHitsList.size() != 0) {
+                    decoyHitsList.sort(Comparator.comparing(LibraryHit::getScore).reversed());
+                    decoyHits.addAll(decoyHitsList);
+                }
+            }
+        });
+
+        List<Double> pValues = new ArrayList<>();
         for (int i = 0; i < pInterval; i++) {
-            thresholds.add(step * (i + 1));
+            pValues.add((double) i / pInterval);
         }
+        List<Double> scores = new ArrayList<>();
 
-        //record real pValue and frequencies from pValue 0~1
-        double[] pValueArray = new double[dataSheet.size()];
-        List<Integer> turePositiveList = new ArrayList<>();
-        List<Integer> falsePositiveList = new ArrayList<>();
-        for (int i = 0; i < dataSheet.size(); i++) {
-            pValueArray[i] = (double) dataSheet.get(i).get(11);
-            Integer turePositive = (Integer) dataSheet.get(i).get(13);
-            Integer falsePositive = (Integer) dataSheet.get(i).get(14);
-            turePositiveList.add(turePositive);
-            falsePositiveList.add(falsePositive);
-        }
+        List<LibraryHit> allHits = new ArrayList<>();
+        allHits.addAll(targetHits);
+        allHits.addAll(decoyHits);
+        allHits.sort(Comparator.comparing(LibraryHit::getScore).reversed());
 
-        //for each threshold, find the nearest pValue and record the index
-        List<Integer> indexList = new ArrayList<>();
-        for (double threshold : thresholds) {
-            int index = ArrayUtil.findNearestIndex(pValueArray, threshold);
-            double diff = Math.abs(pValueArray[index] - threshold);
-            if (diff > step) {
-                indexList.add(-1);
+        int decoyCount = 0;
+        int targetCount = 0;
+        int index = 0;
+        for (LibraryHit hit : allHits) {
+            if (hit.isDecoy()) {
+                decoyCount++;
             } else {
-                indexList.add(index);
+                targetCount++;
+            }
+            double pValue = (targetCount == 0) ? 0 : (double) decoyCount / targetCount;
+            if (pValue > pValues.get(index)) {
+                scores.add(hit.getScore());
+                index++;
+                if (index == pInterval) {
+                    break;
+                }
             }
         }
 
-        //calculate the frequency of each threshold according to the index
-        double totalTruePositive = turePositiveList.get(turePositiveList.size() - 1);
-        for (int i = 0; i < indexList.size(); i++) {
-            int index = indexList.get(i);
+        List<List<Object>> result = new ArrayList<>();
+
+        for (int i = 0; i < scores.size(); i++) {
             List<Object> row = new ArrayList<>();
-            row.add(thresholds.get(i));
-            row.add(dataSheet.get(index).get(11));
-            if (i == 0) {
-                row.add((double) turePositiveList.get(index) / totalTruePositive);
-                row.add((double) falsePositiveList.get(index) / totalTruePositive);
+            if (i == scores.size() - 1) {
+                double maxScore = scores.get(i);
+                double minScore = 0d;
+                int truePositiveCount = truePositives.stream().filter(hit -> hit.getScore() >= minScore && hit.getScore() <= maxScore).toList().size();
+                int falsePositiveCount = falsePositives.stream().filter(hit -> hit.getScore() >= minScore && hit.getScore() <= maxScore).toList().size();
+                row.add(minScore);
+                row.add(maxScore);
+                row.add(truePositiveCount / (double) truePositives.size());
+                row.add(falsePositiveCount / (double) falsePositives.size());
+            } else if (i == 0) {
+                double minScore = scores.get(i + 1);
+                int truePositiveCount = truePositives.stream().filter(hit -> hit.getScore() > minScore).toList().size();
+                int falsePositiveCount = falsePositives.stream().filter(hit -> hit.getScore() > minScore).toList().size();
+                row.add(minScore);
+                row.add(1.0d);
+                row.add(truePositiveCount / (double) truePositives.size());
+                row.add(falsePositiveCount / (double) falsePositives.size());
             } else {
-                row.add((turePositiveList.get(index) - turePositiveList.get(indexList.get(i - 1))) / totalTruePositive);
-                row.add((falsePositiveList.get(index) - falsePositiveList.get(indexList.get(i - 1))) / totalTruePositive);
+                double maxScore = scores.get(i);
+                double minScore = scores.get(i + 1);
+                int truePositiveCount = truePositives.stream().filter(hit -> hit.getScore() > minScore && hit.getScore() <= maxScore).toList().size();
+                int falsePositiveCount = falsePositives.stream().filter(hit -> hit.getScore() > minScore && hit.getScore() <= maxScore).toList().size();
+                row.add(minScore);
+                row.add(maxScore);
+                row.add(truePositiveCount / (double) truePositives.size());
+                row.add(falsePositiveCount / (double) falsePositives.size());
             }
-            resultDatasheet.add(row);
+            result.add(row);
         }
 
-        //header
-        List<Object> header = Arrays.asList("EstimatedPValue", "RealPValue", "True", "False");
-        resultDatasheet.add(0, header);
+        List<Object> row = new ArrayList<>();
+        row.add(truePositives.size());
+        row.add(falsePositives.size());
+        result.add(row);
 
-        EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(resultDatasheet);
+        List<Object> header = Arrays.asList("minScore", "maxScore", "True", "False", "PValue");
+        result.add(0, header);
+
+        EasyExcel.write(outputFileName).sheet("estimatedPValueGraph").doWrite(result);
         log.info("export estimatedPValue graph success: " + outputFileName);
     }
 

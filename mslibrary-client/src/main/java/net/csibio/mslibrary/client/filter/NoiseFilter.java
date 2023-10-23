@@ -45,6 +45,10 @@ public class NoiseFilter {
             List<Double> ints = new ArrayList<>();
             double basePeak = StatUtils.max(spectrumDO.getInts());
             for (int i = 0; i < spectrumDO.getMzs().length; i++) {
+//                if (spectrumDO.getInts()[i] > 0) {
+//                    mzs.add(spectrumDO.getMzs()[i]);
+//                    ints.add(spectrumDO.getInts()[i]);
+//                }
                 if (spectrumDO.getInts()[i] < 0.01 * basePeak) {
                     continue;
                 }
