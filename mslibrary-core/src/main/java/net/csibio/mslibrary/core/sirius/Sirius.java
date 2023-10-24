@@ -193,7 +193,6 @@ public class Sirius {
                 decoySpectrumDOS.add(decoySpectrumDO);
             }
         }
-        spectrumService.remove(new SpectrumQuery(), decoyLibraryId);
         SpectrumQuery spectrumQuery = new SpectrumQuery();
         spectrumQuery.setIds(deleteIds);
         spectrumService.remove(spectrumQuery, libraryId);
