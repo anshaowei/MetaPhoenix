@@ -101,23 +101,25 @@ public class Similarity {
     private static double getEntropySimilarity(Spectrum querySpectrum, Spectrum libSpectrum, double mzTolerance) {
         double entropyA = Entropy.getSpectrumEntropy(querySpectrum);
         double entropyB = Entropy.getSpectrumEntropy(libSpectrum);
-        double weightA;
-        double weightB;
 
         //dynamic weight
-        if (entropyA >= 3) {
-            weightA = 1;
-        } else {
-            weightA = 0.25 + entropyA * 0.25;
+        if (entropyA < 3) {
+            for (int i = 0; i < querySpectrum.getInts().length; i++) {
+                querySpectrum.getInts()[i] = Math.pow(querySpectrum.getInts()[i], 0.25 + entropyA * 0.25);
+            }
+            SpectrumUtil.normalize(querySpectrum);
+            entropyA = Entropy.getSpectrumEntropy(querySpectrum);
         }
-        if (entropyB >= 3) {
-            weightB = 1;
-        } else {
-            weightB = 0.25 + entropyB * 0.25;
+        if (entropyB < 3) {
+            for (int i = 0; i < libSpectrum.getInts().length; i++) {
+                libSpectrum.getInts()[i] = Math.pow(libSpectrum.getInts()[i], 0.25 + entropyB * 0.25);
+            }
+            SpectrumUtil.normalize(libSpectrum);
+            entropyB = Entropy.getSpectrumEntropy(libSpectrum);
         }
 
         //mix spectrum
-        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(querySpectrum, libSpectrum, weightA, weightB, mzTolerance);
+        Spectrum mixSpectrum = SpectrumUtil.mixByWeight(querySpectrum, libSpectrum, 1, 1, mzTolerance);
         SpectrumUtil.normalize(mixSpectrum);
         double entropyMix = Entropy.getSpectrumEntropy(mixSpectrum);
 

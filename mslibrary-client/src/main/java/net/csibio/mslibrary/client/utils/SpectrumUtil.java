@@ -44,7 +44,7 @@ public class SpectrumUtil {
                     }
                 }
                 double mixMz = (mz1 + mz2) / 2;
-                double mixIntensity = spectrum1.getInts()[i] * weight1 + spectrum2Map.get(mz2) * weight2;
+                double mixIntensity = Math.pow(spectrum1.getInts()[i], weight1) + Math.pow(spectrum2Map.get(mz2), weight2);
                 mixMap.put(mixMz, mixIntensity);
                 spectrum2MzList.remove(mz2);
             } else {

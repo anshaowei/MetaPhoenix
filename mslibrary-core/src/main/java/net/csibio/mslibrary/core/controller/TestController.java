@@ -318,10 +318,10 @@ public class TestController {
 //        String targetLibraryId = "MassBank-MoNA";
 
         //compare different spectrum match method
-//        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
+        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
 
         //compare different decoy strategy
-        reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 200);
+//        reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 200);
     }
 
 
