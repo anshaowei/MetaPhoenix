@@ -1,32 +1,7 @@
-## 项目名称
-> 请介绍一下你的项目吧  
+# Entropy-Based Methods for Improved False Discovery Rate Control in Metabolomics
 
+Accurate identification of metabolites and estimation of false discovery rates (FDRs) remain ongoing challenges in metabolomics, particularly for large-scale studies. While methods from proteomics have provided a useful starting point, metabolite annotations present unique complexities. Target-decoy strategies have shown promise for FDR control, but generating reliable decoy libraries is difficult for diverse metabolite structures. There is a continued need for bioinformatics innovation to maximize information from expanding spectral databases while minimizing false identifications.
 
+In this project, we introduce the novel concept of ion entropy for metabolomics and develop two entropy-based strategies for decoy spectral library generation. We demonstrate the utility of ion entropy for quantifying information content in large-scale tandem MS datasets. Benchmarking assessments show our entropy-decoy approaches outperform current leading methods in metabolomics for accurate FDR estimation across diverse search conditions. Analysis of 46 public metabolomics datasets provides practical guidance for real-world applications.
 
-## 运行条件
-> 列出运行该项目所必须的条件和相关依赖  
-* 条件一
-* 条件二
-* 条件三
-
-
-
-## 运行说明
-> 说明如何运行和使用你的项目，建议给出具体的步骤说明
-* 操作一
-* 操作二
-* 操作三  
-
-
-
-## 测试说明
-> 如果有测试相关内容需要说明，请填写在这里  
-
-
-
-## 技术架构
-> 使用的技术框架或系统架构图等相关说明，请填写在这里  
-
-
-## 协作者
-> 高效的协作会激发无尽的创造力，将他们的名字记录在这里吧
+Overall, this work presents new entropy-driven methods to address the pressing needs for sensitive metabolite identification and rigorous FDR control in high-throughput metabolomics studies. The proposed strategies leverage emerging big data resources to improve false discovery metrics without sacrificing identification power. This project exemplifies the immense opportunities at the intersection of information theory, statistical learning, and metabolomics.
