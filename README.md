@@ -30,7 +30,7 @@ Run the Spring Boot app from [MSLibraryApplication.java](mslibrary-core/src/main
 ## 5. Commands
 Import a spectral library:
 
-``` import -f library.msp -l library_name```
+```import -f library.msp -l library_name```
 
 Filter a library:
 
