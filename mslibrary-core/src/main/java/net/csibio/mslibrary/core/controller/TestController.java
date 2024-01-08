@@ -90,7 +90,7 @@ public class TestController {
 //        gnpsParser.parseMgf("/Users/anshaowei/Documents/Metabolomics/library/GNPS/GNPS-LIBRARY.mgf");
 
         //massbank
-        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp","MassBank-Europe");
+//        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/MassBank_NIST.msp","MassBank-Europe");
         massBankParser.parseMspMoNA("/Users/anshaowei/Documents/Metabolomics/library/MoNA-MassBank/MoNA-export-LC-MS_Spectra.msp");
 //        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/TimeSeris/MassBank_NIST202212.msp", "MassBank-NIST202212");
 //        massBankParser.parseMspEU("/Users/anshaowei/Documents/Metabolomics/library/MassBank/TimeSeris/MassBank_NIST202206.msp", "MassBank-NIST202206");
@@ -101,8 +101,8 @@ public class TestController {
     @RequestMapping("/filter")
     public void filter() {
         //filter all the libraries
-        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
-        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
+//        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+//        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.basicFilter(libraryDO.getId()));
 
         //basic filter
 //        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
@@ -115,6 +115,10 @@ public class TestController {
         //filter on one library
 //        String libraryId = "MassBank-MoNA";
 //        noiseFilter.filter(libraryId);
+
+        //filter on all libraries
+        List<LibraryDO> libraryDOS = libraryService.getAll(new LibraryQuery());
+        libraryDOS.parallelStream().forEach(libraryDO -> noiseFilter.filter(libraryDO.getId()));
 
         //basic filter on one library
 //        String libraryId = "GNPS-NIST14-MATCHES";
@@ -311,17 +315,17 @@ public class TestController {
         methodDO.setPpmForMzTolerance(true);
         methodDO.setPpm(10);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
-//        methodDO.setPrecursorRemoval(true);
+        methodDO.setPrecursorRemoval(true);
         String queryLibraryId = "MassBank-MoNA";
         String targetLibraryId = "ALL_GNPS";
 //        String queryLibraryId = "GNPS-NIST14-MATCHES";
 //        String targetLibraryId = "MassBank-MoNA";
 
         //compare different spectrum match method
-        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
+//        reporter.compareSpectrumMatchMethods(queryLibraryId, targetLibraryId, methodDO, 100);
 
         //compare different decoy strategy
-//        reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 200);
+        reporter.compareDecoyStrategy(queryLibraryId, targetLibraryId, methodDO, 200);
     }
 
 
@@ -460,10 +464,10 @@ public class TestController {
         importLibrary();
         filter();
 //        sirius();
-//        decoy();
+        decoy();
 //        identification();
 //        report();
-//        compare();
+        compare();
 //        ionEntropy();
     }
 
