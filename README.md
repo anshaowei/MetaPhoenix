@@ -11,6 +11,8 @@ Overall, this work presents new entropy-driven methods to address the pressing n
 * Java 17-21
 * Maven 3.9 or higher
 * MongoDB 4.4 or higher
+* Redis is optional for the current web/API workflow
+* Sirius is optional and only required for Sirius-based decoy generation
 
 # Usage
 
@@ -21,9 +23,24 @@ Download the latest source code from the repository.
 Follow the [MongoDB installation guide](https://www.mongodb.com/docs/) to install MongoDB on your system.
 
 ## 3. Configure
-In [applications.properties](mslibrary-core/src/main/resources/application.properties), configure the MongoDB address and port.
+Default configuration lives in [application.properties](mslibrary-core/src/main/resources/application.properties). Copy [application-example.properties](mslibrary-core/src/main/resources/application-example.properties) to `mslibrary-core/src/main/resources/application-local.properties` before packaging for local overrides, or use environment variables.
 
-```spring.data.mongodb.uri=mongodb://localhost:27017/mslibrary```
+Common overrides:
+
+```bash
+export MONGODB_URI=mongodb://localhost:27017/metaphoenix
+export METAPHOENIX_REPOSITORY=$HOME/metaphoenix-data
+export SIRIUS_PATH=/Applications/sirius.app/Contents/MacOS/sirius
+export SIRIUS_PROJECT_SPACE=$HOME/metaphoenix-data/sirius
+```
+
+Enable Redis integration only when a local or remote Redis service is available:
+
+```bash
+export REDIS_HOST=localhost
+export REDIS_PORT=6379
+export REDIS_HEALTH_ENABLED=true
+```
 
 ## 4. Run
 Build the project first:
@@ -36,6 +53,12 @@ Run the Spring Boot app:
 
 ```bash
 java -jar mslibrary-core/target/mslibrary-core-1.0.0.jar
+```
+
+To include local overrides:
+
+```bash
+java -jar mslibrary-core/target/mslibrary-core-1.0.0.jar --spring.profiles.active=local
 ```
 
 The interactive command runner is disabled by default for web startup. To enable it, run the app with `--command.runner.enabled=true`.

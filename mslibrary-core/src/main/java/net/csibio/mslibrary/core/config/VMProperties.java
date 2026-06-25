@@ -6,6 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+
 @Component("vmProperties")
 public class VMProperties {
     @Value("${repository}")
@@ -19,7 +21,12 @@ public class VMProperties {
 
     @PostConstruct
     public void init() {
-        RepositoryUtil.repository = repository;
+        String repositoryPath = getRepository();
+        File repositoryDir = new File(repositoryPath);
+        if (!repositoryDir.exists()) {
+            repositoryDir.mkdirs();
+        }
+        RepositoryUtil.repository = repositoryPath;
     }
 
     public void setRepository(String repository) {

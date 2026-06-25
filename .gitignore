@@ -5,6 +5,8 @@
 # Log file
 *.log
 target/
+application-local.properties
+mslibrary-core/src/main/resources/application-local.properties
 # BlueJ files
 *.ctxt
 
