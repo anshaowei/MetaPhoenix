@@ -6,9 +6,10 @@ In this project, we introduce the novel concept of ion entropy for metabolomics 
 
 Overall, this work presents new entropy-driven methods to address the pressing needs for sensitive metabolite identification and rigorous FDR control in high-throughput metabolomics studies. The proposed strategies leverage emerging big data resources to improve false discovery metrics without sacrificing identification power. This project exemplifies the immense opportunities at the intersection of information theory, statistical learning, and metabolomics.
 
-# Preprequisites
+# Prerequisites
 
-* Java 16 or higher
+* Java 17-21
+* Maven 3.9 or higher
 * MongoDB 4.4 or higher
 
 # Usage
@@ -25,7 +26,19 @@ In [applications.properties](mslibrary-core/src/main/resources/application.prope
 ```spring.data.mongodb.uri=mongodb://localhost:27017/mslibrary```
 
 ## 4. Run
-Run the Spring Boot app from [MSLibraryApplication.java](mslibrary-core/src/main/java/net/csibio/mslibrary/core/MSLibraryApplication.java).
+Build the project first:
+
+```bash
+mvn -DskipTests clean package
+```
+
+Run the Spring Boot app:
+
+```bash
+java -jar mslibrary-core/target/mslibrary-core-1.0.0.jar
+```
+
+The interactive command runner is disabled by default for web startup. To enable it, run the app with `--command.runner.enabled=true`.
 
 ## 5. Commands
 Import a spectral library:
