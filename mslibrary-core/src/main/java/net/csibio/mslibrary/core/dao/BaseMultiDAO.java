@@ -145,7 +145,7 @@ public abstract class BaseMultiDAO<T, Q extends PageQuery> implements IMultiDAO<
                 .toArray(String[]::new);
         for (String indexField : indexFields) {
             if (StringUtils.hasText(indexField)) {
-                indexOps.ensureIndex(new Index(indexField, Sort.Direction.ASC));
+                indexOps.createIndex(new Index(indexField, Sort.Direction.ASC));
             }
         }
         for (Annotation annotation : clazz.getAnnotations()) {
@@ -158,9 +158,9 @@ public abstract class BaseMultiDAO<T, Q extends PageQuery> implements IMultiDAO<
                         Document document = Document.parse(index.def());
                         CompoundIndexDefinition definition = new CompoundIndexDefinition(document);
                         if (index.unique()) {
-                            indexOps.ensureIndex(definition.unique());
+                            indexOps.createIndex(definition.unique());
                         } else {
-                            indexOps.ensureIndex(definition);
+                            indexOps.createIndex(definition);
                         }
                     }
                 }

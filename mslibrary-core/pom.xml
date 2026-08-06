@@ -32,16 +32,10 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <!-- repackage 由 spring-boot-starter-parent 默认绑定，无需在此重复声明 execution -->
                 <configuration>
                     <mainClass>net.csibio.mslibrary.core.MSLibraryApplication</mainClass>
                 </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
