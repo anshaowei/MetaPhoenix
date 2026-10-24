@@ -167,12 +167,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/gnu.trove/trove -->
-        <dependency>
-            <groupId>gnu.trove</groupId>
-            <artifactId>trove</artifactId>
-            <version>3.0.3</version>
-        </dependency>
         <dependency>
             <artifactId>aird-sdk</artifactId>
             <groupId>net.csibio.aird</groupId>

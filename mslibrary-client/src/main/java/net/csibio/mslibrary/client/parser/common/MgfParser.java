@@ -94,20 +94,21 @@ public class MgfParser {
                         }
                         //mz values
                         else if (startWithNumber(line)) {
-                            while (!(line = br.readLine()).toLowerCase().startsWith("end")) {
+                            //the current line is already the first peak, so it must be consumed before reading on
+                            do {
                                 String[] values = null;
                                 if (line.contains(" ")) {
                                     values = line.split(" ");
                                 } else if (line.contains("\t")) {
                                     values = line.split("\t");
                                 }
-                                if (values.length == 2) {
+                                if (values != null && values.length == 2) {
                                     double mz = Double.parseDouble(values[0]);
                                     double intensity = Double.parseDouble(values[1]);
                                     mzList.add(mz);
                                     intensityList.add(intensity);
                                 }
-                            }
+                            } while (!(line = br.readLine()).toLowerCase().startsWith("end"));
                             break;
                         }
                     }
