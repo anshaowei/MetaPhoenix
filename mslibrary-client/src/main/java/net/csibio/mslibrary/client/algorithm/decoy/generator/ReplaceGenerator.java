@@ -38,9 +38,9 @@ public class ReplaceGenerator extends BaseGenerator {
         AminoAcid b = aminoAcids.get(0);
         AminoAcid y = aminoAcids.get(aminoAcids.size() - 1);
 
-        b.setName(target.charAt(origin.indexOf(b.getName())) + "");
-        y.setName(target.charAt(origin.indexOf(y.getName())) + "");
-        
+        b.setName(replacement(b.getName()));
+        y.setName(replacement(y.getName()));
+
         for (FragmentInfo targetFi : peptide.getFragments()) {
             FragmentInfo decoyFi = new FragmentInfo();
             decoyFi.setCutInfo(targetFi.getCutInfo());
@@ -53,8 +53,12 @@ public class ReplaceGenerator extends BaseGenerator {
             try {
                 acids = fragmentFactory.getFragmentSequence(aminoAcids, oneAnno.getType(), oneAnno.getLocation());
             } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println(peptide.getFullName());
+                logger.error("Decoy generation failed for peptide {}, fragment annotation {}", peptide.getFullName(), targetFi.getAnnotations(), e);
+            }
+            if (acids == null) {
+                //a partial decoy would bias the scores, so leave this peptide without any decoy
+                logger.error("Skip decoy generation for peptide {}: unusable fragment annotation {}", peptide.getFullName(), targetFi.getAnnotations());
+                peptide.clearDecoy();
                 return;
             }
             for (AminoAcid aminoAcid : acids) {
@@ -79,5 +83,13 @@ public class ReplaceGenerator extends BaseGenerator {
 
         peptide.setDecoySequence(TransitionUtil.toSequence(aminoAcids, false));
         peptide.setDecoyUnimodMap(unimodMap);
+    }
+
+    /**
+     * Residues outside the 20 standard amino acids (e.g. X, U) have no replacement and are kept as they are.
+     */
+    private String replacement(String residue) {
+        int index = origin.indexOf(residue);
+        return index < 0 ? residue : String.valueOf(target.charAt(index));
     }
 }

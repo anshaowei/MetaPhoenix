@@ -45,7 +45,7 @@ public abstract class BaseGenerator {
      */
     protected double aaSequenceIdentify(String sequence, String decoy) {
         //sequence和decoy的长度必须一致
-        if (sequence.length() != decoy.length()) {
+        if (sequence.length() != decoy.length() || sequence.isEmpty()) {
             return 0;
         }
 

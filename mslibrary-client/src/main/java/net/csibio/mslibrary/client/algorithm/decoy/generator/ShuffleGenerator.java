@@ -103,8 +103,13 @@ public class ShuffleGenerator extends BaseGenerator {
             try {
                 acids = fragmentFactory.getFragmentSequence(bestDecoy, oneAnno.getType(), oneAnno.getLocation());
             } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println(peptideDO.getFullName());
+                logger.error("Decoy generation failed for peptide {}, fragment annotation {}", peptideDO.getFullName(), targetFi.getAnnotations(), e);
+            }
+            if (acids == null) {
+                //a partial decoy would bias the scores, so leave this peptide without any decoy
+                logger.error("Skip decoy generation for peptide {}: unusable fragment annotation {}", peptideDO.getFullName(), targetFi.getAnnotations());
+                peptideDO.clearDecoy();
+                return;
             }
             for (AminoAcid aminoAcid : acids) {
                 if (aminoAcid.getModId() != null) {
