@@ -32,11 +32,6 @@ public class StatServiceImpl implements StatService {
     @Autowired
     SpectrumService spectrumService;
 
-    @Autowired
-    ProteinService proteinService;
-    @Autowired
-    GeneService geneService;
-
     @Override
     public long count(StatQuery query) {
         return statDAO.count(query);
@@ -85,14 +80,7 @@ public class StatServiceImpl implements StatService {
 
         long libraryNum = libraryService.count(new LibraryQuery());
 
-        long hmdbGeneNum = geneService.count(new GeneQuery(), LibraryConst.HMDB_GENE);
-        long hmdbProteinNum = proteinService.count(new ProteinQuery(), LibraryConst.HMDB_PROTEIN);
         long hmdbCompoundNum = compoundService.count(new CompoundQuery(), LibraryConst.HMDB_COMPOUND);
-
-        long uniprotGeneNum = geneService.count(new GeneQuery(), LibraryConst.UNIPROT_GENE);
-        long uniprotProteinNum = proteinService.count(new ProteinQuery(
-
-        ), LibraryConst.UNIPROT_PROTEIN);
 
         long gnpsNum = compoundService.count(new CompoundQuery(), LibraryConst.GNPS);
         long massBankNum = compoundService.count(new CompoundQuery(), LibraryConst.MassBank);
@@ -100,12 +88,7 @@ public class StatServiceImpl implements StatService {
 
         HashMap<String, Object> statMap = new HashMap<>();
         statMap.put(StatConst.STAT_LIBRARY_NUM, libraryNum);
-        statMap.put(StatConst.STAT_HMDB_GENE_NUM, hmdbGeneNum);
-        statMap.put(StatConst.STAT_HMDB_PROTEIN_NUM, hmdbProteinNum);
         statMap.put(StatConst.STAT_HMDB_COMPOUND_NUM, hmdbCompoundNum);
-
-        statMap.put(StatConst.STAT_UNIPROT_GENE_NUM, uniprotGeneNum);
-        statMap.put(StatConst.STAT_UNIPROT_PROTEIN_NUM, uniprotProteinNum);
 
         statMap.put(StatConst.STAT_GNPS_COMPOUND_NUM, gnpsNum);
         statMap.put(StatConst.STAT_MASSBANK_COMPOUND_NUM, massBankNum);
