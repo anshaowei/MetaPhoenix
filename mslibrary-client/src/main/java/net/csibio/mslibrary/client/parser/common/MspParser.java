@@ -61,12 +61,9 @@ public class MspParser {
             while (line != null) {
                 String lowerLine = line.toLowerCase();
                 if (lowerLine.startsWith("name")) {
-                    String[] items = line.split(" ");
                     SpectrumDO spectrumDO = new SpectrumDO();
                     spectrumDO.setLibraryId(libraryDO.getId());
-                    if (items.length > 1) {
-                        spectrumDO.setCompoundName(items[1]);
-                    }
+                    spectrumDO.setCompoundName(fieldValue(line));
                     line = br.readLine();
                     while (line != null) {
                         lowerLine = line.toLowerCase();
@@ -76,92 +73,92 @@ public class MspParser {
                         }
                         //precursor m/z
                         if (lowerLine.startsWith("precursormz")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                spectrumDO.setPrecursorMz(Double.parseDouble(items2[1]));
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                spectrumDO.setPrecursorMz(Double.parseDouble(value));
                             }
                         }
                         //precursor type
                         else if (lowerLine.startsWith("precursortype")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                spectrumDO.setPrecursorAdduct(items2[1]);
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                spectrumDO.setPrecursorAdduct(value);
                             }
                         }
                         //formula
                         else if (lowerLine.startsWith("formula")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                spectrumDO.setFormula(items2[1]);
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                spectrumDO.setFormula(value);
                             }
                         }
                         //ontology
                         else if (lowerLine.startsWith("ontology")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                spectrumDO.setOntology(items2[1]);
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                spectrumDO.setOntology(value);
                             }
                         }
                         //inchiKey
                         else if (lowerLine.startsWith("inchikey")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                spectrumDO.setInChIKey(items2[1]);
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                spectrumDO.setInChIKey(value);
                             }
                         }
                         //inchi
                         else if (lowerLine.startsWith("inchi")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                spectrumDO.setInChI(items2[1]);
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                spectrumDO.setInChI(value);
                             }
                         }
                         //smiles
                         else if (lowerLine.startsWith("smiles")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                spectrumDO.setSmiles(items2[1]);
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                spectrumDO.setSmiles(value);
                             }
                         }
                         //retention time
                         else if (lowerLine.startsWith("retentiontime")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
+                            String value = fieldValue(line);
+                            if (value != null) {
                             }
                         }
                         //ionMode
                         else if (lowerLine.startsWith("ionmode")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                if (items2[1].equalsIgnoreCase(IonMode.Positive.getName())) {
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                if (value.equalsIgnoreCase(IonMode.Positive.getName())) {
                                     spectrumDO.setIonMode(IonMode.Positive.getName());
                                 }
-                                if (items2[1].equalsIgnoreCase(IonMode.Negative.getName())) {
+                                if (value.equalsIgnoreCase(IonMode.Negative.getName())) {
                                     spectrumDO.setIonMode(IonMode.Negative.getName());
                                 }
                             }
                         }
                         //instrumentType
                         else if (lowerLine.startsWith("instrumenttype")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                spectrumDO.setInstrumentType(items2[1]);
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                spectrumDO.setInstrumentType(value);
                             }
                         }
                         //instrument
                         else if (lowerLine.startsWith("instrument")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                spectrumDO.setInstrument(items2[1]);
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                spectrumDO.setInstrument(value);
                             }
                         }
                         //collisionEnergy
                         else if (lowerLine.startsWith("collisionenergy")) {
-                            String[] items2 = line.split(" ");
+                            String value = fieldValue(line);
                             Double collisionEnergy = null;
-                            if (items2.length > 1) {
+                            if (value != null) {
                                 try {
-                                    collisionEnergy = Double.parseDouble(items2[1]);
+                                    collisionEnergy = Double.parseDouble(value);
                                 } catch (Exception e) {
                                     log.error("Collision energy parse error: {}", spectrumDO.getCompoundName());
                                 }
@@ -170,9 +167,9 @@ public class MspParser {
                         }
                         //comment
                         else if (lowerLine.startsWith("comment")) {
-                            String[] items2 = line.split(" ");
-                            if (items2.length > 1) {
-                                spectrumDO.setComment(items2[1]);
+                            String value = fieldValue(line);
+                            if (value != null) {
+                                spectrumDO.setComment(value);
                             }
                         }
                         //num peaks
@@ -181,7 +178,7 @@ public class MspParser {
                             List<Double> intensityList = new ArrayList<>();
                             line = br.readLine();
                             while (line != null && !line.isEmpty()) {
-                                String[] values = line.split("\t");
+                                String[] values = line.trim().split("\\s+");
                                 if (values.length > 1) {
                                     double mz = Double.parseDouble(values[0]);
                                     double intensity = Double.parseDouble(values[1]);
@@ -216,5 +213,21 @@ public class MspParser {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Value of a "Key: value" line. Everything after the first colon (or the first space when there is no
+     * colon) is returned, so values containing spaces stay intact. Returns null when the value is empty.
+     */
+    static String fieldValue(String line) {
+        int sep = line.indexOf(':');
+        if (sep < 0) {
+            sep = line.indexOf(' ');
+        }
+        if (sep < 0) {
+            return null;
+        }
+        String value = line.substring(sep + 1).trim();
+        return value.isEmpty() ? null : value;
     }
 }

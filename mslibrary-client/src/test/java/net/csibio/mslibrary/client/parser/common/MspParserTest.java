@@ -95,6 +95,33 @@ class MspParserTest {
     }
 
     @Test
+    void keepsValuesContainingSpacesAndAcceptsSpaceSeparatedPeaks() throws IOException {
+        Path file = dir.resolve("spaces.msp");
+        Files.writeString(file, String.join("\n",
+                "Name: Caffeine citrate salt",
+                "PrecursorMZ: 195.0877",
+                "Comment: DB#=CCMSLIB001; origin=GNPS library",
+                "Instrument: Q Exactive Plus",
+                "Num Peaks: 2",
+                "138.0662 100.0",
+                "110.0713  20.5",
+                ""));
+        when(libraryService.insert(any(LibraryDO.class))).thenReturn(Result.OK());
+
+        parser.execute(file.toString(), "testLib");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<SpectrumDO>> captor = ArgumentCaptor.forClass(List.class);
+        verify(spectrumService).insert(captor.capture(), any());
+        SpectrumDO s = captor.getValue().get(0);
+        assertEquals("Caffeine citrate salt", s.getCompoundName());
+        assertEquals("DB#=CCMSLIB001; origin=GNPS library", s.getComment());
+        assertEquals("Q Exactive Plus", s.getInstrument());
+        assertArrayEquals(new double[]{138.0662, 110.0713}, s.getMzs(), 1e-9);
+        assertArrayEquals(new double[]{100.0, 20.5}, s.getInts(), 1e-9);
+    }
+
+    @Test
     void doesNotImportWhenLibraryCreationFails() throws IOException {
         Path file = dir.resolve("lib.msp");
         Files.writeString(file, MSP);
