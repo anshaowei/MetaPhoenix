@@ -4,7 +4,6 @@ import lombok.Data;
 import net.csibio.mslibrary.client.constants.enums.DecoyProcedure;
 import net.csibio.mslibrary.client.constants.enums.DecoyStrategy;
 import net.csibio.mslibrary.client.constants.enums.SpectrumMatchMethod;
-import net.csibio.mslibrary.client.domain.bean.parser.model.traml.Precursor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
