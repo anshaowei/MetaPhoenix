@@ -151,10 +151,11 @@ public class SpectrumGenerator {
     }
 
     private void ionEntropyBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
+        MzIndex precursorMzIndex = MzIndex.ofPrecursors(spectrumDOS);
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             Random rnd = newRandom(methodDO, spectrumDO.getId());
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
-            List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance).toList();
+            List<SpectrumDO> spectraWarehouse = precursorMzIndex.find(spectrumDO.getPrecursorMz(), mzTolerance, librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance);
 
             List<IonPeak> ionWarehouse = new ArrayList<>();
             for (SpectrumDO spectrum : spectraWarehouse) {
@@ -209,11 +210,12 @@ public class SpectrumGenerator {
     }
 
     private void ionEntropyBased_PR(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
+        MzIndex precursorMzIndex = MzIndex.ofPrecursors(spectrumDOS);
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             Random rnd = newRandom(methodDO, spectrumDO.getId());
             //init
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
-            List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance).toList();
+            List<SpectrumDO> spectraWarehouse = precursorMzIndex.find(spectrumDO.getPrecursorMz(), mzTolerance, librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance);
             int precursorIndex = ArrayUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
             IonPeak precursorIonPeak = new IonPeak(spectrumDO.getMzs()[precursorIndex], spectrumDO.getInts()[precursorIndex]);
 
@@ -275,10 +277,11 @@ public class SpectrumGenerator {
     }
 
     private void ionEntropyBased_BasePeak(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
+        MzIndex precursorMzIndex = MzIndex.ofPrecursors(spectrumDOS);
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             Random rnd = newRandom(methodDO, spectrumDO.getId());
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
-            List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance).toList();
+            List<SpectrumDO> spectraWarehouse = precursorMzIndex.find(spectrumDO.getPrecursorMz(), mzTolerance, librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance);
 
             List<IonPeak> ionWarehouse = new ArrayList<>();
             for (SpectrumDO spectrum : spectraWarehouse) {
@@ -340,11 +343,12 @@ public class SpectrumGenerator {
      */
     private void xyMeta(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         double removeProportion = 0.5;
+        MzIndex peakIndex = MzIndex.ofPeaks(spectrumDOS);
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             Random rnd = newRandom(methodDO, spectrumDO.getId());
             //1. find spectra contains the precursorMz
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
-            List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance).toList();
+            List<SpectrumDO> spectraWarehouse = peakIndex.find(spectrumDO.getPrecursorMz(), mzTolerance, spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance);
 
             //2. get all ions which are smaller than precursorMz
             TreeSet<IonPeak> ionWarehouse = new TreeSet<>();
