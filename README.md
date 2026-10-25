@@ -99,6 +99,20 @@ Identify spectra:
 
 ```identify -f spectra.mgf -l library_name -fdr 0.05```
 
+## 6. Using databases created by earlier versions (MSLibrary)
+
+This project was previously named MSLibrary. Databases created with earlier versions, including the `mslibrary` database used for the paper, can be used as they are without migration:
+
+```bash
+export MONGODB_URI=mongodb://localhost:27017/mslibrary
+```
+
+* Documents written by earlier versions store their Java type as `_class: net.csibio.mslibrary.*`. MetaPhoenix maps these to the current `net.csibio.metaphoenix.*` classes when reading (see `LegacyTypeInformationMapper`). Documents written from now on use the new class names, and old and new documents can live in the same collection.
+* Collection names (`spectrum-<libraryId>`, `spectrum-<libraryId>-<DecoyStrategy>`, `library`, ...) are unchanged.
+* Statistics are still stored under the key `MSLibraryCompoundNum` so that existing `stat` documents stay readable.
+* To analyse an old database without changing it, also start with `--spring.data.mongodb.auto-index-creation=false`. Otherwise Spring creates any missing indexes at startup. Commands such as `filter` and `decoy` write to the database.
+* If Redis caching is enabled, flush the cache once after upgrading. Cached entries store class names under the old package and cannot be read by the new code.
+
 # Implementation notes: differences from the paper text
 
 The results and figures in the paper were produced with this code. In a few places the paper's Methods text describes the computation differently from what the code does. The code is the reference: to reproduce the published figures, use the code as it is rather than re-implementing from the text. These differences do not change the paper's conclusions.
