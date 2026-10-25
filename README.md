@@ -1,16 +1,28 @@
-# Ion entropy and accurate entropy-based FDR estimation in metabolomics
+# MetaPhoenix
 
-MetaPhoenix is a Java/Spring Boot implementation of the ion entropy and entropy-based target-decoy workflows described in our Briefings in Bioinformatics paper. The project provides tools for importing tandem MS spectral libraries, filtering spectra, generating decoy spectral libraries, and identifying query spectra with false discovery rate (FDR) control.
+**Ion entropy and accurate entropy-based FDR estimation in metabolomics**
 
-The underlying method introduces ion entropy as a way to quantify ion-level information in large-scale metabolomics MS/MS data. Based on this concept, MetaPhoenix implements entropy-driven decoy generation strategies designed to improve target-decoy FDR estimation for metabolite annotation, where reliable decoy construction is difficult because small-molecule spectra and structures are highly diverse.
+[![DOI](https://img.shields.io/badge/DOI-10.1093%2Fbib%2Fbbae056-blue)](https://doi.org/10.1093/bib/bbae056)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
 
-The software supports common metabolomics spectral formats and library sources, including MSP, MGF, mzML, GNPS, HMDB, and MassBank-related workflows. It is intended for reproducible research, method evaluation, and practical spectral-library-based metabolite identification using entropy-based scoring and FDR estimation.
+MetaPhoenix is a Java/Spring Boot implementation of the ion entropy and entropy-based target-decoy workflows described in our Briefings in Bioinformatics paper. It imports tandem MS spectral libraries, filters spectra, generates decoy spectral libraries and identifies query spectra with false discovery rate (FDR) control.
+
+The method introduces ion entropy as a way to quantify ion-level information in large-scale metabolomics MS/MS data. Based on this concept, MetaPhoenix implements entropy-driven decoy generation strategies that improve target-decoy FDR estimation for metabolite annotation, where reliable decoy construction is difficult because small-molecule spectra and structures are highly diverse.
+
+## Branches and versions
+
+* `dev` (default branch): MetaPhoenix 1.0.0, the maintained version. Spring Boot 4, command-line workflow, reproducible decoys (`-seed`), bug fixes and tests.
+* `master`: archive of the original version of the code, published under the name MSLibrary. It is kept unchanged for reference.
+
+MetaPhoenix was previously named MSLibrary. Databases created with MSLibrary, including the one used for the paper, can be read by MetaPhoenix without migration (see [Using databases created by MSLibrary](#using-databases-created-by-mslibrary)).
 
 # Citation
 
-If you use this project, please cite:
+If you use MetaPhoenix, please cite:
 
-An S, Lu M, Wang R, Wang J, Jiang H, Xie C, Tong J, Yu C. Ion entropy and accurate entropy-based FDR estimation in metabolomics. Briefings in Bioinformatics. 2024;25(2):bbae056. doi:10.1093/bib/bbae056
+> An S, Lu M, Wang R, Wang J, Jiang H, Xie C, Tong J, Yu C. Ion entropy and accurate entropy-based FDR estimation in metabolomics. *Briefings in Bioinformatics*. 2024;25(2):bbae056. [doi:10.1093/bib/bbae056](https://doi.org/10.1093/bib/bbae056)
+
+PubMed: [38426325](https://pubmed.ncbi.nlm.nih.gov/38426325/) · Free full text: [PMC10939419](https://pmc.ncbi.nlm.nih.gov/articles/PMC10939419/)
 
 ```bibtex
 @article{an2024ionentropy,
@@ -25,103 +37,183 @@ An S, Lu M, Wang R, Wang J, Jiang H, Xie C, Tong J, Yu C. Ion entropy and accura
 }
 ```
 
+The citation is also available in [CITATION.cff](CITATION.cff) and through the "Cite this repository" button on GitHub.
+
+If you use the spectral entropy similarity, please also cite: Li Y, Kind T, Folz J, et al. Spectral entropy outperforms MS/MS dot product similarity for small-molecule compound identification. *Nature Methods*. 2021;18:1524–1531. [doi:10.1038/s41592-021-01331-z](https://doi.org/10.1038/s41592-021-01331-z)
+
+# Project structure
+
+* `metaphoenix-client`: algorithms (ion entropy, decoy generation, similarity, identification), spectrum parsers, filters, domain classes and data access.
+* `metaphoenix-core`: Spring Boot application. Configuration, the command runner and the HTTP controllers.
+
 # Prerequisites
 
-* Java 17-21
-* Maven 3.9 or higher
-* MongoDB 4.4 or higher
-* Redis is optional for the current web/API workflow
-* Sirius is optional and only required for Sirius-based decoy generation
+* Java 17 or newer (built and tested with Java 25)
+* Maven 3.9 or newer
+* MongoDB 4.4 or newer
+* Redis: optional, only used as a cache
 
-# Usage
+# Installation
 
-## 1. Download
-Download the latest source code from the repository.
+## 1. Get the code
+
+```bash
+git clone https://github.com/anshaowei/MetaPhoenix.git
+cd MetaPhoenix
+```
 
 ## 2. Install MongoDB
-Follow the [MongoDB installation guide](https://www.mongodb.com/docs/) to install MongoDB on your system.
 
-## 3. Configure
-Default configuration lives in [application.properties](metaphoenix-core/src/main/resources/application.properties). Copy [application-example.properties](metaphoenix-core/src/main/resources/application-example.properties) to `metaphoenix-core/src/main/resources/application-local.properties` before packaging for local overrides, or use environment variables.
+Follow the [MongoDB installation guide](https://www.mongodb.com/docs/manual/installation/) and start the server. MetaPhoenix uses the database `metaphoenix` on `localhost:27017` by default.
 
-Common overrides:
-
-```bash
-export MONGODB_URI=mongodb://localhost:27017/metaphoenix
-export METAPHOENIX_REPOSITORY=$HOME/metaphoenix-data
-export SIRIUS_PATH=/Applications/sirius.app/Contents/MacOS/sirius
-export SIRIUS_PROJECT_SPACE=$HOME/metaphoenix-data/sirius
-```
-
-Enable Redis integration only when a local or remote Redis service is available:
-
-```bash
-export REDIS_HOST=localhost
-export REDIS_PORT=6379
-export REDIS_HEALTH_ENABLED=true
-```
-
-## 4. Run
-Build the project first:
+## 3. Build
 
 ```bash
 mvn -DskipTests clean package
 ```
 
-Run the Spring Boot app:
+Run `mvn test` to run the unit tests. They do not need MongoDB.
+
+## 4. Configure
+
+Default configuration lives in [application.properties](metaphoenix-core/src/main/resources/application.properties). Settings can be changed with environment variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `MONGODB_URI` | `mongodb://localhost:27017/metaphoenix` | MongoDB connection string, including the database name |
+| `METAPHOENIX_REPOSITORY` | `~/metaphoenix-data` | Working directory for data files used by the HTTP API |
+| `SERVER_PORT` | `8081` | HTTP port |
+| `COMMAND_RUNNER_ENABLED` | `false` | Read commands from standard input (same as `--command.runner.enabled=true`) |
+| `REDIS_ENABLED` | `false` | Enable the Redis cache |
+| `REDIS_HOST`, `REDIS_PORT`, `REDIS_DATABASE` | `localhost`, `6379`, `1` | Redis connection, used only when `REDIS_ENABLED=true` |
+| `REDIS_HEALTH_ENABLED` | `false` | Include Redis in the actuator health check |
+
+Alternatively, copy [application-example.properties](metaphoenix-core/src/main/resources/application-example.properties) to `metaphoenix-core/src/main/resources/application-local.properties`, edit it, rebuild and start with `--spring.profiles.active=local`.
+
+## 5. Run
+
+The analysis workflow is driven by commands read from standard input, so start the application with the command runner enabled:
 
 ```bash
-java -jar metaphoenix-core/target/metaphoenix-core-1.0.0.jar
+java -jar metaphoenix-core/target/metaphoenix-core-1.0.0.jar --command.runner.enabled=true
 ```
 
-To include local overrides:
+The usage is printed at startup. Enter one command per line. A command with missing or invalid parameters prints the usage and the next command is read. Closing the input (Ctrl-D) stops the command runner. Commands can also be piped in from a file:
 
 ```bash
-java -jar metaphoenix-core/target/metaphoenix-core-1.0.0.jar --spring.profiles.active=local
+java -jar metaphoenix-core/target/metaphoenix-core-1.0.0.jar --command.runner.enabled=true < commands.txt
 ```
 
-The interactive command runner is disabled by default for web startup. To enable it, run the app with `--command.runner.enabled=true`.
+Without `--command.runner.enabled=true` only the HTTP API is started and commands typed into the terminal are ignored.
 
-## 5. Commands
-Commands are read line by line from standard input. A command with missing or invalid parameters prints the usage and the next command is read; closing the input stops the command runner.
+# Quick start
 
-Import a spectral library:
+Build a target library from MassBank-Europe, generate ion entropy–based decoys and identify the spectra in `query.mgf` at 1% FDR:
 
-```import -f library.msp -l library_name [-t format]```
+```text
+import -f MassBank_NIST.msp -l massbank -t massbank
+filter -l massbank
+decoy -l massbank -s IonEntropyBased -seed 42
+identify -f query.mgf -l massbank -fdr 0.01 -o query-report.xlsx
+```
 
-* `-t`: `msp` (default) for generic MSP files, `massbank` for the MassBank-Europe MSP release and `mona` for the MassBank-MoNA MSP export.
+# Commands
 
-Filter a library:
+## import
 
-```filter -l library_name```
+```text
+import -f <library.msp> -l <library> [-t <format>]
+```
 
-Generate decoys:
+Imports an MSP file into a new library named `<library>`.
 
-```decoy -l library_name [-s strategy] [-ppm 10] [-seed 42] [-overwrite]```
+| `-t` | Source | Download |
+|---|---|---|
+| `msp` (default) | Generic MSP (`NAME`, `PRECURSORMZ`, `PRECURSORTYPE`, `FORMULA`, `INCHIKEY`, `SMILES`, `IONMODE`, ...) | |
+| `massbank` | MassBank-Europe MSP release (`MassBank_NIST.msp`) | [MassBank-data releases](https://github.com/MassBank/MassBank-data/releases) |
+| `mona` | MassBank of North America (MoNA) MSP export | [MoNA downloads](https://mona.fiehnlab.ucdavis.edu/downloads) |
 
-* `-s`: decoy strategy, one of `Naive`, `XYMeta`, `SpectralEntropyBased`, `SpectralEntropyBased_PR`, `IonEntropyBased` (default) and `IonEntropyBased_PR`. The decoy library is stored as `library_name-<strategy>`.
+GNPS libraries cannot be imported from the command line yet. The HTTP endpoint `/async/gnps` imports the GNPS JSON export from `<METAPHOENIX_REPOSITORY>/ALL_GNPS.json` ([GNPS library downloads](https://external.gnps2.org/gnpslibrary)) and creates one library per GNPS `library_membership`.
+
+The paper used GNPS (December 2023) as the target library and MoNA (July 2023) as the query set.
+
+## filter
+
+```text
+filter -l <library>
+```
+
+Cleans a library with the rules described in the paper:
+
+1. Remove spectra without m/z values, intensities, precursor m/z, ion mode or InChIKey.
+2. Remove peaks with intensity below 1% of the base peak.
+3. Remove spectra without a peak within 10 ppm of the precursor m/z.
+4. Remove spectra with fewer than 5 peaks above 2% relative intensity.
+5. Remove spectra with precursor m/z or exact mass above 1000.
+6. Keep MS2 spectra only.
+7. Keep positive ion mode spectra only.
+
+**The library is replaced by the filtered spectra.** Re-import the file to get the unfiltered library back.
+
+## decoy
+
+```text
+decoy -l <library> [-s <strategy>] [-ppm <ppm>] [-seed <seed>] [-overwrite]
+```
+
+Generates a decoy library, stored as `<library>-<strategy>`.
+
+* `-s`: decoy strategy (default `IonEntropyBased`):
+  * `IonEntropyBased`, `IonEntropyBased_PR`: ion entropy–based decoys proposed in the paper.
+  * `SpectralEntropyBased`, `SpectralEntropyBased_PR`: spectral entropy–based decoys proposed in the paper.
+  * `Naive`, `XYMeta`: existing methods used for comparison.
+  * The `_PR` variants keep the precursor ion in the decoy spectrum.
 * `-ppm`: m/z tolerance in ppm (default 10).
 * `-seed`: random seed. With the same seed and library, the same decoy library is generated. Without it, every run gives a different decoy library.
 * `-overwrite`: if the decoy library already exists, nothing is generated, so existing decoys (such as the ones used for the paper) are never replaced by accident. Add `-overwrite` to regenerate it.
 
-Identify spectra:
+The fragmentation tree–based strategy (`FragmentationTreeBased`, using SIRIUS) is not available in this version.
 
-```identify -f spectra.mgf -l library_name -fdr 0.05 [-s strategy] [-ppm 10] [-o report.xlsx]```
+## identify
 
-* `-f`: query spectra in `.mgf` or `.mzML` format.
+```text
+identify -f <spectra.mgf|spectra.mzML> -l <library> -fdr <fdr> [-s <strategy>] [-ppm <ppm>] [-o <report.xlsx>]
+```
+
+Searches query spectra against a target library and its decoy library and reports the hits that pass the FDR threshold.
+
+* `-f`: query spectra in `.mgf` or `.mzML` format. Only MS2 spectra with a precursor m/z are searched, and peaks with zero intensity are removed.
+* `-l`: target library.
+* `-fdr`: FDR threshold, for example `0.01` or `0.05`.
 * `-s`: decoy library to estimate the FDR with (default `IonEntropyBased`). It has to be generated with `decoy` first.
+* `-ppm`: precursor m/z tolerance in ppm (default 10).
 * `-o`: output report (default `report.xlsx` in the working directory).
-* If no score threshold reaches the requested FDR, no hits are reported.
 
-## 6. Using databases created by earlier versions (MSLibrary)
+Spectra are scored with the weighted spectral entropy similarity (Li et al., 2021). If no score threshold reaches the requested FDR, no hits are reported.
 
-This project was previously named MSLibrary. Databases created with earlier versions, including the `mslibrary` database used for the paper, can be used as they are without migration:
+The report has one row per accepted hit:
+
+| Column | Description |
+|---|---|
+| `querySpectrumId` | 0-based position of the query spectrum among the searched spectra |
+| `CompoundName`, `InChIKey`, `Smiles`, `PrecursorAdduct` | Annotation of the matched library spectrum |
+| `PrecursorMz` | Precursor m/z of the matched library spectrum |
+| `Score` | Spectral entropy similarity |
+| `LibrarySpectrumId` | ID of the matched library spectrum in MongoDB |
+
+# HTTP API
+
+When the application is running, `metaphoenix-core` also serves an HTTP API on port 8081 for browsing libraries, spectra and compounds (`/library`, `/spectrum`, `/compound`, `/method`, `/stat`, ...). It was written for an internal web front end that is not part of this repository and is not a stable public interface.
+
+# Using databases created by MSLibrary
+
+Databases created with MSLibrary, including the `mslibrary` database used for the paper, can be used as they are without migration:
 
 ```bash
 export MONGODB_URI=mongodb://localhost:27017/mslibrary
 ```
 
-* Documents written by earlier versions store their Java type as `_class: net.csibio.mslibrary.*`. MetaPhoenix maps these to the current `net.csibio.metaphoenix.*` classes when reading (see `LegacyTypeInformationMapper`). Documents written from now on use the new class names, and old and new documents can live in the same collection.
+* Documents written by MSLibrary store their Java type as `_class: net.csibio.mslibrary.*`. MetaPhoenix maps these to the current `net.csibio.metaphoenix.*` classes when reading (see `LegacyTypeInformationMapper`). Documents written from now on use the new class names, and old and new documents can live in the same collection.
 * Collection names (`spectrum-<libraryId>`, `spectrum-<libraryId>-<DecoyStrategy>`, `library`, ...) are unchanged.
 * Statistics are still stored under the key `MSLibraryCompoundNum` so that existing `stat` documents stay readable.
 * To analyse an old database without changing it, also start with `--spring.data.mongodb.auto-index-creation=false`. Otherwise Spring creates any missing indexes at startup. Commands such as `filter` and `decoy` write to the database.
@@ -162,3 +254,11 @@ Note: `Reporter.ionEntropyDistributionGraph`, used for the ion entropy statistic
 ## Note on low FDR thresholds
 
 In the MassBank-MoNA vs. GNPS benchmark, the true FDR cannot go below about 1.8%. Even among hits with a perfect score of 1.0, about 1.8% have a different first InChIKey block from the query (different compounds with nearly identical spectra). As a result, an estimated FDR of 0.01 corresponds to a true FDR of about 2–3% in this benchmark. The estimate is accurate from about 0.05 upward. This is why the curves in Fig. 5 start at a true FDR of about 0.02.
+
+# License
+
+MetaPhoenix is released under the [Apache License 2.0](LICENSE).
+
+# Contact
+
+Questions and bug reports: [GitHub Issues](https://github.com/anshaowei/MetaPhoenix/issues).

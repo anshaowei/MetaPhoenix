@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+message: "If you use MetaPhoenix, please cite the article below."
+title: MetaPhoenix
+abstract: >-
+  Ion entropy and entropy-based target-decoy FDR estimation for
+  metabolite annotation from tandem mass spectra.
+type: software
+version: 1.0.0
+license: Apache-2.0
+repository-code: "https://github.com/anshaowei/MetaPhoenix"
+keywords:
+  - metabolomics
+  - mass spectrometry
+  - FDR estimation
+  - target-decoy
+  - entropy
+authors:
+  - family-names: An
+    given-names: Shaowei
+  - family-names: Lu
+    given-names: Miaoshan
+preferred-citation:
+  type: article
+  title: Ion entropy and accurate entropy-based FDR estimation in metabolomics
+  authors:
+    - family-names: An
+      given-names: Shaowei
+    - family-names: Lu
+      given-names: Miaoshan
+    - family-names: Wang
+      given-names: Ruimin
+    - family-names: Wang
+      given-names: Jinyin
+    - family-names: Jiang
+      given-names: Hengxuan
+    - family-names: Xie
+      given-names: Cong
+    - family-names: Tong
+      given-names: Junjie
+    - family-names: Yu
+      given-names: Changbin
+  journal: Briefings in Bioinformatics
+  volume: 25
+  issue: 2
+  start: bbae056
+  year: 2024
+  month: 1
+  doi: 10.1093/bib/bbae056
+  url: "https://doi.org/10.1093/bib/bbae056"
