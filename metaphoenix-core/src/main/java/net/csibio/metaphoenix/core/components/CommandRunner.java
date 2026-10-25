@@ -125,9 +125,13 @@ public class CommandRunner implements Runnable {
 
     public void decoy(String[] params) {
         String libraryName = null;
+        boolean overwrite = false;
         for (int i = 0; i < params.length; i++) {
             if (params[i].equals("-l")) {
                 libraryName = params[i + 1];
+            }
+            if (params[i].equals("-overwrite")) {
+                overwrite = true;
             }
         }
         if (libraryName == null) {
@@ -137,7 +141,7 @@ public class CommandRunner implements Runnable {
         methodDO.setPpm(10);
         methodDO.setPpmForMzTolerance(true);
         methodDO.setDecoyStrategy(DecoyStrategy.IonEntropyBased.getName());
-        spectrumGenerator.execute(libraryName, methodDO);
+        spectrumGenerator.execute(libraryName, methodDO, overwrite);
     }
 
     public void identify(String[] params) {

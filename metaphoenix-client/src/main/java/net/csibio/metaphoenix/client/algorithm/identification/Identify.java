@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -45,7 +46,26 @@ public class Identify {
         });
 
         //find score threshold in accordance with the given fdr
-        double scoreThreshold = 0;
+        OptionalDouble scoreThreshold = findScoreThreshold(targetHits, decoyHits, fdr);
+        if (scoreThreshold.isEmpty()) {
+            log.warn("No score threshold reaches the estimated FDR < {} ({} target hits, {} decoy hits), no hits reported", fdr, targetHits.size(), decoyHits.size());
+            return new HashMap<>();
+        }
+
+        //get hits with this score threshold
+        final double finalScoreThreshold = scoreThreshold.getAsDouble();
+        List<LibraryHit> resultHits = targetHits.stream().filter(hit -> hit.getScore() >= finalScoreThreshold).toList();
+        HashMap<String, List<LibraryHit>> resultMap = (HashMap<String, List<LibraryHit>>) resultHits.stream().collect(Collectors.groupingBy(LibraryHit::getQuerySpectrumId));
+        return resultMap;
+    }
+
+    /**
+     * Find the lowest score threshold (in steps of 0.001) whose estimated FDR is below the given fdr.
+     * The estimated FDR is N_D / (N_T + N_D), see "Implementation notes" in the README.
+     *
+     * @return the threshold, or empty if no threshold reaches the given fdr
+     */
+    public static OptionalDouble findScoreThreshold(List<LibraryHit> targetHits, List<LibraryHit> decoyHits, double fdr) {
         int steps = 1000;
         for (int i = 0; i < steps; i++) {
             double threshold = (double) i / steps;
@@ -57,16 +77,10 @@ public class Identify {
                 estimatedFDR = (double) decoyCount / (targetCount + decoyCount);
             }
             if (estimatedFDR < fdr) {
-                scoreThreshold = threshold;
-                break;
+                return OptionalDouble.of(threshold);
             }
         }
-
-        //get hits with this score threshold
-        final double finalScoreThreshold = scoreThreshold;
-        List<LibraryHit> resultHits = targetHits.stream().filter(hit -> hit.getScore() >= finalScoreThreshold).toList();
-        HashMap<String, List<LibraryHit>> resultMap = (HashMap<String, List<LibraryHit>>) resultHits.stream().collect(Collectors.groupingBy(LibraryHit::getQuerySpectrumId));
-        return resultMap;
+        return OptionalDouble.empty();
     }
 
     public void execute(String queryLibraryId, String targetLibraryId, String decoyLibraryId, MethodDO methodDO, double fdr) {

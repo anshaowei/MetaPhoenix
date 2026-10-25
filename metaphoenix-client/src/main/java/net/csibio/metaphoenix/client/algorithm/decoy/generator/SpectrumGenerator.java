@@ -8,6 +8,7 @@ import net.csibio.metaphoenix.client.constants.enums.DecoyStrategy;
 import net.csibio.metaphoenix.client.domain.bean.spectrum.IonPeak;
 import net.csibio.metaphoenix.client.domain.db.MethodDO;
 import net.csibio.metaphoenix.client.domain.db.SpectrumDO;
+import net.csibio.metaphoenix.client.domain.query.SpectrumQuery;
 import net.csibio.metaphoenix.client.service.SpectrumService;
 import net.csibio.metaphoenix.client.utils.ArrayUtil;
 import org.apache.commons.math3.stat.StatUtils;
@@ -24,7 +25,22 @@ public class SpectrumGenerator {
     SpectrumService spectrumService;
 
     public void execute(String libraryId, MethodDO method) {
+        execute(libraryId, method, false);
+    }
+
+    /**
+     * @param overwrite replace an existing decoy library of the same strategy. Without it, an existing decoy
+     *                  library is left untouched and nothing is generated, because inserting into it would mix
+     *                  two decoy sets and double the decoy hits used for FDR estimation.
+     */
+    public void execute(String libraryId, MethodDO method, boolean overwrite) {
         long start = System.currentTimeMillis();
+        String decoyLibraryId = libraryId + SymbolConst.DELIMITER + method.getDecoyStrategy();
+        boolean decoyExists = spectrumService.exists(new SpectrumQuery(), decoyLibraryId);
+        if (decoyExists && !overwrite) {
+            log.error("Decoy library {} already exists, nothing generated. Use overwrite to replace it", decoyLibraryId);
+            return;
+        }
         log.info("Start to generate decoy spectra on library: {} by {} method", libraryId, method.getDecoyStrategy());
 
         //initialize
@@ -42,12 +58,21 @@ public class SpectrumGenerator {
 //            case IonEntropyBased_BasePeak -> ionEntropyBased_BasePeak(spectrumDOS, decoySpectrumDOS, method);
             case SpectralEntropyBased_PR -> spectralEntropyBased_PR(spectrumDOS, decoySpectrumDOS);
             case IonEntropyBased_PR -> ionEntropyBased_PR(spectrumDOS, decoySpectrumDOS, method);
-            default -> log.error("Decoy procedure {} is currently not supported", method.getDecoyStrategy());
+            default -> {
+                log.error("Decoy procedure {} is currently not supported", method.getDecoyStrategy());
+                return;
+            }
+        }
+
+        //replace the old decoy library only after the new one has been generated
+        if (decoyExists) {
+            log.warn("Removing existing decoy library {} before inserting the new decoy spectra", decoyLibraryId);
+            spectrumService.remove(new SpectrumQuery(), decoyLibraryId);
         }
 
         //insert decoy spectra into database
-        decoySpectrumDOS.parallelStream().forEach(spectrumDO -> spectrumDO.setLibraryId(libraryId + SymbolConst.DELIMITER + method.getDecoyStrategy()));
-        spectrumService.insert(decoySpectrumDOS, libraryId + SymbolConst.DELIMITER + method.getDecoyStrategy());
+        decoySpectrumDOS.parallelStream().forEach(spectrumDO -> spectrumDO.setLibraryId(decoyLibraryId));
+        spectrumService.insert(decoySpectrumDOS, decoyLibraryId);
         log.info("Decoy spectra generation finished, cost {} ms", System.currentTimeMillis() - start);
     }
 

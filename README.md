@@ -95,9 +95,15 @@ Generate decoys:
 
 ```decoy -l library_name```
 
+If the decoy library already exists, nothing is generated, so existing decoys (such as the ones used for the paper) are never replaced by accident. To regenerate it, add `-overwrite`:
+
+```decoy -l library_name -overwrite```
+
 Identify spectra:
 
 ```identify -f spectra.mgf -l library_name -fdr 0.05```
+
+If no score threshold reaches the requested FDR, no hits are reported.
 
 ## 6. Using databases created by earlier versions (MSLibrary)
 
