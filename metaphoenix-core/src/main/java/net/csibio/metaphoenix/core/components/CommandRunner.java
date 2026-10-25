@@ -16,6 +16,7 @@ import net.csibio.metaphoenix.client.filter.NoiseFilter;
 import net.csibio.metaphoenix.client.parser.common.MgfParser;
 import net.csibio.metaphoenix.client.parser.common.MspParser;
 import net.csibio.metaphoenix.client.parser.common.MzMLParser;
+import net.csibio.metaphoenix.client.parser.massbank.MassBankParser;
 import net.csibio.metaphoenix.client.service.SpectrumService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -31,10 +32,11 @@ public class CommandRunner implements Runnable {
 
     static final String USAGE = """
             Commands:
-              import   -f <library.msp> -l <library>
+              import   -f <library.msp> -l <library> [-t <format>]
               filter   -l <library>
               decoy    -l <library> [-s <strategy>] [-ppm <ppm>] [-seed <seed>] [-overwrite]
               identify -f <spectra.mgf|spectra.mzML> -l <library> -fdr <fdr> [-s <strategy>] [-ppm <ppm>] [-o <report.xlsx>]
+            Import formats (-t): msp (default), massbank (MassBank-Europe MSP), mona (MassBank-MoNA MSP)
             Decoy strategies (-s): Naive, XYMeta, SpectralEntropyBased, SpectralEntropyBased_PR, IonEntropyBased (default), IonEntropyBased_PR
             Defaults: -ppm 10, -o report.xlsx, no seed (a different decoy library on every run)""";
 
@@ -50,6 +52,8 @@ public class CommandRunner implements Runnable {
     NoiseFilter noiseFilter;
     @Autowired
     MspParser mspParser;
+    @Autowired
+    MassBankParser massBankParser;
     @Autowired
     MzMLParser mzMLParser;
     @Autowired
@@ -159,7 +163,15 @@ public class CommandRunner implements Runnable {
         if (!require(options, "-f", "-l")) {
             return;
         }
-        mspParser.execute(options.get("-f"), options.get("-l"));
+        String filePath = options.get("-f");
+        String libraryName = options.get("-l");
+        String format = options.getOrDefault("-t", "msp");
+        switch (format) {
+            case "msp" -> mspParser.execute(filePath, libraryName);
+            case "massbank" -> massBankParser.parseMspEU(filePath, libraryName);
+            case "mona" -> massBankParser.parseMspMoNA(filePath, libraryName);
+            default -> throw new IllegalArgumentException("unknown import format " + format + ", use msp, massbank or mona");
+        }
     }
 
     public void filter(Map<String, String> options) {

@@ -265,13 +265,16 @@ public class MassBankParser {
     }
 
     public void parseMspMoNA(String filePath) {
+        parseMspMoNA(filePath, "MassBank-MoNA");
+    }
+
+    public void parseMspMoNA(String filePath, String libraryName) {
         //read file use buffer
         File file = new File(filePath);
         FileInputStream fis = null;
         int count = 0;
 
         //create library
-        String libraryName = "MassBank-MoNA";
         LibraryDO libraryDO = new LibraryDO();
         libraryDO.setName(libraryName);
         if (libraryService.insert(libraryDO).isFailed()) {

@@ -9,6 +9,7 @@ import net.csibio.metaphoenix.client.filter.NoiseFilter;
 import net.csibio.metaphoenix.client.parser.common.MgfParser;
 import net.csibio.metaphoenix.client.parser.common.MspParser;
 import net.csibio.metaphoenix.client.parser.common.MzMLParser;
+import net.csibio.metaphoenix.client.parser.massbank.MassBankParser;
 import net.csibio.metaphoenix.client.service.SpectrumService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +39,8 @@ class CommandRunnerTest {
     NoiseFilter noiseFilter;
     @Mock
     MspParser mspParser;
+    @Mock
+    MassBankParser massBankParser;
     @Mock
     MzMLParser mzMLParser;
     @Mock
@@ -128,6 +131,16 @@ class CommandRunnerTest {
 
         verify(mspParser).execute("lib.msp", "lib");
         verifyNoInteractions(noiseFilter);
+    }
+
+    @Test
+    void importChoosesTheParserByFormat() {
+        run("import -f a.msp -l a", "import -f eu.msp -l eu -t massbank", "import -f mona.msp -l mona -t mona", "import -f x.msp -l x -t nist");
+
+        verify(mspParser).execute("a.msp", "a");
+        verify(massBankParser).parseMspEU("eu.msp", "eu");
+        verify(massBankParser).parseMspMoNA("mona.msp", "mona");
+        verifyNoMoreInteractions(mspParser, massBankParser);
     }
 
     @Test

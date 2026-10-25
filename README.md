@@ -87,7 +87,9 @@ Commands are read line by line from standard input. A command with missing or in
 
 Import a spectral library:
 
-```import -f library.msp -l library_name```
+```import -f library.msp -l library_name [-t format]```
+
+* `-t`: `msp` (default) for generic MSP files, `massbank` for the MassBank-Europe MSP release and `mona` for the MassBank-MoNA MSP export.
 
 Filter a library:
 
