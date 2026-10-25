@@ -219,7 +219,7 @@ public class MspParser {
      * Value of a "Key: value" line. Everything after the first colon (or the first space when there is no
      * colon) is returned, so values containing spaces stay intact. Returns null when the value is empty.
      */
-    static String fieldValue(String line) {
+    public static String fieldValue(String line) {
         int sep = line.indexOf(':');
         if (sep < 0) {
             sep = line.indexOf(' ');

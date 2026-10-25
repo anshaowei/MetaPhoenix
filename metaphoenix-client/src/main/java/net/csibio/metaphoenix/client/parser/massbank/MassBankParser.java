@@ -8,6 +8,7 @@ import net.csibio.metaphoenix.client.domain.Result;
 import net.csibio.metaphoenix.client.domain.bean.adduct.Adduct;
 import net.csibio.metaphoenix.client.domain.db.LibraryDO;
 import net.csibio.metaphoenix.client.domain.db.SpectrumDO;
+import net.csibio.metaphoenix.client.parser.common.MspParser;
 import net.csibio.metaphoenix.client.service.LibraryService;
 import net.csibio.metaphoenix.client.service.SpectrumService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,10 +67,10 @@ public class MassBankParser {
             while (line != null) {
                 String lowerLine = line.toLowerCase();
                 if (lowerLine.startsWith("name")) {
-                    String[] items = line.split(" ");
+                    String value = MspParser.fieldValue(line);
                     SpectrumDO spectrumDO = new SpectrumDO();
-                    if (items.length > 1) {
-                        spectrumDO.setCompoundName(items[1]);
+                    if (value != null) {
+                        spectrumDO.setCompoundName(value);
                     }
                     line = br.readLine();
                     while (line != null) {
@@ -80,138 +81,138 @@ public class MassBankParser {
                         }
                         //synon
                         if (lowerLine.startsWith("synon")) {
-                            String[] synonItems = line.split(" ");
-                            if (synonItems.length > 1) {
-                                spectrumDO.setSynon(synonItems[1]);
+                            String synonValue = MspParser.fieldValue(line);
+                            if (synonValue != null) {
+                                spectrumDO.setSynon(synonValue);
                             }
                         }
                         //inchiKey
                         if (lowerLine.startsWith("inchikey")) {
-                            String[] inchiKeyItems = line.split(" ");
-                            if (inchiKeyItems.length > 1) {
-                                spectrumDO.setInChIKey(inchiKeyItems[1]);
+                            String inchiKeyValue = MspParser.fieldValue(line);
+                            if (inchiKeyValue != null) {
+                                spectrumDO.setInChIKey(inchiKeyValue);
                             }
                         }
                         //inchi
                         if (lowerLine.startsWith("inchi")) {
-                            String[] inchiItems = line.split(" ");
-                            if (inchiItems.length > 1) {
-                                spectrumDO.setInChI(inchiItems[1]);
+                            String inchiValue = MspParser.fieldValue(line);
+                            if (inchiValue != null) {
+                                spectrumDO.setInChI(inchiValue);
                             }
                         }
                         //smiles
                         if (lowerLine.startsWith("smiles")) {
-                            String[] smilesItems = line.split(" ");
-                            if (smilesItems.length > 1) {
-                                spectrumDO.setSmiles(smilesItems[1]);
+                            String smilesValue = MspParser.fieldValue(line);
+                            if (smilesValue != null) {
+                                spectrumDO.setSmiles(smilesValue);
                             }
                         }
                         //precursor_type
                         if (lowerLine.startsWith("precursor_type")) {
-                            String[] precursorTypeItems = line.split(" ");
-                            if (precursorTypeItems.length > 1) {
-                                spectrumDO.setPrecursorAdduct(precursorTypeItems[1]);
+                            String precursorTypeValue = MspParser.fieldValue(line);
+                            if (precursorTypeValue != null) {
+                                spectrumDO.setPrecursorAdduct(precursorTypeValue);
                             }
                         }
                         //spectrum_type
                         if (lowerLine.startsWith("spectrum_type")) {
-                            String[] spectrumTypeItems = line.split(" ");
-                            if (spectrumTypeItems.length > 1) {
-                                if (spectrumTypeItems[1].equals("MS1")) {
+                            String spectrumTypeValue = MspParser.fieldValue(line);
+                            if (spectrumTypeValue != null) {
+                                if (spectrumTypeValue.equals("MS1")) {
                                     spectrumDO.setMsLevel(MsLevel.MS1.getCode());
                                 }
-                                if (spectrumTypeItems[1].equals("MS2")) {
+                                if (spectrumTypeValue.equals("MS2")) {
                                     spectrumDO.setMsLevel(MsLevel.MS2.getCode());
                                 }
-                                if (spectrumTypeItems[1].equals("MS3")) {
+                                if (spectrumTypeValue.equals("MS3")) {
                                     break;
                                 }
                             }
                         }
                         //precursorMz
                         if (lowerLine.startsWith("precursormz")) {
-                            String[] precursorMzItems = line.split(" ");
-                            if (precursorMzItems.length > 1) {
+                            String precursorMzValue = MspParser.fieldValue(line);
+                            if (precursorMzValue != null) {
                                 Double precursorMz = null;
                                 try {
-                                    precursorMz = Double.parseDouble(precursorMzItems[1]);
+                                    precursorMz = Double.parseDouble(precursorMzValue);
                                 } catch (Exception e) {
-//                                    log.error("Parse precursorMz failed, precursorMz: {} is not number", precursorMzItems[1]);
+//                                    log.error("Parse precursorMz failed, precursorMz: {} is not number", precursorMzValue);
                                 }
                                 spectrumDO.setPrecursorMz(precursorMz);
                             }
                         }
                         //instrument_type
                         if (lowerLine.startsWith("instrument_type")) {
-                            String[] instrumentTypeItems = line.split(" ");
-                            if (instrumentTypeItems.length > 1) {
-                                spectrumDO.setInstrumentType(instrumentTypeItems[1]);
+                            String instrumentTypeValue = MspParser.fieldValue(line);
+                            if (instrumentTypeValue != null) {
+                                spectrumDO.setInstrumentType(instrumentTypeValue);
                             }
                         }
                         //instrument
                         if (lowerLine.startsWith("instrument")) {
-                            String[] instrumentItems = line.split(" ");
-                            if (instrumentItems.length > 1) {
-                                spectrumDO.setInstrument(instrumentItems[1]);
+                            String instrumentValue = MspParser.fieldValue(line);
+                            if (instrumentValue != null) {
+                                spectrumDO.setInstrument(instrumentValue);
                             }
                         }
                         //ion_mode
                         if (lowerLine.startsWith("ion_mode")) {
-                            String[] ionModeItems = line.split(" ");
-                            if (ionModeItems.length > 1) {
-                                if (ionModeItems[1].equalsIgnoreCase("positive")) {
+                            String ionModeValue = MspParser.fieldValue(line);
+                            if (ionModeValue != null) {
+                                if (ionModeValue.equalsIgnoreCase("positive")) {
                                     spectrumDO.setIonMode(IonMode.Positive.getName());
                                 }
-                                if (ionModeItems[1].equalsIgnoreCase("negative")) {
+                                if (ionModeValue.equalsIgnoreCase("negative")) {
                                     spectrumDO.setIonMode(IonMode.Negative.getName());
                                 }
                             }
                         }
                         //collision_energy
                         if (lowerLine.startsWith("collision_energy")) {
-                            String[] collisionEnergyItems = line.split(" ");
-                            if (collisionEnergyItems.length > 1) {
+                            String collisionEnergyValue = MspParser.fieldValue(line);
+                            if (collisionEnergyValue != null) {
                                 Double collisionEnergy = null;
                                 try {
-                                    collisionEnergy = Double.valueOf(collisionEnergyItems[1]);
+                                    collisionEnergy = Double.valueOf(collisionEnergyValue);
                                 } catch (Exception e) {
-//                                    log.error("Parse collision energy failed, value: {}", collisionEnergyItems[1]);
+//                                    log.error("Parse collision energy failed, value: {}", collisionEnergyValue);
                                 }
                                 spectrumDO.setCollisionEnergy(collisionEnergy);
                             }
                         }
                         //formula
                         if (lowerLine.startsWith("formula")) {
-                            String[] formulaItems = line.split(" ");
-                            if (formulaItems.length > 1) {
-                                spectrumDO.setFormula(formulaItems[1]);
+                            String formulaValue = MspParser.fieldValue(line);
+                            if (formulaValue != null) {
+                                spectrumDO.setFormula(formulaValue);
                             }
                         }
                         //mw
                         if (lowerLine.startsWith("mw")) {
-                            String[] mwItems = line.split(" ");
-                            if (mwItems.length > 1) {
+                            String mwValue = MspParser.fieldValue(line);
+                            if (mwValue != null) {
                             }
                         }
                         //exactMass
                         if (lowerLine.startsWith("exactmass")) {
-                            String[] exactMassItems = line.split(" ");
-                            if (exactMassItems.length > 1) {
-                                spectrumDO.setExactMass(Double.valueOf(exactMassItems[1]));
+                            String exactMassValue = MspParser.fieldValue(line);
+                            if (exactMassValue != null) {
+                                spectrumDO.setExactMass(Double.valueOf(exactMassValue));
                             }
                         }
                         //comments
                         if (lowerLine.startsWith("comments")) {
-                            String[] commentsItems = line.split(" ");
-                            if (commentsItems.length > 1) {
-                                spectrumDO.setComment(commentsItems[1]);
+                            String commentsValue = MspParser.fieldValue(line);
+                            if (commentsValue != null) {
+                                spectrumDO.setComment(commentsValue);
                             }
                         }
                         //splash
                         if (lowerLine.startsWith("splash")) {
-                            String[] splashItems = line.split(" ");
-                            if (splashItems.length > 1) {
-                                spectrumDO.setSplash(splashItems[1]);
+                            String splashValue = MspParser.fieldValue(line);
+                            if (splashValue != null) {
+                                spectrumDO.setSplash(splashValue);
                             }
                         }
                         //num peaks
@@ -220,7 +221,7 @@ public class MassBankParser {
                             List<Double> intensityList = new ArrayList<>();
                             line = br.readLine();
                             while (line != null && !line.isEmpty()) {
-                                String[] values = line.split(" ");
+                                String[] values = line.trim().split("\\s+");
                                 if (values.length > 1) {
                                     double mz = Double.parseDouble(values[0]);
                                     double intensity = Double.parseDouble(values[1]);
@@ -307,10 +308,10 @@ public class MassBankParser {
             while (line != null) {
                 String lowerLine = line.toLowerCase();
                 if (lowerLine.startsWith("name")) {
-                    String[] items = line.split(" ");
+                    String value = MspParser.fieldValue(line);
                     SpectrumDO spectrumDO = new SpectrumDO();
-                    if (items.length > 1) {
-                        spectrumDO.setCompoundName(items[1]);
+                    if (value != null) {
+                        spectrumDO.setCompoundName(value);
                     }
                     line = br.readLine();
                     while (line != null) {
@@ -321,95 +322,95 @@ public class MassBankParser {
                         }
                         //synon
                         if (lowerLine.startsWith("synon")) {
-                            String[] synonItems = line.split(" ");
-                            if (synonItems.length > 1) {
-                                spectrumDO.setSynon(synonItems[1]);
+                            String synonValue = MspParser.fieldValue(line);
+                            if (synonValue != null) {
+                                spectrumDO.setSynon(synonValue);
                             }
                         }
                         //inchiKey
                         if (lowerLine.startsWith("inchikey")) {
-                            String[] inchiKeyItems = line.split(" ");
-                            if (inchiKeyItems.length > 1) {
-                                spectrumDO.setInChIKey(inchiKeyItems[1]);
+                            String inchiKeyValue = MspParser.fieldValue(line);
+                            if (inchiKeyValue != null) {
+                                spectrumDO.setInChIKey(inchiKeyValue);
                             }
                         }
                         //precursor_type
                         if (lowerLine.startsWith("precursor_type")) {
-                            String[] precursorTypeItems = line.split(" ");
-                            if (precursorTypeItems.length > 1) {
-                                spectrumDO.setPrecursorAdduct(precursorTypeItems[1]);
+                            String precursorTypeValue = MspParser.fieldValue(line);
+                            if (precursorTypeValue != null) {
+                                spectrumDO.setPrecursorAdduct(precursorTypeValue);
                             }
                         }
                         //precursor_mz
                         if (lowerLine.startsWith("precursormz")) {
-                            String[] precursorMzItems = line.split(" ");
-                            if (precursorMzItems.length > 1) {
+                            String precursorMzValue = MspParser.fieldValue(line);
+                            if (precursorMzValue != null) {
                                 try {
-                                    spectrumDO.setPrecursorMz(Double.valueOf(precursorMzItems[1]));
+                                    spectrumDO.setPrecursorMz(Double.valueOf(precursorMzValue));
                                 } catch (NumberFormatException e) {
-//                                    log.error("precursorMz is not a number: {}", precursorMzItems[1]);
+//                                    log.error("precursorMz is not a number: {}", precursorMzValue);
                                 }
                             }
                         }
                         //spectrum_type
                         if (lowerLine.startsWith("spectrum_type")) {
-                            String[] spectrumTypeItems = line.split(" ");
-                            if (spectrumTypeItems.length > 1) {
-                                if (spectrumTypeItems[1].equals("MS1")) {
+                            String spectrumTypeValue = MspParser.fieldValue(line);
+                            if (spectrumTypeValue != null) {
+                                if (spectrumTypeValue.equals("MS1")) {
                                     spectrumDO.setMsLevel(MsLevel.MS1.getCode());
                                 }
-                                if (spectrumTypeItems[1].equals("MS2")) {
+                                if (spectrumTypeValue.equals("MS2")) {
                                     spectrumDO.setMsLevel(MsLevel.MS2.getCode());
                                 }
-                                if (spectrumTypeItems[1].equals("MS3")) {
+                                if (spectrumTypeValue.equals("MS3")) {
                                     break;
                                 }
                             }
                         }
                         //instrument_type
                         if (lowerLine.startsWith("instrument_type")) {
-                            String[] instrumentTypeItems = line.split(" ");
-                            if (instrumentTypeItems.length > 1) {
-                                spectrumDO.setInstrumentType(instrumentTypeItems[1]);
+                            String instrumentTypeValue = MspParser.fieldValue(line);
+                            if (instrumentTypeValue != null) {
+                                spectrumDO.setInstrumentType(instrumentTypeValue);
                             }
                         }
                         //instrument
                         if (lowerLine.startsWith("instrument")) {
-                            String[] instrumentItems = line.split(" ");
-                            if (instrumentItems.length > 1) {
-                                spectrumDO.setInstrument(instrumentItems[1]);
+                            String instrumentValue = MspParser.fieldValue(line);
+                            if (instrumentValue != null) {
+                                spectrumDO.setInstrument(instrumentValue);
                             }
                         }
                         //ion_mode
                         if (lowerLine.startsWith("ion_mode")) {
-                            String[] ionModeItems = line.split(" ");
-                            if (ionModeItems.length > 1) {
-                                if (ionModeItems[1].equalsIgnoreCase("positive") || ionModeItems[1].equalsIgnoreCase("p")) {
+                            String ionModeValue = MspParser.fieldValue(line);
+                            if (ionModeValue != null) {
+                                if (ionModeValue.equalsIgnoreCase("positive") || ionModeValue.equalsIgnoreCase("p")) {
                                     spectrumDO.setIonMode(IonMode.Positive.getName());
                                 }
-                                if (ionModeItems[1].equalsIgnoreCase("negative") || ionModeItems[1].equalsIgnoreCase("n")) {
+                                if (ionModeValue.equalsIgnoreCase("negative") || ionModeValue.equalsIgnoreCase("n")) {
                                     spectrumDO.setIonMode(IonMode.Negative.getName());
                                 }
                             }
                         }
                         //formula
                         if (lowerLine.startsWith("formula")) {
-                            String[] formulaItems = line.split(" ");
-                            if (formulaItems.length > 1) {
-                                spectrumDO.setFormula(formulaItems[1]);
+                            String formulaValue = MspParser.fieldValue(line);
+                            if (formulaValue != null) {
+                                spectrumDO.setFormula(formulaValue);
                             }
                         }
                         //mw
                         if (lowerLine.startsWith("mw")) {
-                            String[] mwItems = line.split(" ");
-                            if (mwItems.length > 1) {
+                            String mwValue = MspParser.fieldValue(line);
+                            if (mwValue != null) {
                             }
                         }
                         //exactMass
                         if (lowerLine.startsWith("exactmass")) {
-                            String[] exactMassItems = line.split(" ");
-                            if (exactMassItems.length > 1) {
-                                spectrumDO.setExactMass(Double.valueOf(exactMassItems[1]));
+                            String exactMassValue = MspParser.fieldValue(line);
+                            if (exactMassValue != null) {
+                                spectrumDO.setExactMass(Double.valueOf(exactMassValue));
                             }
                         }
                         //comments
@@ -433,7 +434,7 @@ public class MassBankParser {
                             List<Double> intensityList = new ArrayList<>();
                             line = br.readLine();
                             while (line != null && !line.isEmpty()) {
-                                String[] values = line.split(" ");
+                                String[] values = line.trim().split("\\s+");
                                 if (values.length > 1) {
                                     double mz = Double.parseDouble(values[0]);
                                     double intensity = Double.parseDouble(values[1]);
