@@ -11,169 +11,201 @@ import net.csibio.metaphoenix.client.constants.enums.SpectrumMatchMethod;
 import net.csibio.metaphoenix.client.domain.bean.identification.LibraryHit;
 import net.csibio.metaphoenix.client.domain.db.MethodDO;
 import net.csibio.metaphoenix.client.domain.db.SpectrumDO;
+import net.csibio.metaphoenix.client.domain.query.SpectrumQuery;
 import net.csibio.metaphoenix.client.filter.NoiseFilter;
 import net.csibio.metaphoenix.client.parser.common.MgfParser;
 import net.csibio.metaphoenix.client.parser.common.MspParser;
 import net.csibio.metaphoenix.client.parser.common.MzMLParser;
-import net.csibio.metaphoenix.client.parser.massbank.MassBankParser;
-import net.csibio.metaphoenix.client.service.LibraryService;
 import net.csibio.metaphoenix.client.service.SpectrumService;
-import net.csibio.metaphoenix.core.config.VMProperties;
-import net.csibio.metaphoenix.core.export.Exporter;
-import net.csibio.metaphoenix.core.export.Reporter;
-import net.csibio.metaphoenix.core.sirius.Sirius;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 @Component
 @Slf4j
 public class CommandRunner implements Runnable {
 
+    static final String USAGE = """
+            Commands:
+              import   -f <library.msp> -l <library>
+              filter   -l <library>
+              decoy    -l <library> [-s <strategy>] [-ppm <ppm>] [-seed <seed>] [-overwrite]
+              identify -f <spectra.mgf|spectra.mzML> -l <library> -fdr <fdr> [-s <strategy>] [-ppm <ppm>] [-o <report.xlsx>]
+            Decoy strategies (-s): Naive, XYMeta, SpectralEntropyBased, SpectralEntropyBased_PR, IonEntropyBased (default), IonEntropyBased_PR
+            Defaults: -ppm 10, -o report.xlsx, no seed (a different decoy library on every run)""";
+
+    static final int DEFAULT_PPM = 10;
+    static final String DEFAULT_REPORT = "report.xlsx";
+    static final Set<String> FLAGS = Set.of("-overwrite");
+
     @Autowired
     SpectrumService spectrumService;
     @Autowired
-    LibraryService libraryService;
-    @Autowired
-    MassBankParser massBankParser;
-    @Autowired
     SpectrumGenerator spectrumGenerator;
-    @Autowired
-    Reporter reporter;
     @Autowired
     NoiseFilter noiseFilter;
     @Autowired
     MspParser mspParser;
-    @Autowired
-    MongoTemplate mongoTemplate;
-    @Autowired
-    Exporter exporter;
-    @Autowired
-    Sirius sirius;
     @Autowired
     MzMLParser mzMLParser;
     @Autowired
     Identify identify;
     @Autowired
     MgfParser mgfParser;
-    @Autowired
-    VMProperties vmProperties;
 
     @Override
     public void run() {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        run(new BufferedReader(new InputStreamReader(System.in)));
+    }
+
+    /**
+     * Read and execute commands until the input is closed. A failing command is reported and the next one is read.
+     */
+    void run(BufferedReader reader) {
+        System.out.println(USAGE);
         while (true) {
-            String input = null;
+            String input;
             try {
                 input = reader.readLine();
+            } catch (IOException e) {
+                log.error("Failed to read command, command runner stopped", e);
+                return;
+            }
+            if (input == null) {
+                log.info("Input closed, command runner stopped");
+                return;
+            }
+            try {
+                execute(input);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid argument: " + e.getMessage());
             } catch (Exception e) {
-                log.info("Error occurred");
+                log.error("Command failed: {}", input, e);
             }
-            String[] params = input.split("\\s+");
-            String command = params[0];
+        }
+    }
 
-            if ("import".equals(command)) {
-                importLibrary(params);
-            } else if ("decoy".equals(command)) {
-                decoy(params);
-            } else if ("filter".equals(command)) {
-                filter(params);
-            } else if ("identify".equals(command)) {
-                identify(params);
+    void execute(String input) {
+        String[] params = input.trim().split("\\s+");
+        String command = params[0];
+        if (command.isEmpty()) {
+            return;
+        }
+        Map<String, String> options = parseOptions(params);
+        switch (command) {
+            case "import" -> importLibrary(options);
+            case "filter" -> filter(options);
+            case "decoy" -> decoy(options);
+            case "identify" -> identify(options);
+            default -> System.out.println("No such command: " + command + "\n" + USAGE);
+        }
+    }
+
+    /**
+     * Parse "-key value" pairs and the flags in {@link #FLAGS} (stored as "true") after the command name.
+     */
+    static Map<String, String> parseOptions(String[] params) {
+        Map<String, String> options = new HashMap<>();
+        for (int i = 1; i < params.length; i++) {
+            String key = params[i];
+            if (!key.startsWith("-")) {
+                throw new IllegalArgumentException("unexpected argument " + key);
+            }
+            if (FLAGS.contains(key)) {
+                options.put(key, "true");
+            } else if (i + 1 < params.length) {
+                options.put(key, params[++i]);
             } else {
-                System.out.print("No such command");
+                throw new IllegalArgumentException("missing value for " + key);
             }
         }
+        return options;
     }
 
-    public void importLibrary(String[] params) {
-        String libraryName = null, filePath = null;
-        for (int i = 0; i < params.length; i++) {
-            if (params[i].equals("-f")) {
-                filePath = params[i + 1];
-            }
-            if (params[i].equals("-l")) {
-                libraryName = params[i + 1];
-            }
+    /**
+     * @return false (after printing the usage) if any of the keys is missing
+     */
+    static boolean require(Map<String, String> options, String... keys) {
+        List<String> missing = Arrays.stream(keys).filter(key -> !options.containsKey(key)).toList();
+        if (!missing.isEmpty()) {
+            System.out.println("Missing parameters: " + String.join(" ", missing) + "\n" + USAGE);
+            return false;
         }
-        if (libraryName == null || filePath == null) {
-            System.out.print("Missing parameters");
-        }
-        mspParser.execute(filePath, libraryName);
+        return true;
     }
 
-    public void filter(String[] params) {
-        String libraryName = null;
-        for (int i = 0; i < params.length; i++) {
-            if (params[i].equals("-l")) {
-                libraryName = params[i + 1];
-            }
-        }
-        if (libraryName == null) {
-            System.out.print("Missing parameters");
-        }
-        noiseFilter.filter(libraryName);
+    static DecoyStrategy parseStrategy(Map<String, String> options) {
+        String name = options.getOrDefault("-s", DecoyStrategy.IonEntropyBased.getName());
+        return Arrays.stream(DecoyStrategy.values()).filter(strategy -> strategy.getName().equals(name)).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("unknown decoy strategy " + name));
     }
 
-
-    public void decoy(String[] params) {
-        String libraryName = null;
-        boolean overwrite = false;
-        for (int i = 0; i < params.length; i++) {
-            if (params[i].equals("-l")) {
-                libraryName = params[i + 1];
-            }
-            if (params[i].equals("-overwrite")) {
-                overwrite = true;
-            }
-        }
-        if (libraryName == null) {
-            System.out.print("Missing parameters");
-        }
+    static MethodDO buildMethod(Map<String, String> options) {
         MethodDO methodDO = new MethodDO();
-        methodDO.setPpm(10);
+        methodDO.setPpm(options.containsKey("-ppm") ? Integer.parseInt(options.get("-ppm")) : DEFAULT_PPM);
         methodDO.setPpmForMzTolerance(true);
-        methodDO.setDecoyStrategy(DecoyStrategy.IonEntropyBased.getName());
-        spectrumGenerator.execute(libraryName, methodDO, overwrite);
+        methodDO.setDecoyStrategy(parseStrategy(options).getName());
+        if (options.containsKey("-seed")) {
+            methodDO.setRandomSeed(Long.parseLong(options.get("-seed")));
+        }
+        return methodDO;
     }
 
-    public void identify(String[] params) {
-        String libraryName = null, filePath = null;
-        Double fdr = null;
-        for (int i = 0; i < params.length; i++) {
-            if (params[i].equals("-f")) {
-                filePath = params[i + 1];
-            }
-            if (params[i].equals("-l")) {
-                libraryName = params[i + 1];
-            }
-            if (params[i].equals("-fdr")) {
-                fdr = Double.parseDouble(params[i + 1]);
-            }
+    public void importLibrary(Map<String, String> options) {
+        if (!require(options, "-f", "-l")) {
+            return;
         }
-        if (libraryName == null || filePath == null || fdr == null) {
-            System.out.print("Missing parameters");
+        mspParser.execute(options.get("-f"), options.get("-l"));
+    }
+
+    public void filter(Map<String, String> options) {
+        if (!require(options, "-l")) {
+            return;
         }
-        String decoyLibraryId = libraryName + SymbolConst.DELIMITER + DecoyStrategy.IonEntropyBased.getName();
-        MethodDO methodDO = new MethodDO();
-        methodDO.setPpm(10);
-        methodDO.setPpmForMzTolerance(true);
+        noiseFilter.filter(options.get("-l"));
+    }
+
+    public void decoy(Map<String, String> options) {
+        if (!require(options, "-l")) {
+            return;
+        }
+        spectrumGenerator.execute(options.get("-l"), buildMethod(options), options.containsKey("-overwrite"));
+    }
+
+    public void identify(Map<String, String> options) {
+        if (!require(options, "-f", "-l", "-fdr")) {
+            return;
+        }
+        String filePath = options.get("-f");
+        String libraryName = options.get("-l");
+        double fdr = Double.parseDouble(options.get("-fdr"));
+        String outputFilePath = options.getOrDefault("-o", DEFAULT_REPORT);
+        MethodDO methodDO = buildMethod(options);
         methodDO.setSpectrumMatchMethod(SpectrumMatchMethod.Entropy);
+        String decoyLibraryId = libraryName + SymbolConst.DELIMITER + methodDO.getDecoyStrategy();
 
-        List<SpectrumDO> querySpectrumDOS = new ArrayList<>();
+        //without a decoy library every hit would pass the FDR threshold
+        if (!spectrumService.exists(new SpectrumQuery(), libraryName)) {
+            System.out.println("Library " + libraryName + " does not exist or is empty");
+            return;
+        }
+        if (!spectrumService.exists(new SpectrumQuery(), decoyLibraryId)) {
+            System.out.println("Decoy library " + decoyLibraryId + " does not exist, run: decoy -l " + libraryName + " -s " + methodDO.getDecoyStrategy());
+            return;
+        }
+
+        List<SpectrumDO> querySpectrumDOS;
         if (filePath.endsWith(".mgf")) {
             querySpectrumDOS = mgfParser.execute(filePath);
         } else if (filePath.endsWith(".mzML")) {
             querySpectrumDOS = mzMLParser.execute(filePath);
         } else {
-            System.out.print("Unsupported file format");
+            System.out.println("Unsupported file format, use .mgf or .mzML: " + filePath);
+            return;
         }
 
         //remove low quality spectra
@@ -226,8 +258,7 @@ public class CommandRunner implements Runnable {
 
         List<Object> header = Arrays.asList("querySpectrumId", "CompoundName", "InChIKey", "PrecursorMz", "Smiles", "Score", "LibrarySpectrumId", "PrecursorAdduct");
         dataSheet.add(0, header);
-        String outputFilePath = "/Users/anshaowei/Downloads/report.xlsx";
         EasyExcel.write(outputFilePath).sheet("identification").doWrite(dataSheet);
+        log.info("Identified {} of {} query spectra, report written to {}", result.size(), querySpectrumDOS.size(), outputFilePath);
     }
-
 }

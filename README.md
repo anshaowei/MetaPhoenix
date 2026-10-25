@@ -83,6 +83,8 @@ java -jar metaphoenix-core/target/metaphoenix-core-1.0.0.jar --spring.profiles.a
 The interactive command runner is disabled by default for web startup. To enable it, run the app with `--command.runner.enabled=true`.
 
 ## 5. Commands
+Commands are read line by line from standard input. A command with missing or invalid parameters prints the usage and the next command is read; closing the input stops the command runner.
+
 Import a spectral library:
 
 ```import -f library.msp -l library_name```
@@ -93,17 +95,21 @@ Filter a library:
 
 Generate decoys:
 
-```decoy -l library_name```
+```decoy -l library_name [-s strategy] [-ppm 10] [-seed 42] [-overwrite]```
 
-If the decoy library already exists, nothing is generated, so existing decoys (such as the ones used for the paper) are never replaced by accident. To regenerate it, add `-overwrite`:
-
-```decoy -l library_name -overwrite```
+* `-s`: decoy strategy, one of `Naive`, `XYMeta`, `SpectralEntropyBased`, `SpectralEntropyBased_PR`, `IonEntropyBased` (default) and `IonEntropyBased_PR`. The decoy library is stored as `library_name-<strategy>`.
+* `-ppm`: m/z tolerance in ppm (default 10).
+* `-seed`: random seed. With the same seed and library, the same decoy library is generated. Without it, every run gives a different decoy library.
+* `-overwrite`: if the decoy library already exists, nothing is generated, so existing decoys (such as the ones used for the paper) are never replaced by accident. Add `-overwrite` to regenerate it.
 
 Identify spectra:
 
-```identify -f spectra.mgf -l library_name -fdr 0.05```
+```identify -f spectra.mgf -l library_name -fdr 0.05 [-s strategy] [-ppm 10] [-o report.xlsx]```
 
-If no score threshold reaches the requested FDR, no hits are reported.
+* `-f`: query spectra in `.mgf` or `.mzML` format.
+* `-s`: decoy library to estimate the FDR with (default `IonEntropyBased`). It has to be generated with `decoy` first.
+* `-o`: output report (default `report.xlsx` in the working directory).
+* If no score threshold reaches the requested FDR, no hits are reported.
 
 ## 6. Using databases created by earlier versions (MSLibrary)
 

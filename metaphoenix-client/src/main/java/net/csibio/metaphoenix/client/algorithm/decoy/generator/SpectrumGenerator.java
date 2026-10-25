@@ -50,13 +50,13 @@ public class SpectrumGenerator {
 
         //process with different strategies
         switch (strategy) {
-            case Naive -> naive(spectrumDOS, decoySpectrumDOS);
+            case Naive -> naive(spectrumDOS, decoySpectrumDOS, method);
             case XYMeta -> xyMeta(spectrumDOS, decoySpectrumDOS, method);
-            case SpectralEntropyBased -> spectralEntropyBased(spectrumDOS, decoySpectrumDOS);
+            case SpectralEntropyBased -> spectralEntropyBased(spectrumDOS, decoySpectrumDOS, method);
 //            case SpectrumBased -> spectrumBased(spectrumDOS, decoySpectrumDOS, method);
             case IonEntropyBased -> ionEntropyBased(spectrumDOS, decoySpectrumDOS, method);
 //            case IonEntropyBased_BasePeak -> ionEntropyBased_BasePeak(spectrumDOS, decoySpectrumDOS, method);
-            case SpectralEntropyBased_PR -> spectralEntropyBased_PR(spectrumDOS, decoySpectrumDOS);
+            case SpectralEntropyBased_PR -> spectralEntropyBased_PR(spectrumDOS, decoySpectrumDOS, method);
             case IonEntropyBased_PR -> ionEntropyBased_PR(spectrumDOS, decoySpectrumDOS, method);
             default -> {
                 log.error("Decoy procedure {} is currently not supported", method.getDecoyStrategy());
@@ -76,7 +76,7 @@ public class SpectrumGenerator {
         log.info("Decoy spectra generation finished, cost {} ms", System.currentTimeMillis() - start);
     }
 
-    private void spectralEntropyBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
+    private void spectralEntropyBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
             SpectrumDO decoySpectrumDO = new SpectrumDO();
             decoySpectrumDO.setRawSpectrumId(spectrumDO.getId());
@@ -86,12 +86,13 @@ public class SpectrumGenerator {
             decoySpectrumDO.setDecoy(true);
             decoySpectrumDOS.add(decoySpectrumDO);
         });
-        entropyControl(spectrumDOS, decoySpectrumDOS);
+        entropyControl(spectrumDOS, decoySpectrumDOS, methodDO);
     }
 
     // precursor reserved
-    private void spectralEntropyBased_PR(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
+    private void spectralEntropyBased_PR(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            Random rnd = newRandom(methodDO, spectrumDO.getId());
             int precursorIndex = ArrayUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
             SpectrumDO decoySpectrumDO = new SpectrumDO();
             decoySpectrumDO.setRawSpectrumId(spectrumDO.getId());
@@ -106,7 +107,7 @@ public class SpectrumGenerator {
                     decoySpectrumInts[i] = spectrumDO.getInts()[precursorIndex];
                     continue;
                 }
-                int randomIndex = new Random().nextInt(rawSpectrumInts.size());
+                int randomIndex = rnd.nextInt(rawSpectrumInts.size());
                 decoySpectrumInts[i] = rawSpectrumInts.get(randomIndex);
                 rawSpectrumInts.remove(randomIndex);
             }
@@ -121,9 +122,10 @@ public class SpectrumGenerator {
      * 2. randomly add ion peaks from other spectra
      * 3. stop until the number of peaks in decoy is the same as the original spectrum
      */
-    private void naive(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
+    private void naive(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         //Generate decoy spectra
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            Random rnd = newRandom(methodDO, spectrumDO.getId());
             //add precursor ion peak
             TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
             double diff = Double.MAX_VALUE;
@@ -138,9 +140,9 @@ public class SpectrumGenerator {
 
             //randomly add ion peaks from other spectra
             while (decoyIonPeaks.size() < spectrumDO.getMzs().length) {
-                int randomIndex = new Random().nextInt(spectrumDOS.size());
+                int randomIndex = rnd.nextInt(spectrumDOS.size());
                 SpectrumDO randomSpectrumDO = spectrumDOS.get(randomIndex);
-                int randomIonIndex = new Random().nextInt(randomSpectrumDO.getMzs().length);
+                int randomIonIndex = rnd.nextInt(randomSpectrumDO.getMzs().length);
                 IonPeak ionPeak = new IonPeak(randomSpectrumDO.getMzs()[randomIonIndex], randomSpectrumDO.getInts()[randomIonIndex]);
                 decoyIonPeaks.add(ionPeak);
             }
@@ -150,6 +152,7 @@ public class SpectrumGenerator {
 
     private void ionEntropyBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            Random rnd = newRandom(methodDO, spectrumDO.getId());
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
             List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance).toList();
 
@@ -190,7 +193,7 @@ public class SpectrumGenerator {
             List<IonPeak> entropyZeroIonPeaks = ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 0).toList();
             List<Double> intensities = new ArrayList<>(entropyZeroIonPeaks.stream().map(IonPeak::getIntensity).toList());
             for (IonPeak ionPeak : entropyZeroIonPeaks) {
-                int random = new Random().nextInt(intensities.size());
+                int random = rnd.nextInt(intensities.size());
                 decoyIonPeaks.add(new IonPeak(ionPeak.getMz(), intensities.get(random)));
                 intensities.remove(random);
             }
@@ -207,6 +210,7 @@ public class SpectrumGenerator {
 
     private void ionEntropyBased_PR(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            Random rnd = newRandom(methodDO, spectrumDO.getId());
             //init
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
             List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance).toList();
@@ -254,7 +258,7 @@ public class SpectrumGenerator {
             List<IonPeak> entropyZeroIonPeaks = ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 0).toList();
             List<Double> intensities = new ArrayList<>(entropyZeroIonPeaks.stream().map(IonPeak::getIntensity).toList());
             for (IonPeak ionPeak : entropyZeroIonPeaks) {
-                int random = new Random().nextInt(intensities.size());
+                int random = rnd.nextInt(intensities.size());
                 decoyIonPeaks.add(new IonPeak(ionPeak.getMz(), intensities.get(random)));
                 intensities.remove(random);
             }
@@ -272,6 +276,7 @@ public class SpectrumGenerator {
 
     private void ionEntropyBased_BasePeak(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            Random rnd = newRandom(methodDO, spectrumDO.getId());
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
             List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(librarySpectrumDO -> Math.abs(librarySpectrumDO.getPrecursorMz() - spectrumDO.getPrecursorMz()) < mzTolerance).toList();
 
@@ -311,7 +316,7 @@ public class SpectrumGenerator {
             List<IonPeak> entropyZeroIonPeaks = ionPeaks.stream().filter(ionPeak -> ionPeak.getIonEntropy() == 0).toList();
             List<Double> intensities = new ArrayList<>(entropyZeroIonPeaks.stream().map(IonPeak::getIntensity).toList());
             for (IonPeak ionPeak : entropyZeroIonPeaks) {
-                int random = new Random().nextInt(intensities.size());
+                int random = rnd.nextInt(intensities.size());
                 decoyIonPeaks.add(new IonPeak(ionPeak.getMz(), intensities.get(random)));
                 intensities.remove(random);
             }
@@ -336,6 +341,7 @@ public class SpectrumGenerator {
     private void xyMeta(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         double removeProportion = 0.5;
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            Random rnd = newRandom(methodDO, spectrumDO.getId());
             //1. find spectra contains the precursorMz
             Double mzTolerance = methodDO.getPpmForMzTolerance() ? methodDO.getPpm() * Constants.PPM * spectrumDO.getPrecursorMz() : methodDO.getMzTolerance();
             List<SpectrumDO> spectraWarehouse = spectrumDOS.stream().filter(spectrum -> ArrayUtil.findNearestDiff(spectrum.getMzs(), spectrumDO.getPrecursorMz()) < mzTolerance).toList();
@@ -359,15 +365,15 @@ public class SpectrumGenerator {
             }
             int removeNum = (int) (targetIonPeaks.size() * removeProportion);
             for (int i = 0; i < removeNum; i++) {
-                targetIonPeaks.remove(new Random().nextInt(targetIonPeaks.size()));
+                targetIonPeaks.remove(rnd.nextInt(targetIonPeaks.size()));
             }
 
             //3.5 fill S if S is not enough, fill it with random ions
             if (ionWarehouse.size() <= removeNum) {
                 while (ionWarehouse.size() < 5 * removeNum) {
-                    int random = new Random().nextInt(spectrumDOS.size());
+                    int random = rnd.nextInt(spectrumDOS.size());
                     SpectrumDO randomSpectrum = spectrumDOS.get(random);
-                    int randomIndex = new Random().nextInt(randomSpectrum.getMzs().length);
+                    int randomIndex = rnd.nextInt(randomSpectrum.getMzs().length);
                     IonPeak randomIonPeak = new IonPeak(randomSpectrum.getMzs()[randomIndex], randomSpectrum.getInts()[randomIndex]);
                     ionWarehouse.add(randomIonPeak);
                 }
@@ -377,7 +383,7 @@ public class SpectrumGenerator {
             List<IonPeak> decoyIonPeaks = new ArrayList<>();
             List<IonPeak> ionWarehouseList = new ArrayList<>(ionWarehouse);
             for (int i = 0; i < removeNum; i++) {
-                int random = new Random().nextInt(ionWarehouseList.size());
+                int random = rnd.nextInt(ionWarehouseList.size());
                 IonPeak randomIonPeak = ionWarehouseList.get(random);
                 decoyIonPeaks.add(randomIonPeak);
                 ionWarehouseList.remove(random);
@@ -387,10 +393,10 @@ public class SpectrumGenerator {
             //5. 30% of the ions in the decoy spectrum is randomly selected to shift +/- precursorMz/200,000
             int shiftNum = (int) (decoyIonPeaks.size() * 0.3);
             for (int i = 0; i < shiftNum; i++) {
-                int random = new Random().nextInt(decoyIonPeaks.size());
+                int random = rnd.nextInt(decoyIonPeaks.size());
                 IonPeak randomIonPeak = decoyIonPeaks.get(random);
-                double shift = new Random().nextDouble() * spectrumDO.getPrecursorMz() / 200000;
-                if (new Random().nextBoolean()) {
+                double shift = rnd.nextDouble() * spectrumDO.getPrecursorMz() / 200000;
+                if (rnd.nextBoolean()) {
                     randomIonPeak.setMz(randomIonPeak.getMz() + shift);
                 } else {
                     randomIonPeak.setMz(randomIonPeak.getMz() - shift);
@@ -409,6 +415,7 @@ public class SpectrumGenerator {
      */
     private void spectrumBased(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         spectrumDOS.parallelStream().forEach(spectrumDO -> {
+            Random rnd = newRandom(methodDO, spectrumDO.getId());
             //1. add precursor ion peak to decoy spectrum
             TreeSet<IonPeak> decoyIonPeaks = new TreeSet<>();
             int precursorIndex = ArrayUtil.findNearestIndex(spectrumDO.getMzs(), spectrumDO.getPrecursorMz());
@@ -440,7 +447,7 @@ public class SpectrumGenerator {
                         }
                     } else {
                         for (int j = 0; j < limitCount; j++) {
-                            int randomIndex = new Random().nextInt(candidateSpectrum.getMzs().length);
+                            int randomIndex = rnd.nextInt(candidateSpectrum.getMzs().length);
                             IonPeak ionPeak = new IonPeak(candidateSpectrum.getMzs()[randomIndex], candidateSpectrum.getInts()[randomIndex]);
                             candidateIonPeaks.add(ionPeak);
                         }
@@ -448,7 +455,7 @@ public class SpectrumGenerator {
                 }
 
                 //4. randomly select a peak from the set and add it to the decoy spectrum
-                int randomIndex = new Random().nextInt(candidateIonPeaks.size());
+                int randomIndex = rnd.nextInt(candidateIonPeaks.size());
                 IonPeak randomIonPeak = candidateIonPeaks.get(randomIndex);
                 decoyIonPeaks.add(randomIonPeak);
                 lastAddedMz = randomIonPeak.getMz();
@@ -479,21 +486,33 @@ public class SpectrumGenerator {
         return spectrumDO;
     }
 
-    private void entropyControl(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS) {
+    private void entropyControl(List<SpectrumDO> spectrumDOS, List<SpectrumDO> decoySpectrumDOS, MethodDO methodDO) {
         HashMap<String, SpectrumDO> spectrumMap = new HashMap<>();
         spectrumDOS.forEach(spectrumDO -> spectrumMap.put(spectrumDO.getId(), spectrumDO));
         decoySpectrumDOS.parallelStream().forEach(decoySpectrum -> {
+            Random rnd = newRandom(methodDO, decoySpectrum.getRawSpectrumId());
             SpectrumDO rawSpectrumDO = spectrumMap.get(decoySpectrum.getRawSpectrumId());
             List<Double> rawSpectrumInts = new ArrayList<>(Arrays.stream(rawSpectrumDO.getInts()).boxed().toList());
             double[] decoySpectrumInts = new double[decoySpectrum.getInts().length];
             //randomly set intensity in decoy spectrum same to raw spectrum
             for (int i = 0; i < decoySpectrumInts.length; i++) {
-                int randomIndex = new Random().nextInt(rawSpectrumInts.size());
+                int randomIndex = rnd.nextInt(rawSpectrumInts.size());
                 decoySpectrumInts[i] = rawSpectrumInts.get(randomIndex);
                 rawSpectrumInts.remove(randomIndex);
             }
             decoySpectrum.setInts(decoySpectrumInts);
         });
+    }
+
+    /**
+     * Random source for one spectrum. With a random seed in the method, it depends only on the seed and the
+     * spectrum id, so the decoys are reproducible regardless of the order in which spectra are processed in parallel.
+     */
+    private static Random newRandom(MethodDO methodDO, String spectrumId) {
+        if (methodDO.getRandomSeed() == null) {
+            return new Random();
+        }
+        return new Random(methodDO.getRandomSeed() * 31 + Objects.hashCode(spectrumId));
     }
 
 }

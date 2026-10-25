@@ -53,6 +53,9 @@ public class MethodDO {
 
     boolean precursorRemoval = false;
 
+    //seed for decoy generation, null for a different decoy library on every run
+    Long randomSeed;
+
     Date createDate;
 
     Date lastModifiedDate;
