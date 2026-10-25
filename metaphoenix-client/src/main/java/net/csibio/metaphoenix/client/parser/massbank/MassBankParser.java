@@ -94,7 +94,7 @@ public class MassBankParser {
                             }
                         }
                         //inchi
-                        if (lowerLine.startsWith("inchi")) {
+                        if (lowerLine.startsWith("inchi") && !lowerLine.startsWith("inchikey")) {
                             String inchiValue = MspParser.fieldValue(line);
                             if (inchiValue != null) {
                                 spectrumDO.setInChI(inchiValue);
@@ -150,7 +150,7 @@ public class MassBankParser {
                             }
                         }
                         //instrument
-                        if (lowerLine.startsWith("instrument")) {
+                        if (lowerLine.startsWith("instrument") && !lowerLine.startsWith("instrument_type")) {
                             String instrumentValue = MspParser.fieldValue(line);
                             if (instrumentValue != null) {
                                 spectrumDO.setInstrument(instrumentValue);
@@ -375,7 +375,7 @@ public class MassBankParser {
                             }
                         }
                         //instrument
-                        if (lowerLine.startsWith("instrument")) {
+                        if (lowerLine.startsWith("instrument") && !lowerLine.startsWith("instrument_type")) {
                             String instrumentValue = MspParser.fieldValue(line);
                             if (instrumentValue != null) {
                                 spectrumDO.setInstrument(instrumentValue);

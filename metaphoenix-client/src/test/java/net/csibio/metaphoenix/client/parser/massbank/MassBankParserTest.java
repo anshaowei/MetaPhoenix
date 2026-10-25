@@ -177,4 +177,43 @@ class MassBankParserTest {
         assertEquals("Thermo Q Exactive HF", spectrum.getInstrument());
         assertEquals("OC1=CC=CC=C1", spectrum.getSmiles());
     }
+
+    @Test
+    void inChIKeyAndInstrumentTypeLinesDoNotOverwriteInChIAndInstrument() throws Exception {
+        // InChI and Instrument come before the keys that start with the same letters
+        Path eu = dir.resolve("massbank.msp");
+        Files.writeString(eu, """
+                Name: Caffeine
+                Spectrum_type: MS2
+                PrecursorMZ: 195.0877
+                InChI: InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/h4H,1-3H3
+                InChIKey: RYYVLZVUVIJVGH-UHFFFAOYSA-N
+                Instrument: Bruker maXis Impact
+                Instrument_type: LC-ESI-QTOF
+                Num Peaks: 1
+                195.0877 100
+                """);
+        Path mona = dir.resolve("mona.msp");
+        Files.writeString(mona, """
+                Name: Caffeine
+                Spectrum_type: MS2
+                PrecursorMZ: 195.0877
+                Instrument: Thermo Q Exactive HF
+                Instrument_type: LC-ESI-QFT
+                Num Peaks: 1
+                195.0877 100
+                """);
+
+        massBankParser.parseMspEU(eu.toString(), "MassBank-EU");
+        massBankParser.parseMspMoNA(mona.toString(), "MoNA");
+
+        SpectrumDO fromEu = inserted("MassBank-EU").get(0);
+        assertEquals("InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/h4H,1-3H3", fromEu.getInChI());
+        assertEquals("RYYVLZVUVIJVGH-UHFFFAOYSA-N", fromEu.getInChIKey());
+        assertEquals("Bruker maXis Impact", fromEu.getInstrument());
+        assertEquals("LC-ESI-QTOF", fromEu.getInstrumentType());
+        SpectrumDO fromMoNA = inserted("MoNA").get(0);
+        assertEquals("Thermo Q Exactive HF", fromMoNA.getInstrument());
+        assertEquals("LC-ESI-QFT", fromMoNA.getInstrumentType());
+    }
 }
