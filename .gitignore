@@ -6,7 +6,7 @@
 *.log
 target/
 application-local.properties
-mslibrary-core/src/main/resources/application-local.properties
+metaphoenix-core/src/main/resources/application-local.properties
 # BlueJ files
 *.ctxt
 

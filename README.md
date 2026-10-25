@@ -42,7 +42,7 @@ Download the latest source code from the repository.
 Follow the [MongoDB installation guide](https://www.mongodb.com/docs/) to install MongoDB on your system.
 
 ## 3. Configure
-Default configuration lives in [application.properties](mslibrary-core/src/main/resources/application.properties). Copy [application-example.properties](mslibrary-core/src/main/resources/application-example.properties) to `mslibrary-core/src/main/resources/application-local.properties` before packaging for local overrides, or use environment variables.
+Default configuration lives in [application.properties](metaphoenix-core/src/main/resources/application.properties). Copy [application-example.properties](metaphoenix-core/src/main/resources/application-example.properties) to `metaphoenix-core/src/main/resources/application-local.properties` before packaging for local overrides, or use environment variables.
 
 Common overrides:
 
@@ -71,13 +71,13 @@ mvn -DskipTests clean package
 Run the Spring Boot app:
 
 ```bash
-java -jar mslibrary-core/target/mslibrary-core-1.0.0.jar
+java -jar metaphoenix-core/target/metaphoenix-core-1.0.0.jar
 ```
 
 To include local overrides:
 
 ```bash
-java -jar mslibrary-core/target/mslibrary-core-1.0.0.jar --spring.profiles.active=local
+java -jar metaphoenix-core/target/metaphoenix-core-1.0.0.jar --spring.profiles.active=local
 ```
 
 The interactive command runner is disabled by default for web startup. To enable it, run the app with `--command.runner.enabled=true`.
