@@ -37,4 +37,17 @@ class EntropyTest {
         Spectrum spectrum = new Spectrum(new double[]{100, 200, 300, 400}, new double[]{1, 1, 1, 1});
         assertEquals(Math.log(4), Entropy.getSpectrumEntropy(spectrum), 1e-9);
     }
+
+    @Test
+    void zeroValuesAreIgnoredInsteadOfGivingNaN() {
+        assertEquals(Math.log(2), Entropy.getEntropy(new double[]{1, 1, 0}), 1e-9);
+        assertEquals(Entropy.getEntropy(new double[]{100, 1, 1}), Entropy.getEntropy(new double[]{100, 0, 1, 1}), 1e-9);
+    }
+
+    @Test
+    void emptyOrAllZeroValuesHaveZeroEntropy() {
+        assertEquals(0.0, Entropy.getEntropy(new double[]{}), 1e-9);
+        assertEquals(0.0, Entropy.getEntropy(new double[]{0, 0, 0}), 1e-9);
+        assertEquals(0.0, Entropy.getNormalizedEntropy(new double[]{0, 0}), 1e-9);
+    }
 }

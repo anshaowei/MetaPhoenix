@@ -1,7 +1,6 @@
 package net.csibio.metaphoenix.client.domain.db;
 
 import lombok.Data;
-import net.csibio.metaphoenix.client.constants.enums.DecoyProcedure;
 import net.csibio.metaphoenix.client.constants.enums.DecoyStrategy;
 import net.csibio.metaphoenix.client.constants.enums.SpectrumMatchMethod;
 import org.springframework.data.annotation.Id;
@@ -40,11 +39,6 @@ public class MethodDO {
      * @see DecoyStrategy
      */
     String decoyStrategy;
-
-    /**
-     * @see DecoyProcedure
-     */
-    String decoyProcedure;
 
     /**
      * @see SpectrumMatchMethod

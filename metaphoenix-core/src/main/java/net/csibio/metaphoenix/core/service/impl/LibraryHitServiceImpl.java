@@ -42,7 +42,8 @@ public class LibraryHitServiceImpl implements LibraryHitService {
     @Override
     public LibraryHit getBestHit(SpectrumDO querySpectrumDO, String libraryId, Double mzTolerance, boolean isDecoy, SpectrumMatchMethod spectrumMatchMethod, boolean precursorRemoval) {
         List<SpectrumDO> libSpectrumDOS = spectrumService.getByPrecursorMz(querySpectrumDO.getPrecursorMz(), mzTolerance, libraryId);
-        Double maxScore = Double.MIN_VALUE;
+        //Double.MIN_VALUE is the smallest positive double, so a best score of 0 would be dropped
+        double maxScore = Double.NEGATIVE_INFINITY;
         int index = -1;
         for (int i = 0; i < libSpectrumDOS.size(); i++) {
             double score = getScore(querySpectrumDO, libSpectrumDOS.get(i), mzTolerance, spectrumMatchMethod, precursorRemoval);
