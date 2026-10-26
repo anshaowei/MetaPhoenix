@@ -69,20 +69,20 @@ cd MetaPhoenix
 mvn -DskipTests clean package
 ```
 
-This produces `metaphoenix-core/target/metaphoenix-core-1.0.0.jar`. Run `mvn test` to run the unit tests; they do not need MongoDB.
+This produces `metaphoenix-core/target/metaphoenix-core-1.1.0.jar`. Run `mvn test` to run the unit tests; they do not need MongoDB.
 
 **Run**
 
 MetaPhoenix reads commands from standard input:
 
 ```bash
-java -jar metaphoenix-core/target/metaphoenix-core-1.0.0.jar --command.runner.enabled=true
+java -jar metaphoenix-core/target/metaphoenix-core-1.1.0.jar --command.runner.enabled=true
 ```
 
 The usage is printed at startup. Enter one command per line; a command with missing or invalid parameters prints the usage and the next command is read. Closing the input (Ctrl-D) stops the command runner. Commands can also be read from a file:
 
 ```bash
-java -jar metaphoenix-core/target/metaphoenix-core-1.0.0.jar --command.runner.enabled=true < commands.txt
+java -jar metaphoenix-core/target/metaphoenix-core-1.1.0.jar --command.runner.enabled=true < commands.txt
 ```
 
 Without `--command.runner.enabled=true` only the HTTP API is started (see [Project structure](#project-structure)) and commands typed into the terminal are ignored.
@@ -218,7 +218,7 @@ Alternatively, copy [application-example.properties](metaphoenix-core/src/main/r
 
 The benchmark in the paper searches MassBank of North America (MoNA, July 2023) spectra against GNPS (December 2023) as the target library. A hit is counted as correct when the first block of its InChIKey matches that of the query, which gives the true FDR to compare with the estimated one.
 
-* **Code.** Use the `dev` branch. The `master` branch is an archive of the original code under its former name, MSLibrary.
+* **Code.** Use the `dev` branch or the latest [release](https://github.com/anshaowei/MetaPhoenix/releases). The `master` branch (tag `v1.0.0`) is an archive of the original code under its former name, MSLibrary.
 * **Data.** Download `ALL_GNPS.msp` from the [GNPS library downloads](https://external.gnps2.org/gnpslibrary) and the MSP export from [MoNA](https://mona.fiehnlab.ucdavis.edu/downloads), then build the libraries:
 
   ```text
