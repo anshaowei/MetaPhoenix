@@ -26,7 +26,7 @@ Target-decoy FDR estimation is standard in proteomics, but in metabolomics it is
 
 ## Features
 
-* **Library import** from generic MSP, MassBank-Europe and MassBank of North America (MoNA) files into MongoDB.
+* **Library import** from GNPS, MassBank-Europe, MassBank of North America (MoNA) and generic MSP files into MongoDB.
 * **Library filtering** with the quality rules used in the paper (precursor, peak count, mass range, MS level, ion mode).
 * **Decoy generation** with six strategies: ion entropy–based and spectral entropy–based decoys from the paper, each with a precursor-retaining variant, and the Naive and XYMeta methods for comparison. Decoys are reproducible with a random seed.
 * **Spectral library search** of MGF or mzML query spectra with the weighted spectral entropy similarity, reporting hits at a chosen FDR as an Excel report.
@@ -120,10 +120,9 @@ Imports an MSP file into a new library named `<library>`.
 | `-t` | Source | Download |
 |---|---|---|
 | `msp` (default) | Generic MSP (`NAME`, `PRECURSORMZ`, `PRECURSORTYPE`, `FORMULA`, `INCHIKEY`, `SMILES`, `IONMODE`, ...) | |
+| `gnps` | GNPS spectral library in MSP format, for example `ALL_GNPS.msp` | [GNPS library downloads](https://external.gnps2.org/gnpslibrary) |
 | `massbank` | MassBank-Europe MSP release (`MassBank_NIST.msp`) | [MassBank-data releases](https://github.com/MassBank/MassBank-data/releases) |
 | `mona` | MassBank of North America (MoNA) MSP export | [MoNA downloads](https://mona.fiehnlab.ucdavis.edu/downloads) |
-
-GNPS libraries cannot be imported from the command line yet; see [Reproducing the paper](#reproducing-the-paper).
 
 ### filter
 
@@ -220,7 +219,18 @@ Alternatively, copy [application-example.properties](metaphoenix-core/src/main/r
 The benchmark in the paper searches MassBank of North America (MoNA, July 2023) spectra against GNPS (December 2023) as the target library. A hit is counted as correct when the first block of its InChIKey matches that of the query, which gives the true FDR to compare with the estimated one.
 
 * **Code.** Use the `dev` branch. The `master` branch is an archive of the original code under its former name, MSLibrary.
-* **Data.** MoNA can be imported with `import -t mona`. GNPS libraries ([downloads](https://external.gnps2.org/gnpslibrary)) cannot be imported from the command line yet; the HTTP endpoint `/async/gnps` imports the GNPS JSON export from `<METAPHOENIX_REPOSITORY>/ALL_GNPS.json` and creates one library per GNPS `library_membership`.
+* **Data.** Download `ALL_GNPS.msp` from the [GNPS library downloads](https://external.gnps2.org/gnpslibrary) and the MSP export from [MoNA](https://mona.fiehnlab.ucdavis.edu/downloads), then build the libraries:
+
+  ```text
+  import -f ALL_GNPS.msp -l ALL_GNPS -t gnps
+  import -f MoNA-export-LC-MS-MS_Spectra.msp -l MassBank-MoNA -t mona
+  filter -l ALL_GNPS
+  filter -l MassBank-MoNA
+  decoy -l ALL_GNPS -s IonEntropyBased -seed 42
+  ```
+
+  Both libraries keep growing, so current downloads contain more spectra than the versions used in the paper. The paper's GNPS library was imported with an earlier version of the MSP parser that kept only the first word of text fields such as the compound name, instrument and comment. These fields are not used by `filter`, `decoy` or `identify`.
+* **Benchmark.** The estimated-vs-true FDR comparison is computed by `Reporter.compareDecoyStrategy` in `metaphoenix-core`, which is not exposed as a command.
 * **Existing databases.** Databases created with MSLibrary, including the one used for the paper, can be read without migration. See [docs/mslibrary-databases.md](docs/mslibrary-databases.md).
 * **Differences from the paper text.** The estimated FDR formula, one fragment tolerance and the similarity weighting differ from the Methods text; the figures were produced with the code as it is. See [docs/implementation-notes.md](docs/implementation-notes.md).
 

@@ -122,6 +122,48 @@ class MspParserTest {
     }
 
     @Test
+    void importsGnpsMspRecords() throws IOException {
+        Path file = dir.resolve("ALL_GNPS.msp");
+        Files.writeString(file, String.join("\n",
+                "NAME: Exumolide M+H",
+                "PRECURSORMZ: 730.418",
+                "PRECURSORTYPE: M+H",
+                "FORMULA: C41H55N5O7",
+                "Ontology: ",
+                "INCHIKEY: GWGKNTICBPKKKW-LBBUGJAGSA-N",
+                "SMILES: CC(C)C[C@@H]1OC(=O)[C@@H]2CCCN2C1=O",
+                "RETENTIONTIME: ",
+                "IONMODE: Positive",
+                "INSTRUMENTTYPE: LC-ESI-qTof",
+                "INSTRUMENT: qTof",
+                "COLLISIONENERGY: ",
+                "Comment: DB#=CCMSLIB00000001563; origin=GNPS-LIBRARY",
+                "Num Peaks: 2",
+                "120.0808\t1530.0",
+                "730.4180\t8420.0",
+                ""));
+        when(libraryService.insert(any(LibraryDO.class))).thenReturn(Result.OK());
+
+        parser.execute(file.toString(), "ALL_GNPS");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<SpectrumDO>> captor = ArgumentCaptor.forClass(List.class);
+        verify(spectrumService).insert(captor.capture(), any());
+        SpectrumDO s = captor.getValue().get(0);
+        assertEquals("Exumolide M+H", s.getCompoundName());
+        assertEquals(730.418, s.getPrecursorMz(), 1e-9);
+        assertEquals("M+H", s.getPrecursorAdduct());
+        assertEquals("GWGKNTICBPKKKW-LBBUGJAGSA-N", s.getInChIKey());
+        assertNull(s.getOntology());
+        assertEquals("Positive", s.getIonMode());
+        assertEquals("LC-ESI-qTof", s.getInstrumentType());
+        assertEquals("qTof", s.getInstrument());
+        assertNull(s.getCollisionEnergy());
+        assertEquals("DB#=CCMSLIB00000001563; origin=GNPS-LIBRARY", s.getComment());
+        assertArrayEquals(new double[]{120.0808, 730.4180}, s.getMzs(), 1e-9);
+    }
+
+    @Test
     void doesNotImportWhenLibraryCreationFails() throws IOException {
         Path file = dir.resolve("lib.msp");
         Files.writeString(file, MSP);

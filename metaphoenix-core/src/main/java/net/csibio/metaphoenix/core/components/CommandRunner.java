@@ -36,7 +36,7 @@ public class CommandRunner implements Runnable {
               filter   -l <library>
               decoy    -l <library> [-s <strategy>] [-ppm <ppm>] [-seed <seed>] [-overwrite]
               identify -f <spectra.mgf|spectra.mzML> -l <library> -fdr <fdr> [-s <strategy>] [-ppm <ppm>] [-o <report.xlsx>]
-            Import formats (-t): msp (default), massbank (MassBank-Europe MSP), mona (MassBank-MoNA MSP)
+            Import formats (-t): msp (default), gnps (GNPS MSP), massbank (MassBank-Europe MSP), mona (MassBank-MoNA MSP)
             Decoy strategies (-s): Naive, XYMeta, SpectralEntropyBased, SpectralEntropyBased_PR, IonEntropyBased (default), IonEntropyBased_PR
             Defaults: -ppm 10, -o report.xlsx, no seed (a different decoy library on every run)""";
 
@@ -167,10 +167,11 @@ public class CommandRunner implements Runnable {
         String libraryName = options.get("-l");
         String format = options.getOrDefault("-t", "msp");
         switch (format) {
-            case "msp" -> mspParser.execute(filePath, libraryName);
+            //GNPS MSP files use the generic MSP keys
+            case "msp", "gnps" -> mspParser.execute(filePath, libraryName);
             case "massbank" -> massBankParser.parseMspEU(filePath, libraryName);
             case "mona" -> massBankParser.parseMspMoNA(filePath, libraryName);
-            default -> throw new IllegalArgumentException("unknown import format " + format + ", use msp, massbank or mona");
+            default -> throw new IllegalArgumentException("unknown import format " + format + ", use msp, gnps, massbank or mona");
         }
     }
 

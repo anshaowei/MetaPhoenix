@@ -135,9 +135,10 @@ class CommandRunnerTest {
 
     @Test
     void importChoosesTheParserByFormat() {
-        run("import -f a.msp -l a", "import -f eu.msp -l eu -t massbank", "import -f mona.msp -l mona -t mona", "import -f x.msp -l x -t nist");
+        run("import -f a.msp -l a", "import -f ALL_GNPS.msp -l ALL_GNPS -t gnps", "import -f eu.msp -l eu -t massbank", "import -f mona.msp -l mona -t mona", "import -f x.msp -l x -t nist");
 
         verify(mspParser).execute("a.msp", "a");
+        verify(mspParser).execute("ALL_GNPS.msp", "ALL_GNPS");
         verify(massBankParser).parseMspEU("eu.msp", "eu");
         verify(massBankParser).parseMspMoNA("mona.msp", "mona");
         verifyNoMoreInteractions(mspParser, massBankParser);
