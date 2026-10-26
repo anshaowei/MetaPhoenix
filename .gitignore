@@ -30,3 +30,6 @@ hs_err_pid*
 
 # macOS
 .DS_Store
+
+# Local paper reproduction material (not published)
+/reproduction/
