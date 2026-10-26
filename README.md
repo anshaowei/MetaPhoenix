@@ -269,10 +269,6 @@ PubMed: [38426325](https://pubmed.ncbi.nlm.nih.gov/38426325/) · Free full text:
 
 The citation is also available in [CITATION.cff](CITATION.cff) and through the "Cite this repository" button on GitHub.
 
-MetaPhoenix scores spectra with the entropy similarity of Li et al. If you report these scores, please also cite:
-
-> Li Y, Kind T, Folz J, Vaniya A, Mehta SS, Fiehn O. Spectral entropy outperforms MS/MS dot product similarity for small-molecule compound identification. *Nature Methods*. 2021;18(12):1524–1531. [doi:10.1038/s41592-021-01331-z](https://doi.org/10.1038/s41592-021-01331-z)
-
 ## License
 
 MetaPhoenix is released under the [Apache License 2.0](LICENSE).
